@@ -1,0 +1,8 @@
+Package: vimcom
+Version: 0.9-1
+Date: 2012-02-16
+Title: Intermediate the communication between Vim and R
+Author: Jakson Aquino
+Maintainer: Jakson Alves de Aquino <jalvesaq@gmail.com>
+Description: Provide a service to intermediate the communication between Vim and R.
+License: GPL (>= 2)
