@@ -607,6 +607,8 @@ static void *vimcom_server_thread(void *arg)
                 sprintf(rep, "%s", getenv("VIMINSTANCEID"));
                 if(strcmp(rep, "(null)") == 0)
                     REprintf("vimcom: the environment variable VIMINSTANCEID is not set.\n");
+                strcat(rep, "&");
+                strcat(rep, getenv("TMUX_PANE"));
                 break;
             case 3: // Update Object Browser (.GlobalEnv)
                 vimcom_list_env(0);
@@ -763,7 +765,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
 #endif
         vimcom_initialized = 1;
         if(verbose > 0)
-            REprintf("vimcom 0.9-0 loaded\n");
+            REprintf("vimcom 0.9-1 loaded\n");
     }
 }
 
