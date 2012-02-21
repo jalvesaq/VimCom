@@ -224,21 +224,38 @@ static void vimcom_browser_line(SEXP *x, const char *xname, const char *curenv, 
             sprintf(newpre, "%s%s", pre, strT);
             listNames = getAttrib(*x, R_NamesSymbol);
             len = length(listNames);
-            if(length(listNames) > 0){
+            if(len == 0){ /* Empty list? */
+                int len1 = length(*x);
+                if(len1 > 0){ /* List without names */
+                    len1 -= 1;
+                    for(int i = 0; i < len1; i++){
+                        sprintf(ebuf, "[[%d]]", i + 1);
+                        elmt = VECTOR_ELT(*x, i);
+                        vimcom_browser_line(&elmt, ebuf, newenv, newpre, f);
+                    }
+                    sprintf(newpre, "%s%s", pre, strL);
+                    sprintf(ebuf, "[[%d]]", len1 + 1);
+                    elmt = VECTOR_ELT(*x, len);
+                    vimcom_browser_line(&elmt, ebuf, newenv, newpre, f);
+                }
+            } else { /* Named list */
                 len -= 1;
                 for(int i = 0; i < len; i++){
                     eexp = STRING_ELT(listNames, i);
-                    if(Rf_isValidString(eexp)){
-                        sprintf(ebuf, "[[%d]]", i);
+                    ename = CHAR(eexp);
+                    if(ename[0] == 0){
+                        sprintf(ebuf, "[[%d]]", i + 1);
                         ename = ebuf;
-                        REprintf(">>>%s<<<\n", ename);
-                    } else
-                        ename = CHAR(eexp);
+                    }
                     elmt = VECTOR_ELT(*x, i);
                     vimcom_browser_line(&elmt, ename, newenv, newpre, f);
                 }
                 sprintf(newpre, "%s%s", pre, strL);
                 ename = CHAR(STRING_ELT(listNames, len));
+                if(ename[0] == 0){
+                    sprintf(ebuf, "[[%d]]", len + 1);
+                    ename = ebuf;
+                }
                 elmt = VECTOR_ELT(*x, len);
                 vimcom_browser_line(&elmt, ename, newenv, newpre, f);
             }
