@@ -11,11 +11,11 @@
   control the vimcom behavior:
 
   \tabular{lll}{
-    Option          \tab Description               \tab Default \cr
-    vimcom.verbose  \tab Print information.        \tab 0 \cr
-    vimcom.opendf   \tab Show data.frames elements.\tab TRUE \cr
-    vimcom.openlist \tab Show lists elements.      \tab FALSE \cr
-    vimcom.allnames \tab Show hidden objects.      \tab FALSE \cr
+    Option          \tab Description                     \tab Default \cr
+    vimcom.verbose  \tab Print information.              \tab 0       \cr
+    vimcom.opendf   \tab Show data.frames elements.      \tab TRUE    \cr
+    vimcom.openlist \tab Show lists elements.            \tab FALSE   \cr
+    vimcom.allnames \tab Show .GlobalEnv hidden objects. \tab FALSE   \cr
   }
 
   You may want to put the options above in your Rprofile rather than setting

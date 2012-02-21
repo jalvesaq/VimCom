@@ -5,7 +5,8 @@ Build omnilist for Vim.
 }
 \description{
 Build the omniList file for Vim. The function is supposed to be
-called by the Vim-R-plugin.
+called by the user through Vim-R-plugin (command :RUpdateObjList  or
+:RUpdateObjListAll).
 }
 \usage{
 vim.bol(omnilist, what = "loaded", allnames = FALSE)
