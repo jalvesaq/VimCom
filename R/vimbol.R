@@ -14,6 +14,11 @@
 ### Jakson Alves de Aquino
 ### Tue, January 18, 2011
 
+# This function writes two files: one with the names of all functions in all
+# packages (either loaded or installed); the other file lists all objects,
+# including function arguments. These files are used by Vim to highlight
+# functions and to complete the names of objects and the arguments of
+# functions.
 
 # Build Omni List
 vim.bol <- function(omnilist, what = "loaded", allnames = FALSE) {
@@ -149,7 +154,8 @@ vim.bol <- function(omnilist, what = "loaded", allnames = FALSE) {
   if(what == "installed"){
     cat("Loading all installed packages...\n")
     for(vim.pack in installed.packages()[, "Package"]){
-      library(vim.pack, character.only = TRUE)
+      cat("Loading ", vim.pack, "...\n", sep = "")
+      try( library(vim.pack, character.only = TRUE))
     }
   }
   noGlobalEnv <- vim.grepl("/r-plugin/omniList", omnilist)
@@ -169,6 +175,9 @@ vim.bol <- function(omnilist, what = "loaded", allnames = FALSE) {
   }
   sink()
   options(OutDec = vim.OutDec)
+  writeLines(text = "Finished",
+             con = paste(Sys.getenv("VIMRPLUGIN_TMPDIR"), "/vimbol_finished", sep = ""))
+  cat("Finished.")
   return("VIMBROWSER")
 }
 
