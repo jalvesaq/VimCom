@@ -178,6 +178,6 @@ vim.bol <- function(omnilist, what = "loaded", allnames = FALSE) {
   writeLines(text = "Finished",
              con = paste(Sys.getenv("VIMRPLUGIN_TMPDIR"), "/vimbol_finished", sep = ""))
   cat("Finished.")
-  return("VIMBROWSER")
+  return(invisible(NULL))
 }
 
