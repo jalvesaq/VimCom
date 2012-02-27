@@ -395,7 +395,7 @@ static void vimcom_eval_expr(const char *buf, char *rep)
 {
     SEXP cmdSexp, cmdexpr, ans = R_NilValue;
     ParseStatus status;
-    int er = 0;
+    int er = 0, npro = 2;
 
     PROTECT(cmdSexp = allocVector(STRSXP, 1));
     SET_STRING_ELT(cmdSexp, 0, mkChar(buf));
@@ -407,6 +407,8 @@ static void vimcom_eval_expr(const char *buf, char *rep)
         /* Loop is needed here as EXPSEXP will be of length > 1 */
         for(R_len_t i = 0; i < length(cmdexpr); i++){
             ans = R_tryEval(VECTOR_ELT(cmdexpr, i), R_GlobalEnv, &er);
+            PROTECT(ans);
+            npro++;
             if(er){
                 strcpy(rep, "ERROR");
                 break;
@@ -430,7 +432,7 @@ static void vimcom_eval_expr(const char *buf, char *rep)
             }
         }
     }
-    UNPROTECT(2);
+    UNPROTECT(npro);
 }
 
 #ifndef WIN32
