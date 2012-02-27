@@ -395,11 +395,11 @@ static void vimcom_eval_expr(const char *buf, char *rep)
 {
     SEXP cmdSexp, cmdexpr, ans = R_NilValue;
     ParseStatus status;
-    int er = 0, npro = 2;
+    int er = 0;
 
     PROTECT(cmdSexp = allocVector(STRSXP, 1));
     SET_STRING_ELT(cmdSexp, 0, mkChar(buf));
-    cmdexpr = PROTECT(R_ParseVector(cmdSexp, -1, &status, R_NilValue));
+    PROTECT(cmdexpr = R_ParseVector(cmdSexp, -1, &status, R_NilValue));
 
     if (status != PARSE_OK) {
         sprintf(rep, "INVALID");
@@ -408,7 +408,6 @@ static void vimcom_eval_expr(const char *buf, char *rep)
         for(R_len_t i = 0; i < length(cmdexpr); i++){
             ans = R_tryEval(VECTOR_ELT(cmdexpr, i), R_GlobalEnv, &er);
             PROTECT(ans);
-            npro++;
             if(er){
                 strcpy(rep, "ERROR");
                 break;
@@ -430,9 +429,10 @@ static void vimcom_eval_expr(const char *buf, char *rep)
                 default:
                     sprintf(rep, "RTYPE");
             }
+            UNPROTECT(1);
         }
     }
-    UNPROTECT(npro);
+    UNPROTECT(2);
 }
 
 #ifndef WIN32
