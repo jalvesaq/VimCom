@@ -410,7 +410,7 @@ static void vimcom_eval_expr(const char *buf, char *rep)
     } else {
         /* Loop is needed here as EXPSEXP will be of length > 1 */
         for(R_len_t i = 0; i < length(cmdexpr); i++){
-            ans = R_tryEval(VECTOR_ELT(cmdexpr, i), R_GlobalEnv, &er);
+            PROTECT(ans = R_tryEval(VECTOR_ELT(cmdexpr, i), R_GlobalEnv, &er));
             if(er){
                 strcpy(rep, "ERROR");
                 break;
@@ -432,6 +432,7 @@ static void vimcom_eval_expr(const char *buf, char *rep)
                 default:
                     sprintf(rep, "RTYPE");
             }
+            UNPROTECT(1);
         }
     }
     UNPROTECT(3);
