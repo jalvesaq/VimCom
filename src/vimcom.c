@@ -43,6 +43,7 @@ static char tmpdir[512];
 static int objbr_auto = 0;
 static int has_new_lib = 0;
 static int has_new_obj = 0;
+static int r_is_busy = 0;
 
 typedef struct liststatus_ {
     char *key;
@@ -117,9 +118,9 @@ static void vimcom_count_elements(SEXP *x)
 
 static int vimcom_count_objects()
 {
-    int np = 1;
     const char *varName;
     SEXP envVarsSEXP;
+    SEXP varSEXP;
 
     int oldcount = nobjs;
     nobjs = 0;
@@ -127,19 +128,18 @@ static int vimcom_count_objects()
     PROTECT(envVarsSEXP = R_lsInternal(R_GlobalEnv, 0));
     for(int i = 0; i < Rf_length(envVarsSEXP); i++){
         varName = CHAR(STRING_ELT(envVarsSEXP, i));
-        SEXP varSEXP = Rf_findVar(Rf_install(varName), R_GlobalEnv);
+        PROTECT(varSEXP = Rf_findVar(Rf_install(varName), R_GlobalEnv));
         if (varSEXP != R_UnboundValue) // should never be unbound 
         {
-            PROTECT(varSEXP);
-            np++;
             nobjs++;
             if(Rf_isNewList(varSEXP))
                 vimcom_count_elements(&varSEXP);
         } else {
             REprintf("Unexpected R_UnboundValue returned from R_lsInternal");
         }
+        UNPROTECT(1);
     }
-    UNPROTECT(np);
+    UNPROTECT(1);
 
     return(oldcount != nobjs);
 }
@@ -182,12 +182,12 @@ static void vimcom_browser_line(SEXP *x, const char *xname, const char *curenv, 
 
     PROTECT(lablab = allocVector(STRSXP, 1));
     SET_STRING_ELT(lablab, 0, mkChar("label"));
-    label = getAttrib(*x, lablab);
+    PROTECT(label = getAttrib(*x, lablab));
     if(length(label) > 0)
         fprintf(f, "%s\t%s\n", xname, CHAR(STRING_ELT(label, 0)));
     else
         fprintf(f, "%s\t\n", xname);
-    UNPROTECT(1);
+    UNPROTECT(2);
 
     if(strcmp(xclass, "list") == 0 || strcmp(xclass, "data.frame") == 0){
         snprintf(newenv, 500, "%s-%s", curenv, xname);
@@ -222,7 +222,7 @@ static void vimcom_browser_line(SEXP *x, const char *xname, const char *curenv, 
             }
 
             sprintf(newpre, "%s%s", pre, strT);
-            listNames = getAttrib(*x, R_NamesSymbol);
+            PROTECT(listNames = getAttrib(*x, R_NamesSymbol));
             len = length(listNames);
             if(len == 0){ /* Empty list? */
                 int len1 = length(*x);
@@ -235,20 +235,23 @@ static void vimcom_browser_line(SEXP *x, const char *xname, const char *curenv, 
                     }
                     sprintf(newpre, "%s%s", pre, strL);
                     sprintf(ebuf, "[[%d]]", len1 + 1);
-                    elmt = VECTOR_ELT(*x, len);
+                    PROTECT(elmt = VECTOR_ELT(*x, len));
                     vimcom_browser_line(&elmt, ebuf, newenv, newpre, f);
+                    UNPROTECT(1);
                 }
             } else { /* Named list */
                 len -= 1;
                 for(int i = 0; i < len; i++){
-                    eexp = STRING_ELT(listNames, i);
+                    PROTECT(eexp = STRING_ELT(listNames, i));
                     ename = CHAR(eexp);
+                    UNPROTECT(1);
                     if(ename[0] == 0){
                         sprintf(ebuf, "[[%d]]", i + 1);
                         ename = ebuf;
                     }
-                    elmt = VECTOR_ELT(*x, i);
+                    PROTECT(elmt = VECTOR_ELT(*x, i));
                     vimcom_browser_line(&elmt, ename, newenv, newpre, f);
+                    UNPROTECT(1);
                 }
                 sprintf(newpre, "%s%s", pre, strL);
                 ename = CHAR(STRING_ELT(listNames, len));
@@ -256,18 +259,19 @@ static void vimcom_browser_line(SEXP *x, const char *xname, const char *curenv, 
                     sprintf(ebuf, "[[%d]]", len + 1);
                     ename = ebuf;
                 }
-                elmt = VECTOR_ELT(*x, len);
+                PROTECT(elmt = VECTOR_ELT(*x, len));
                 vimcom_browser_line(&elmt, ename, newenv, newpre, f);
+                UNPROTECT(1);
             }
+            UNPROTECT(1); /* listNames */
         }
     }
 }
 
 static void vimcom_list_env(int checkcount)
 {
-    int np = 1;
     const char *varName;
-    SEXP envVarsSEXP;
+    SEXP envVarsSEXP, varSEXP;
 
     if(checkcount && vimcom_count_objects() == 0)
         return;
@@ -291,17 +295,16 @@ static void vimcom_list_env(int checkcount)
     PROTECT(envVarsSEXP = R_lsInternal(R_GlobalEnv, allnames));
     for(int i = 0; i < Rf_length(envVarsSEXP); i++){
         varName = CHAR(STRING_ELT(envVarsSEXP, i));
-        SEXP varSEXP = Rf_findVar(Rf_install(varName), R_GlobalEnv);
+        PROTECT(varSEXP = Rf_findVar(Rf_install(varName), R_GlobalEnv));
         if (varSEXP != R_UnboundValue) // should never be unbound 
         {
-            PROTECT(varSEXP);
-            np++;
             vimcom_browser_line(&varSEXP, varName, "", "   ", f);
         } else {
             REprintf("Unexpected R_UnboundValue returned from R_lsInternal");
         }
+        UNPROTECT(1);
     }
-    UNPROTECT(np);
+    UNPROTECT(1);
     fclose(f);
     has_new_obj = 1;
 }
@@ -393,10 +396,11 @@ static void vimcom_list_libs(int checkcount)
 
 static void vimcom_eval_expr(const char *buf, char *rep)
 {
-    SEXP cmdSexp, cmdexpr, ans = R_NilValue;
+    SEXP cmdSexp, cmdexpr, ans;
     ParseStatus status;
     int er = 0;
 
+    PROTECT(ans = R_NilValue);
     PROTECT(cmdSexp = allocVector(STRSXP, 1));
     SET_STRING_ELT(cmdSexp, 0, mkChar(buf));
     PROTECT(cmdexpr = R_ParseVector(cmdSexp, -1, &status, R_NilValue));
@@ -407,7 +411,6 @@ static void vimcom_eval_expr(const char *buf, char *rep)
         /* Loop is needed here as EXPSEXP will be of length > 1 */
         for(R_len_t i = 0; i < length(cmdexpr); i++){
             ans = R_tryEval(VECTOR_ELT(cmdexpr, i), R_GlobalEnv, &er);
-            PROTECT(ans);
             if(er){
                 strcpy(rep, "ERROR");
                 break;
@@ -429,10 +432,9 @@ static void vimcom_eval_expr(const char *buf, char *rep)
                 default:
                     sprintf(rep, "RTYPE");
             }
-            UNPROTECT(1);
         }
     }
-    UNPROTECT(2);
+    UNPROTECT(3);
 }
 
 #ifndef WIN32
@@ -667,7 +669,10 @@ static void *vimcom_server_thread(void *arg)
                 objbr_auto = 0;
                 break;
             default: // eval expression
-                vimcom_eval_expr(buf, rep);
+                if(r_is_busy == 0)
+                    vimcom_eval_expr(buf, rep);
+                else
+                    strcpy(rep, "R is busy.");
                 break;
         }
 
@@ -695,6 +700,7 @@ static void *vimcom_server_thread(void *arg)
 #ifndef WIN32
 static void vimcom_R_Busy(int which)
 {
+    r_is_busy = 1;
     if(verbose > 3)
         REprintf("vimcom_busy: %d\n", which);
     if(which == 0 && vimcom_relist){
@@ -721,6 +727,7 @@ static void vimcom_R_Busy(int which)
         has_new_lib = 0;
         has_new_obj = 0;
     }
+    r_is_busy = which;
 }
 #endif
 
