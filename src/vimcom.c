@@ -319,13 +319,12 @@ static void vimcom_list_libs(int checkcount)
     char prefixT[64];
     char prefixL[64];
     char fn[512];
-    SEXP s, t, a, l;
+    SEXP s, t, a, l, n, m, x, y, oblist, obj;
 
     PROTECT(t = s = allocList(1));
     SET_TYPEOF(s, LANGSXP);
     SETCAR(t, install("search"));
     PROTECT(a = R_tryEval(s, R_GlobalEnv, &er));
-    int np = 2;
     
     if(tmpdir[0] == 0)
         return;
@@ -350,9 +349,7 @@ static void vimcom_list_libs(int checkcount)
     strcat(prefixL, strL);
 
     for(int i = 0; i < Rf_length(a); i++){
-        l = STRING_ELT(a, i);
-        PROTECT(l);
-        np++;
+        PROTECT(l = STRING_ELT(a, i));
         libname = CHAR(l);
         libn = strstr(libname, "package:");
         if(libn != NULL){
@@ -361,35 +358,33 @@ static void vimcom_list_libs(int checkcount)
             if(vimcom_get_list_status(libname, "library") == 1){
                 idx = i + 1;
 
-                SEXP x, y, oblist, obj;
 
                 PROTECT(y = x = allocList(2));
-                np++;
                 SET_TYPEOF(x, LANGSXP);
                 SETCAR(y, install("objects")); y = CDR(y);
                 SETCAR(y, ScalarInteger(idx));
                 PROTECT(oblist = R_tryEval(x, R_GlobalEnv, &er));
-                np++;
                 len = Rf_length(oblist);
                 len1 = len - 1;
                 for(int j = 0; j < len; j++){
-                    PROTECT(y = x = allocList(3));
-                    np++;
-                    SET_TYPEOF(x, LANGSXP);
-                    SETCAR(y, install("get")); y = CDR(y);
-                    SETCAR(y, ScalarString(STRING_ELT(oblist, j))); y = CDR(y);
-                    SETCAR(y, ScalarInteger(idx)); y = CDR(y);
-                    PROTECT(obj = R_tryEval(x, R_GlobalEnv, &er));
-                    np++;
+                    PROTECT(m = n = allocList(3));
+                    SET_TYPEOF(n, LANGSXP);
+                    SETCAR(m, install("get")); m = CDR(m);
+                    SETCAR(m, ScalarString(STRING_ELT(oblist, j))); m = CDR(m);
+                    SETCAR(m, ScalarInteger(idx)); m = CDR(m);
+                    PROTECT(obj = R_tryEval(n, R_GlobalEnv, &er));
                     if(j == len1)
                         vimcom_browser_line(&obj, CHAR(STRING_ELT(oblist, j)), libname, prefixL, f);
                     else
                         vimcom_browser_line(&obj, CHAR(STRING_ELT(oblist, j)), libname, prefixT, f);
+                    UNPROTECT(2);
                 }
+                UNPROTECT(2);
             }
         }
+        UNPROTECT(1);
     }
-    UNPROTECT(np);
+    UNPROTECT(2);
     fclose(f);
     has_new_lib = 2;
 }
@@ -791,6 +786,8 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
         vimcom_initialized = 1;
         if(verbose > 0)
             REprintf("vimcom 0.9-1 loaded\n");
+        if(verbose > 1)
+            REprintf("Last change in vimcom.c: 2012-03-02 17:09\n");
     }
 }
 
