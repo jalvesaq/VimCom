@@ -325,6 +325,11 @@ static void vimcom_list_libs(int checkcount)
     SET_TYPEOF(s, LANGSXP);
     SETCAR(t, install("search"));
     PROTECT(a = R_tryEval(s, R_GlobalEnv, &er));
+    if(er){
+        REprintf("Failure on search() [%s:%d]\n", __FILE__, __LINE__);
+        UNPROTECT(2);
+        return;
+    }
     
     if(tmpdir[0] == 0)
         return;
@@ -364,6 +369,11 @@ static void vimcom_list_libs(int checkcount)
                 SETCAR(y, install("objects")); y = CDR(y);
                 SETCAR(y, ScalarInteger(idx));
                 PROTECT(oblist = R_tryEval(x, R_GlobalEnv, &er));
+                if(er){
+                    REprintf("Failure on objects() [%s:%d]\n", __FILE__, __LINE__);
+                    UNPROTECT(3);
+                    break;
+                }
                 len = Rf_length(oblist);
                 len1 = len - 1;
                 for(int j = 0; j < len; j++){
@@ -373,6 +383,11 @@ static void vimcom_list_libs(int checkcount)
                     SETCAR(m, ScalarString(STRING_ELT(oblist, j))); m = CDR(m);
                     SETCAR(m, ScalarInteger(idx)); m = CDR(m);
                     PROTECT(obj = R_tryEval(n, R_GlobalEnv, &er));
+                    if(er){
+                        REprintf("Failure on get() [%s:%d]\n", __FILE__, __LINE__);
+                        UNPROTECT(2);
+                        break;
+                    }
                     if(j == len1)
                         vimcom_browser_line(&obj, CHAR(STRING_ELT(oblist, j)), libname, prefixL, f);
                     else
@@ -784,7 +799,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
         if(verbose > 0)
             REprintf("vimcom 0.9-1 loaded\n");
         if(verbose > 1)
-            REprintf("Last change in vimcom.c: 2012-03-03 22:43\n");
+            REprintf("Last change in vimcom.c: 2012-03-04 11:14\n");
     }
 }
 
