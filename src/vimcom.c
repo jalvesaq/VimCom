@@ -395,7 +395,6 @@ static void vimcom_eval_expr(const char *buf, char *rep)
     ParseStatus status;
     int er = 0;
 
-    PROTECT(ans = R_NilValue);
     PROTECT(cmdSexp = allocVector(STRSXP, 1));
     SET_STRING_ELT(cmdSexp, 0, mkChar(buf));
     PROTECT(cmdexpr = R_ParseVector(cmdSexp, -1, &status, R_NilValue));
@@ -403,34 +402,32 @@ static void vimcom_eval_expr(const char *buf, char *rep)
     if (status != PARSE_OK) {
         sprintf(rep, "INVALID");
     } else {
-        /* Loop is needed here as EXPSEXP will be of length > 1 */
-        for(R_len_t i = 0; i < length(cmdexpr); i++){
-            PROTECT(ans = R_tryEval(VECTOR_ELT(cmdexpr, i), R_GlobalEnv, &er));
-            if(er){
-                strcpy(rep, "ERROR");
-                break;
-            }
+        /* Only the first command will be executed if a semicolon is used. */
+        PROTECT(ans = R_tryEval(VECTOR_ELT(cmdexpr, 0), R_GlobalEnv, &er));
+        if(er){
+            strcpy(rep, "ERROR");
+        } else {
             switch(TYPEOF(ans)) {
                 case REALSXP:
-                    sprintf(rep, "%f", REAL(ans)[i]);
+                    sprintf(rep, "%f", REAL(ans)[0]);
                     break;
                 case LGLSXP:
                 case INTSXP:
-                    sprintf(rep, "%d", INTEGER(ans)[i]);
+                    sprintf(rep, "%d", INTEGER(ans)[0]);
                     break;
                 case STRSXP:
                     if(length(ans) > 0)
-                        sprintf(rep, "%s", CHAR(STRING_ELT(ans, i)));
+                        sprintf(rep, "%s", CHAR(STRING_ELT(ans, 0)));
                     else
                         sprintf(rep, "EMPTY");
                     break;
                 default:
                     sprintf(rep, "RTYPE");
             }
-            UNPROTECT(1);
         }
+        UNPROTECT(1);
     }
-    UNPROTECT(3);
+    UNPROTECT(2);
 }
 
 #ifndef WIN32
@@ -787,7 +784,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
         if(verbose > 0)
             REprintf("vimcom 0.9-1 loaded\n");
         if(verbose > 1)
-            REprintf("Last change in vimcom.c: 2012-03-02 17:09\n");
+            REprintf("Last change in vimcom.c: 2012-03-03 22:43\n");
     }
 }
 
