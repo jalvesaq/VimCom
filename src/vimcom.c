@@ -27,6 +27,8 @@ static void (*save_pt_R_Busy)(int);
 static int vimcom_relist = 0;
 #endif
 
+extern unsigned long R_CStackLimit;
+
 static int vimcom_initialized = 0;
 static int verbose = 0;
 static int opendf = 1;
@@ -326,7 +328,7 @@ static void vimcom_list_libs(int checkcount)
     SETCAR(t, install("search"));
     PROTECT(a = R_tryEval(s, R_GlobalEnv, &er));
     if(er){
-        REprintf("Failure on search() [%s:%d]\n", __FILE__, __LINE__);
+        REprintf("Error on search() [%s:%d]\nThe Object Browser will not show the loaded libraries.\n", __FILE__, __LINE__);
         UNPROTECT(2);
         return;
     }
@@ -781,6 +783,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
 #ifdef WIN32
     tid = _beginthread(vimcom_server_thread, 0, NULL);
 #else
+    R_CStackLimit = (uintptr_t)-1;
     pthread_create(&tid, NULL, vimcom_server_thread, NULL);
 #endif
 
@@ -799,7 +802,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
         if(verbose > 0)
             REprintf("vimcom 0.9-1 loaded\n");
         if(verbose > 1)
-            REprintf("Last change in vimcom.c: 2012-03-04 11:14\n");
+            REprintf("Last change in vimcom.c: 2012-03-04 22:26\n");
     }
 }
 
