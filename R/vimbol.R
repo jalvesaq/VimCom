@@ -177,7 +177,7 @@ vim.bol <- function(omnilist, what = "loaded", allnames = FALSE) {
   options(OutDec = vim.OutDec)
   writeLines(text = "Finished",
              con = paste(Sys.getenv("VIMRPLUGIN_TMPDIR"), "/vimbol_finished", sep = ""))
-  cat("Finished.")
+  cat("Finished.\n")
   return(invisible(NULL))
 }
 
