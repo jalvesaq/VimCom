@@ -709,12 +709,21 @@ static void *vimcom_server_thread(void *arg)
                 bbuf++;
                 status = atoi(bbuf);
                 ListStatus *tmp = firstList;
-                while(tmp){
-                    if(strstr(tmp->key, "package:") != tmp->key)
+                if(status == 0){
+                    while(tmp){
                         tmp->status = status;
-                    tmp = tmp->next;
+                        tmp = tmp->next;
+                    }
+                } else {
+                    while(tmp){
+                        if(strstr(tmp->key, "package:") != tmp->key)
+                            tmp->status = status;
+                        tmp = tmp->next;
+                    }
                 }
                 vimcom_list_env(0);
+                if(status == 0)
+                    vimcom_list_libs(0);
                 break;
             case 7: // Set obport
                 bbuf = buf;
@@ -851,7 +860,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
         if(verbose > 0)
             REprintf("vimcom 0.9-1 loaded\n");
         if(verbose > 1)
-            REprintf("Last change in vimcom.c: 2012-03-07 10:51\n");
+            REprintf("Last change in vimcom.c: 2012-03-07 11:43\n");
     }
 }
 
