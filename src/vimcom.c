@@ -38,6 +38,7 @@ static int vimcom_is_utf8;
 static int vimcom_failure = 0;
 static int nlibs = 0;
 static int nobjs = 0;
+static int edport = 0;
 static int obport = 0;
 static char strL[16];
 static char strT[16];
@@ -55,6 +56,8 @@ typedef struct liststatus_ {
 } ListStatus;
 
 static ListStatus *firstList = NULL;
+
+static char *loadedlibs[64];
 
 #ifdef WIN32
 SOCKET sfd;
@@ -314,59 +317,55 @@ static void vimcom_list_env(int checkcount)
 
 static int check_tcltk()
 {
-    int newnlibs, er = 0;
     const char *libname;
-    SEXP s, t, a, l;
+    char *libn;
+    SEXP a, l;
 
-    PROTECT(t = s = allocList(1));
-    SET_TYPEOF(s, LANGSXP);
-    SETCAR(t, install("search"));
-    PROTECT(a = R_tryEval(s, R_GlobalEnv, &er));
-    if(er){
-        REprintf("Error on search() [%s:%d]\nThe Object Browser will not show the loaded libraries.\n", __FILE__, __LINE__);
-        UNPROTECT(2);
-        return(-1);
-    }
+    PROTECT(a = eval(lang1(install("search")), R_GlobalEnv));
     
-    newnlibs = Rf_length(a);
+    int newnlibs = Rf_length(a);
     if(nlibs == newnlibs)
         return(nlibs);
 
-    for(int i = 0; i < Rf_length(a); i++){
+    int k = 0;
+    for(int i = 0; i < newnlibs; i++){
+        if(i == 62)
+            break;
         PROTECT(l = STRING_ELT(a, i));
         libname = CHAR(l);
-        if(strstr(libname, "package:tcltk") != NULL){
+        libn = strstr(libname, "package:");
+        if(libn != NULL){
+            strncpy(loadedlibs[k], libname, 63);
+            loadedlibs[k+1][0] = 0;
             if(tcltkerr == 0){
-                REprintf("Error: \"vimcom\" and \"tcltk\" packages are incompatible!\n");
-                tcltkerr = 1;
+                if(strstr(libn, "tcltk") != NULL){
+                    REprintf("Error: \"vimcom\" and \"tcltk\" packages are incompatible!\n");
+                    tcltkerr = 1;
+                }
             }
-            UNPROTECT(3);
-            return(-1);
+            k++;
         }
         UNPROTECT(1);
     }
-    UNPROTECT(2);
+    UNPROTECT(1);
     return(newnlibs);
 }
 
 static void vimcom_list_libs(int checkcount)
 {
-    int er = 0;
     int newnlibs;
-    int idx, len, len1;
-    const char *libname;
+    int len, len1;
     char *libn;
     char prefixT[64];
     char prefixL[64];
     char fn[512];
-    SEXP s, t, a, l, n, m, x, y, oblist, obj;
+    SEXP x, oblist, obj;
 
     if(tmpdir[0] == 0)
         return;
 
     newnlibs = check_tcltk();
-    if(newnlibs == -1)
-        return;
+
     if(checkcount){
         if(newnlibs == nlibs)
             return;
@@ -374,21 +373,10 @@ static void vimcom_list_libs(int checkcount)
             nlibs = newnlibs;
     }
 
-    PROTECT(t = s = allocList(1));
-    SET_TYPEOF(s, LANGSXP);
-    SETCAR(t, install("search"));
-    PROTECT(a = R_tryEval(s, R_GlobalEnv, &er));
-    if(er){
-        REprintf("Error on search() [%s:%d]\nThe Object Browser will not show the loaded libraries.\n", __FILE__, __LINE__);
-        UNPROTECT(2);
-        return;
-    }
-
     snprintf(fn, 510, "%s/liblist", tmpdir);
     FILE *f = fopen(fn, "w");
     if(f == NULL){
         REprintf("Error: could not write to '%s'\n", fn);
-        UNPROTECT(2);
         return;
     }
     fprintf(f, "\n");
@@ -398,58 +386,40 @@ static void vimcom_list_libs(int checkcount)
     strcat(prefixT, strT);
     strcat(prefixL, strL);
 
-    for(int i = 0; i < Rf_length(a); i++){
-        PROTECT(l = STRING_ELT(a, i));
-        libname = CHAR(l);
-        libn = strstr(libname, "package:");
-        if(libn != NULL){
-            libn += 8;
-            fprintf(f, "   ##%s\t\n", libn);
-            if(vimcom_get_list_status(libname, "library") == 1){
-                idx = i + 1;
-                PROTECT(y = x = allocList(2));
-                SET_TYPEOF(x, LANGSXP);
-                SETCAR(y, install("objects")); y = CDR(y);
-                SETCAR(y, ScalarInteger(idx));
-                PROTECT(oblist = R_tryEval(x, R_GlobalEnv, &er));
-                if(er){
-                    REprintf("Failure on objects() [%s:%d]\n", __FILE__, __LINE__);
-                    UNPROTECT(3);
-                    break;
-                }
-                len = Rf_length(oblist);
-                len1 = len - 1;
-                for(int j = 0; j < len; j++){
-                    PROTECT(m = n = allocList(3));
-                    SET_TYPEOF(n, LANGSXP);
-                    SETCAR(m, install("get")); m = CDR(m);
-                    SETCAR(m, ScalarString(STRING_ELT(oblist, j))); m = CDR(m);
-                    SETCAR(m, ScalarInteger(idx)); m = CDR(m);
-                    PROTECT(obj = R_tryEval(n, R_GlobalEnv, &er));
-                    if(er){
-                        REprintf("Failure on get() [%s:%d]\n", __FILE__, __LINE__);
-                        UNPROTECT(2);
-                        break;
-                    }
-                    if(j == len1)
-                        vimcom_browser_line(&obj, CHAR(STRING_ELT(oblist, j)), libname, prefixL, f);
-                    else
-                        vimcom_browser_line(&obj, CHAR(STRING_ELT(oblist, j)), libname, prefixT, f);
-                    UNPROTECT(2);
-                }
-                UNPROTECT(2);
+    int i = 0;
+    while(loadedlibs[i][0] != 0){
+        libn = loadedlibs[i] + 8;
+        fprintf(f, "   ##%s\t\n", libn);
+        if(vimcom_get_list_status(loadedlibs[i], "library") == 1){
+            if(tcltkerr){
+                REprintf("Error: \"vimcom\" and \"tcltk\" packages are incompatible!\n");
+                i++;
+                continue;
             }
+            PROTECT(x = allocVector(STRSXP, 1));
+            SET_STRING_ELT(x, 0, mkChar(loadedlibs[i]));
+            PROTECT(oblist = eval(lang2(install("objects"), x), R_GlobalEnv));
+            len = Rf_length(oblist);
+            len1 = len - 1;
+            for(int j = 0; j < len; j++){
+                PROTECT(obj = eval(lang3(install("get"), ScalarString(STRING_ELT(oblist, j)), x), R_GlobalEnv));
+                if(j == len1)
+                    vimcom_browser_line(&obj, CHAR(STRING_ELT(oblist, j)), loadedlibs[i], prefixL, f);
+                else
+                    vimcom_browser_line(&obj, CHAR(STRING_ELT(oblist, j)), loadedlibs[i], prefixT, f);
+                UNPROTECT(1);
+            }
+            UNPROTECT(2);
         }
-        UNPROTECT(1);
+        i++;
     }
-    UNPROTECT(2);
     fclose(f);
     has_new_lib = 2;
 }
 
 static void vimcom_eval_expr(const char *buf, char *rep)
 {
-    if(check_tcltk() == -1){
+    if(tcltkerr){
         sprintf(rep, "Error: \"vimcom\" and \"tcltk\" packages are incompatible!");
         return;
     }
@@ -504,7 +474,7 @@ Rboolean vimcom_task(SEXP expr, SEXP value, Rboolean succeeded,
     return(TRUE);
 }
 
-static void vimcom_ob_client(const char *msg)
+static void vimcom_vimclient(const char *msg, int srvport)
 {
     struct addrinfo hints;
     struct addrinfo *result, *rp;
@@ -520,7 +490,7 @@ static void vimcom_ob_client(const char *msg)
     hints.ai_flags = 0;
     hints.ai_protocol = 0;
 
-    sprintf(portstr, "%d", obport);
+    sprintf(portstr, "%d", srvport);
     a = getaddrinfo("localhost", portstr, &hints, &result);
     if (a != 0) {
         REprintf("Error: getaddrinfo: %s\n", gai_strerror(a));
@@ -670,17 +640,29 @@ static void *vimcom_server_thread(void *arg)
 
         int status;
         char *bbuf;
+        char fn[512];
+        FILE *f;
 
 
         if(verbose > 1){
             bbuf = buf;
             if(buf[0] < 30)
                 bbuf++;
-            REprintf("VimCom Received: %s\n", bbuf);
+            REprintf("VimCom Received: [%d] %s\n", buf[0], bbuf);
         }
 
         switch(buf[0]){
-            case 1: // Flag not used yet
+            case 1: // Save Tmux pane on file
+                snprintf(fn, 510, "%s/rpane", tmpdir);
+                f = fopen(fn, "w");
+                if(f == NULL){
+                    REprintf("Error: could not write to '%s'\n", fn);
+                    strcpy(rep, "ERROR");
+                } else {
+                    fprintf(f, "%s\n", getenv("TMUX_PANE"));
+                    strcpy(rep, "OK");
+                    fclose(f);
+                }
                 break;
             case 2: // Confirm port number
                 sprintf(rep, "%s", getenv("VIMINSTANCEID"));
@@ -709,31 +691,46 @@ static void *vimcom_server_thread(void *arg)
                 bbuf++;
                 status = atoi(bbuf);
                 ListStatus *tmp = firstList;
-                if(status == 0){
+                if(status == 0 || status == 2){
                     while(tmp){
-                        tmp->status = status;
+                        tmp->status = 0;
                         tmp = tmp->next;
                     }
+                    vimcom_list_libs(0);
+                    vimcom_list_env(0);
+                    if(status > 1)
+                        vimcom_vimclient("B", obport);
                 } else {
                     while(tmp){
                         if(strstr(tmp->key, "package:") != tmp->key)
-                            tmp->status = status;
+                            tmp->status = 1;
                         tmp = tmp->next;
                     }
+                    vimcom_list_env(0);
+                    if(status > 1)
+                        vimcom_vimclient("G", obport);
                 }
-                vimcom_list_env(0);
-                if(status == 0)
-                    vimcom_list_libs(0);
                 break;
             case 7: // Set obport
                 bbuf = buf;
                 bbuf++;
-                obport = atoi(bbuf);
-                objbr_auto = 1;
-                sprintf(rep, "Object Browser port set to %d\n", obport);
+                status = atoi(bbuf);
+                if(status > 5000 && status < 6000){
+                    objbr_auto = 1;
+                    obport = status;
+                    sprintf(rep, "Object Browser port set to %d\n", obport);
+                } else {
+                    edport = status;
+                    sprintf(rep, "VimServer() started at port %d\n", obport);
+                }
                 break;
             case 8: // Stop automatic update of Object Browser info
                 objbr_auto = 0;
+                break;
+            case 9: // called from the object browser
+                bbuf = buf;
+                bbuf++;
+                vimcom_vimclient(bbuf, edport);
                 break;
             default: // eval expression
                 if(r_is_busy)
@@ -777,17 +774,17 @@ static void vimcom_R_Busy(int which)
         vimcom_list_libs(1);
         switch(has_new_lib + has_new_obj){
             case 1:
-                vimcom_ob_client("G");
+                vimcom_vimclient("G", obport);
                 if(verbose > 3)
                     Rprintf("G\n");
                 break;
             case 2:
-                vimcom_ob_client("L");
+                vimcom_vimclient("L", obport);
                 if(verbose > 3)
                     Rprintf("L\n");
                 break;
             case 3:
-                vimcom_ob_client("B");
+                vimcom_vimclient("B", obport);
                 if(verbose > 3)
                     Rprintf("B\n");
                 break;
@@ -851,6 +848,11 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
         firstList->key = (char*)malloc(13 * sizeof(char));
         strcpy(firstList->key, "package:base");
 
+        for(int i = 0; i < 64; i++){
+            loadedlibs[i] = (char*)malloc(64 * sizeof(char));
+            loadedlibs[i][0] = 0;
+        }
+
 #ifndef WIN32
         Rf_addTaskCallback(vimcom_task, NULL, free, "VimComHandler", NULL);
         save_pt_R_Busy = ptr_R_Busy;
@@ -860,7 +862,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
         if(verbose > 0)
             REprintf("vimcom 0.9-1 loaded\n");
         if(verbose > 1)
-            REprintf("Last change in vimcom.c: 2012-03-07 11:43\n");
+            REprintf("Last change in vimcom.c: 2012-03-08 08:16\n");
     }
 }
 
@@ -882,6 +884,10 @@ void vimcom_Stop()
             free(tmp->key);
             free(tmp);
             tmp = firstList;
+        }
+        for(int i = 0; i < 64; i++){
+            free(loadedlibs[i]);
+            loadedlibs[i] = NULL;
         }
         if(verbose)
             REprintf("vimcom stopped\n");
