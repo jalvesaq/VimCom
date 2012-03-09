@@ -392,7 +392,7 @@ static void vimcom_list_libs(int checkcount)
         fprintf(f, "   ##%s\t\n", libn);
         if(vimcom_get_list_status(loadedlibs[i], "library") == 1){
             if(tcltkerr){
-                REprintf("Error: \"vimcom\" and \"tcltk\" packages are incompatible!\n");
+                REprintf("Error: cannot open libraries due to conflict between \"vimcom\" and \"tcltk\" packages.\n");
                 i++;
                 continue;
             }
@@ -862,7 +862,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
         if(verbose > 0)
             REprintf("vimcom 0.9-1 loaded\n");
         if(verbose > 1)
-            REprintf("Last change in vimcom.c: 2012-03-08 08:16\n");
+            REprintf("Last change in vimcom.c: 2012-03-09 12:09\n");
     }
 }
 
