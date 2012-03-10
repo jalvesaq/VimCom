@@ -179,7 +179,7 @@ vim.bol <- function(omnilist, what = "loaded", allnames = FALSE) {
         if(vim.grepl(curlib, loadpack) == FALSE){
             sink()
             cat("Loading   '", curlib, "'...\n", sep = "")
-            needunload <- try(library(curlib, character.only = TRUE, logical.return = TRUE))
+            needunload <- try(require(curlib, character.only = TRUE))
             sink(omnilist, append = TRUE)
             if(needunload != TRUE){
                 needunload <- FALSE
