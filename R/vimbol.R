@@ -177,7 +177,10 @@ vim.bol <- function(omnilist, what = "loaded", allnames = FALSE) {
     for(curpack in listpack){
         curlib <- sub("^package:", "", curpack)
         if(vim.grepl(curlib, loadpack) == FALSE){
+            sink()
+            cat("Loading   '", curlib, "'...\n", sep = "")
             needunload <- try(library(curlib, character.only = TRUE, logical.return = TRUE))
+            sink(omnilist, append = TRUE)
             if(needunload != TRUE){
                 needunload <- FALSE
                 next
@@ -188,8 +191,11 @@ vim.bol <- function(omnilist, what = "loaded", allnames = FALSE) {
         if(l > 0)
             for(obj in obj.list) vim.omni.line(obj, curpack, curlib, 0)
         if(needunload){
+            sink()
+            cat("Detaching '", curlib, "'...\n", sep = "")
             try(detach(curpack, unload = TRUE, character.only = TRUE), silent = TRUE)
             needunload <- FALSE
+            sink(omnilist, append = TRUE)
         }
     }
     sink()
