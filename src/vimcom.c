@@ -422,6 +422,13 @@ static void vimcom_eval_expr(const char *buf, char *rep)
     if(tcltkerr){
         sprintf(rep, "Error: \"vimcom\" and \"tcltk\" packages are incompatible!");
         return;
+    } else {
+        if(objbr_auto == 0)
+            check_tcltk();
+        if(tcltkerr){
+            sprintf(rep, "Error!");
+            return;
+        }
     }
 
     SEXP cmdSexp, cmdexpr, ans;
@@ -862,7 +869,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
         if(verbose > 0)
             REprintf("vimcom 0.9-1 loaded\n");
         if(verbose > 1)
-            REprintf("Last change in vimcom.c: 2012-03-09 12:09\n");
+            REprintf("Last change in vimcom.c: 2012-03-14 20:31\n");
     }
 }
 
