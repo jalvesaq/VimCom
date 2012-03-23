@@ -1,6 +1,5 @@
-This is the development version of the R package "VimCom".
-
-To download and build the package do the following in a terminal emulator:
+The development version of the R package "VimCom" is available at github. 
+To download and build it do the following in a terminal emulator:
 
 git clone git://github.com/jalvesaq/VimCom.git
 R CMD build VimCom
