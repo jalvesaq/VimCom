@@ -532,6 +532,12 @@ static void vimcom_vimclient(const char *msg, int srvport)
         return;
     }
 }
+#else
+static void vimcom_vimclient(const char *msg, int srvport)
+{
+    if(verbose > 1)
+        REprintf("vimcom_vimclient not implemented yet: [%d] \"%s\"\n", srvport, msg);
+}
 #endif
 
 #ifdef WIN32
@@ -728,7 +734,7 @@ static void *vimcom_server_thread(void *arg)
                     sprintf(rep, "Object Browser port set to %d\n", obport);
                 } else {
                     edport = status;
-                    sprintf(rep, "VimServer() started at port %d\n", obport);
+                    sprintf(rep, "VimServer() started at port %d\n", edport);
                 }
                 break;
             case 8: // Stop automatic update of Object Browser info
@@ -869,7 +875,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
         if(verbose > 0)
             REprintf("vimcom 0.9-1 loaded\n");
         if(verbose > 1)
-            REprintf("Last change in vimcom.c: 2012-03-14 20:31\n");
+            REprintf("Last change in vimcom.c: 2012-03-23 09:52\n");
     }
 }
 
