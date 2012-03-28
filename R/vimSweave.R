@@ -1,7 +1,12 @@
 
-vim.Sweave <- function(rnowebfile, latexcmd = "pdflatex", bibtex = FALSE, ...)
+vim.Sweave <- function(rnowebfile, latexcmd = "pdflatex", bibtex = FALSE,
+                       knit = FALSE, ...)
 {
-    Sres <- Sweave(rnowebfile, ...)
+    if(knit){
+        Sres <- knitr::knit(rnowebfile, ...)
+    } else {
+        Sres <- Sweave(rnowebfile, ...)
+    }
     if(exists('Sres')){
         system(paste(latexcmd, Sres))
         if(bibtex){

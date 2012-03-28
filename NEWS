@@ -1,10 +1,12 @@
-Version 0.9-1 (2012-03-07)
+Version 0.9-1 (2012-03-28)
 
     - vim.bol(): Don't fail on loading package failure. 
 
     - vimcom.c: Improve the use of PROTECT/UNPROTECT.
 
     - vimcom.c: Warn that vimcom is incompatible with tcltk.
+
+    - vimSweave.R: Add support to knitr.
 
 Version 0.9-0 (2012-02-16)
 
