@@ -23,7 +23,7 @@ vim.args <- function(ff, txt)
     else
         if(exists(ff, mode = "function"))
             res <- capture.output(args(ff))
-    if(res != "NOT_EXISTS"){
+    if(res[1] != "NOT_EXISTS"){
         res <- sub("^\\s*", "", res)
         res <- paste(res, collapse = "")
         res <- sub("^function \\((.*)\\).*", "\\1", res)
