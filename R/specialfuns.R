@@ -14,6 +14,19 @@
 ### Jakson Alves de Aquino
 ### Sat, July 17, 2010
 
+vim.args <- function(ff, txt)
+{
+    ffdef <- paste(ff, ".default", sep = "")
+    if(exists(ffdef, mode = "function"))
+        res <- paste(utils:::functionArgs(ffdef, txt), collapse = "\t")
+    else
+        if(exists(ff, mode = "function"))
+            res <- paste(utils:::functionArgs(ff, txt), collapse = "\t")
+        else
+            res <- "NOT_EXISTS"
+    return(res)
+}
+
 
 vim.list.args <- function(ff){
     knownGenerics <- c(names(.knownS3Generics),
