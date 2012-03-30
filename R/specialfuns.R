@@ -16,14 +16,25 @@
 
 vim.args <- function(ff, txt)
 {
+    res <- "NOT_EXISTS"
     ffdef <- paste(ff, ".default", sep = "")
     if(exists(ffdef, mode = "function"))
-        res <- paste(utils:::functionArgs(ffdef, txt), collapse = "\t")
+        res <- capture.output(args(ffdef, txt))
     else
         if(exists(ff, mode = "function"))
-            res <- paste(utils:::functionArgs(ff, txt), collapse = "\t")
-        else
-            res <- "NOT_EXISTS"
+            res <- capture.output(args(ff))
+    if(res != "NOT_EXISTS"){
+        res <- sub("^\\s*", "", res)
+        res <- paste(res, collapse = "")
+        res <- sub("^function \\((.*)\\).*", "\\1", res)
+        res <- gsub(", ", ",", res)
+        res <- strsplit(res, ",")[[1]]
+        idx <- grep(paste("^", txt, sep = ""), res)
+        res <- res[idx]
+        res <- paste(res, collapse = "\t")
+    }
+    if(length(res) == 0)
+        res <- "NO_ARGS"
     return(res)
 }
 
