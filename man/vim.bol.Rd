@@ -4,7 +4,7 @@
 Build omnilist for Vim.
 }
 \description{
-Build the omniList file for Vim. The function is supposed to be
+Build the omnils file for Vim. The function is supposed to be
 called by the user through Vim-R-plugin (command :RUpdateObjList).
 }
 \usage{

@@ -23,39 +23,6 @@
 # Build Omni List
 vim.bol <- function(omnilist, what = "loaded", allnames = FALSE) {
 
-    vim.list.args2 <- function(ff){ 
-        knownGenerics <- c(names(.knownS3Generics),
-                           tools:::.get_internal_S3_generics()) # from methods()
-        ff.pat <- gsub('\\?', '\\\\?', ff)
-        ff.pat <- gsub('\\*', '\\\\*', ff.pat)
-        ff.pat <- gsub('\\(', '\\\\(', ff.pat)
-        ff.pat <- gsub('\\[', '\\\\[', ff.pat)
-        ff.pat <- gsub('\\{', '\\\\{', ff.pat)
-        ff.pat <- gsub('\\|', '\\\\|', ff.pat)
-        ff.pat <- gsub('\\+', '\\\\+', ff.pat)
-        keyf <- paste("^", ff.pat, "$", sep="")
-        is.generic <- (length(grep(keyf, knownGenerics)) > 0)
-        if(is.generic){
-            if(length(methods(ff)) > 0){
-                return("Generic Method")
-            }
-        }
-
-        ff.formals <- formals(ff)
-        if(is.null(ff.formals)){
-            return("No arguments")
-        } else {
-            ff.args <- capture.output(args(ff))
-            len <- length(ff.args) - 1
-            ff.args <- ff.args[1:len]
-            ff.args[1] <- sub("function \\(", "", ff.args[1])
-            ff.args[len] <- sub("\\) $", "", ff.args[len])
-            ff.args <- sub("^    ", "", ff.args)
-            ff.args <- paste(ff.args, collapse = "\t")
-            return(ff.args)
-        }
-    }
-
     vim.grepl <- function(pattern, x){
         res <- grep(pattern, x)
         if(length(res) == 0){
@@ -118,20 +85,20 @@ vim.bol <- function(omnilist, what = "loaded", allnames = FALSE) {
 
         if(x.group == "function"){
             if(curlevel == 0){
-                cat(x, ";", "function;function", ";", printenv, ";", vim.list.args2(x), "\n", sep="")
+                cat(x, "\x06function\x06function\x06", printenv, "\x06", vim.args(x, ""), "\n", sep="")
             } else {
-                # some libraries have function as list elements
-                cat(x, ";", "function;function", ";", printenv, ";", "Unknown arguments", "\n", sep="")
+                # some libraries have functions as list elements
+                cat(x, "\x06function\x06function\x06", printenv, "\x06Unknown arguments", "\n", sep="")
             }
         } else {
             if(is.list(xx)){
                 if(curlevel == 0){
-                    cat(x, ";", x.class, ";", x.group, ";", printenv, ";", "Not a function", "\n", sep="")
+                    cat(x, "\x06", x.class, "\x06", x.group, "\x06", printenv, "\x06Not a function", "\n", sep="")
                 } else {
-                    cat(x, ";", x.class, ";", " ", ";", printenv, ";", "Not a function", "\n", sep="")
+                    cat(x, "\x06", x.class, "\x06", " ", "\x06", printenv, "\x06Not a function", "\n", sep="")
                 }
             } else {
-                cat(x, ";", x.class, ";", x.group, ";", printenv, ";", "Not a function", "\n", sep="")
+                cat(x, "\x06", x.class, "\x06", x.group, "\x06", printenv, "\x06Not a function", "\n", sep="")
             }
         }
 
@@ -151,7 +118,7 @@ vim.bol <- function(omnilist, what = "loaded", allnames = FALSE) {
     options(OutDec = ".")
 
 
-    if(vim.grepl("/r-plugin/omniList", omnilist) == FALSE){
+    if(vim.grepl("/r-plugin/omnils", omnilist) == FALSE){
         sink(omnilist, append = FALSE)
         obj.list <- objects(".GlobalEnv", all.names = allnames)
         l <- length(obj.list)

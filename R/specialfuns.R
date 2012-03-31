@@ -12,27 +12,40 @@
 #  http://www.r-project.org/Licenses/
 
 ### Jakson Alves de Aquino
-### Sat, July 17, 2010
 
-vim.args <- function(ff, txt)
+# Adapted from: https://stat.ethz.ch/pipermail/ess-help/2011-March/006791.html
+vim.args <- function(funcname, txt)
 {
-    res <- "NOT_EXISTS"
-    ffdef <- paste(ff, ".default", sep = "")
-    if(exists(ffdef, mode = "function"))
-        res <- capture.output(args(ffdef))
-    else
-        if(exists(ff, mode = "function"))
-            res <- capture.output(args(ff))
-    if(res[1] != "NOT_EXISTS"){
-        res <- sub("^\\s*", "", res)
-        res <- paste(res, collapse = "")
-        res <- sub("^function \\((.*)\\).*", "\\1", res)
-        res <- gsub(", ", ",", res)
-        res <- strsplit(res, ",")[[1]]
-        idx <- grep(paste("^", txt, sep = ""), res)
-        res <- res[idx]
-        res <- paste(res, collapse = "\t")
+    deffun <- paste(funcname, ".default", sep = "")
+    if (existsFunction(deffun)) {
+        funcname <- deffun
+    } else if(!existsFunction(funcname)) {
+        return("NOT_EXISTS")
     }
+    frm <- formals(funcname)
+    res <- NULL
+    for (field in names(frm)) {
+        type <- typeof(frm[[field]])
+        if (type == 'symbol') {
+            res <- append(res, paste('\x09', field, sep = ''))
+        } else if (type == 'character') {
+            res <- append(res, paste('\x09', field, '\x07"', frm[[field]], '"', sep = ''))
+        } else if (type == 'logical') {
+            res <- append(res, paste('\x09', field, '\x07', as.character(frm[[field]]), sep = ''))
+        } else if (type == 'double') {
+            res <- append(res, paste('\x09', field, '\x07', as.character(frm[[field]]), sep = ''))
+        } else if (type == 'NULL') {
+            res <- append(res, paste('\x09', field, '\x07', 'NULL', sep = ''))
+        } else if (type == 'language') {
+            res <- append(res, paste('\x09', field, '\x07', deparse(frm[[field]]), sep = ''))
+        }
+    }
+    idx <- grep(paste("^\x09", txt, sep = ""), res)
+    res <- res[idx]
+    res <- paste(res, sep = '', collapse='')
+    res <- sub("^\x09", "", res)
+    res <- gsub("\n", "\\\\n", res)
+
     if(length(res) == 0)
         res <- "NO_ARGS"
     return(res)
