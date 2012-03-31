@@ -19,7 +19,7 @@ vim.args <- function(ff, txt)
     res <- "NOT_EXISTS"
     ffdef <- paste(ff, ".default", sep = "")
     if(exists(ffdef, mode = "function"))
-        res <- capture.output(args(ffdef, txt))
+        res <- capture.output(args(ffdef))
     else
         if(exists(ff, mode = "function"))
             res <- capture.output(args(ff))
