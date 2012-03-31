@@ -85,7 +85,7 @@ vim.bol <- function(omnilist, what = "loaded", allnames = FALSE) {
 
         if(x.group == "function"){
             if(curlevel == 0){
-                cat(x, "\x06function\x06function\x06", printenv, "\x06", vim.args(x, ""), "\n", sep="")
+                cat(x, "\x06function\x06function\x06", printenv, "\x06", vim.args(x, "", printenv), "\n", sep="")
             } else {
                 # some libraries have functions as list elements
                 cat(x, "\x06function\x06function\x06", printenv, "\x06Unknown arguments", "\n", sep="")

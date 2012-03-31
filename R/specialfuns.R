@@ -14,15 +14,24 @@
 ### Jakson Alves de Aquino
 
 # Adapted from: https://stat.ethz.ch/pipermail/ess-help/2011-March/006791.html
-vim.args <- function(funcname, txt)
+vim.args <- function(funcname, txt, pkg = NULL)
 {
-    deffun <- paste(funcname, ".default", sep = "")
-    if (existsFunction(deffun)) {
-        funcname <- deffun
-    } else if(!existsFunction(funcname)) {
-        return("NOT_EXISTS")
+    if(is.null(pkg)){
+        deffun <- paste(funcname, ".default", sep = "")
+        if (existsFunction(deffun)) {
+            funcname <- deffun
+        } else if(!existsFunction(funcname)) {
+            return("NOT_EXISTS")
+        }
+        frm <- formals(funcname)
+    } else {
+        idx <- grep(paste(":", pkg, sep = ""), search())
+        ff <- "NULL"
+        tr <- try(ff <- get(paste(funcname, ".default", sep = ""), pos = idx), silent = TRUE)
+        if(class(tr)[1] == "try-error")
+            ff <- get(funcname, pos = idx)
+        frm <- formals(ff)
     }
-    frm <- formals(funcname)
     res <- NULL
     for (field in names(frm)) {
         type <- typeof(frm[[field]])
