@@ -14,24 +14,45 @@
 ### Jakson Alves de Aquino
 
 # Adapted from: https://stat.ethz.ch/pipermail/ess-help/2011-March/006791.html
-vim.args <- function(funcname, txt, pkg = NULL)
+vim.args <- function(funcname, txt, pkg = NULL, classfor)
 {
-    if(is.null(pkg)){
-        deffun <- paste(funcname, ".default", sep = "")
-        if (existsFunction(deffun)) {
-            funcname <- deffun
-        } else if(!existsFunction(funcname)) {
-            return("NOT_EXISTS")
+    frm <- NA
+    if(!missing(classfor) & length(grep(funcname, names(.knownS3Generics))) > 0){
+        curwarn <- getOption("warn")
+        options(warn = -1)
+        try(classfor <- classfor, silent = TRUE)  # classfor may be a function
+        try(.theclass <- class(classfor), silent = TRUE)
+        options(warn = curwarn)
+        if(exists(".theclass")){
+            for(i in 1:length(.theclass)){
+                funcmeth <- paste(funcname, ".", .theclass[i], sep = "")
+                if(existsFunction(funcmeth)){
+                    frm <- formals(funcmeth)
+                    break
+                }
+            }
         }
-        frm <- formals(funcname)
-    } else {
-        idx <- grep(paste(":", pkg, sep = ""), search())
-        ff <- "NULL"
-        tr <- try(ff <- get(paste(funcname, ".default", sep = ""), pos = idx), silent = TRUE)
-        if(class(tr)[1] == "try-error")
-            ff <- get(funcname, pos = idx)
-        frm <- formals(ff)
     }
+
+    if(is.na(frm)){
+        if(is.null(pkg)){
+            deffun <- paste(funcname, ".default", sep = "")
+            if (existsFunction(deffun)) {
+                funcname <- deffun
+            } else if(!existsFunction(funcname)) {
+                return("NOT_EXISTS")
+            }
+            frm <- formals(funcname)
+        } else {
+            idx <- grep(paste(":", pkg, sep = ""), search())
+            ff <- "NULL"
+            tr <- try(ff <- get(paste(funcname, ".default", sep = ""), pos = idx), silent = TRUE)
+            if(class(tr)[1] == "try-error")
+                ff <- get(funcname, pos = idx)
+            frm <- formals(ff)
+        }
+    }
+
     res <- NULL
     for (field in names(frm)) {
         type <- typeof(frm[[field]])
