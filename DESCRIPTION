@@ -1,10 +1,9 @@
 Package: vimcom
 Version: 0.9-1
-Date: 2012-03-28
+Date: 2012-04-01
 Title: Intermediate the communication between Vim and R
 Author: Jakson Aquino
 Maintainer: Jakson Alves de Aquino <jalvesaq@gmail.com>
-Imports: knitr
 Description: Provide a service to intermediate the communication between Vim and R.
 License: GPL (>= 2)
 URL: https://github.com/jalvesaq/VimCom

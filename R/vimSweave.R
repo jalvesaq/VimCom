@@ -3,7 +3,7 @@ vim.Sweave <- function(rnowebfile, latexcmd = "pdflatex", bibtex = FALSE,
                        knit = FALSE, ...)
 {
     if(knit){
-        Sres <- knitr::knit(rnowebfile, ...)
+        Sres <- knit(rnowebfile, ...)
     } else {
         Sres <- Sweave(rnowebfile, ...)
     }
