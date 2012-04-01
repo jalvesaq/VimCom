@@ -17,6 +17,7 @@
 vim.args <- function(funcname, txt, pkg = NULL, classfor)
 {
     frm <- NA
+    funcmeth <- NA
     if(!missing(classfor) && vim.grepl("[[:punct:]]", funcname) == FALSE){
         if(length(grep(funcname, names(.knownS3Generics))) > 0){
             curwarn <- getOption("warn")
@@ -28,6 +29,7 @@ vim.args <- function(funcname, txt, pkg = NULL, classfor)
                 for(i in 1:length(.theclass)){
                     funcmeth <- paste(funcname, ".", .theclass[i], sep = "")
                     if(existsFunction(funcmeth)){
+                        funcname <- funcmeth
                         frm <- formals(funcmeth)
                         break
                     }
@@ -36,11 +38,12 @@ vim.args <- function(funcname, txt, pkg = NULL, classfor)
         }
     }
 
-    if(is.na(frm)){
+    if(is.na(frm[1])){
         if(is.null(pkg)){
             deffun <- paste(funcname, ".default", sep = "")
             if (existsFunction(deffun)) {
                 funcname <- deffun
+                funcmeth <- deffun
             } else if(!existsFunction(funcname)) {
                 return("NOT_EXISTS")
             }
@@ -78,8 +81,24 @@ vim.args <- function(funcname, txt, pkg = NULL, classfor)
     res <- sub("^\x09", "", res)
     res <- gsub("\n", "\\\\n", res)
 
-    if(length(res) == 0)
+    if(length(res) == 0){
         res <- "NO_ARGS"
+    } else {
+        if(is.null(pkg)){
+            info <- ""
+            pkgname <- find(funcname, mode = "function")
+            if(length(pkgname) > 1)
+                info <- pkgname[1]
+            if(!is.na(funcmeth)){
+                if(info != "")
+                    info <- paste(info, ", ", sep = "")
+                info <- paste(info, "function:", funcmeth, "()", sep = "")
+            }
+            if(info != "")
+                res <- paste(res, "\x04", info, sep = "")
+        }
+    }
+
     return(res)
 }
 
