@@ -17,18 +17,20 @@
 vim.args <- function(funcname, txt, pkg = NULL, classfor)
 {
     frm <- NA
-    if(!missing(classfor) & length(grep(funcname, names(.knownS3Generics))) > 0){
-        curwarn <- getOption("warn")
-        options(warn = -1)
-        try(classfor <- classfor, silent = TRUE)  # classfor may be a function
-        try(.theclass <- class(classfor), silent = TRUE)
-        options(warn = curwarn)
-        if(exists(".theclass")){
-            for(i in 1:length(.theclass)){
-                funcmeth <- paste(funcname, ".", .theclass[i], sep = "")
-                if(existsFunction(funcmeth)){
-                    frm <- formals(funcmeth)
-                    break
+    if(!missing(classfor) && vim.grepl("[[:punct:]]", funcname) == FALSE){
+        if(length(grep(funcname, names(.knownS3Generics))) > 0){
+            curwarn <- getOption("warn")
+            options(warn = -1)
+            try(classfor <- classfor, silent = TRUE)  # classfor may be a function
+            try(.theclass <- class(classfor), silent = TRUE)
+            options(warn = curwarn)
+            if(exists(".theclass")){
+                for(i in 1:length(.theclass)){
+                    funcmeth <- paste(funcname, ".", .theclass[i], sep = "")
+                    if(existsFunction(funcmeth)){
+                        frm <- formals(funcmeth)
+                        break
+                    }
                 }
             }
         }
@@ -44,7 +46,7 @@ vim.args <- function(funcname, txt, pkg = NULL, classfor)
             }
             frm <- formals(funcname)
         } else {
-            idx <- grep(paste(":", pkg, sep = ""), search())
+            idx <- grep(paste(":", pkg, "$", sep = ""), search())
             ff <- "NULL"
             tr <- try(ff <- get(paste(funcname, ".default", sep = ""), pos = idx), silent = TRUE)
             if(class(tr)[1] == "try-error")

@@ -20,17 +20,17 @@
 # functions and to complete the names of objects and the arguments of
 # functions.
 
+vim.grepl <- function(pattern, x){
+    res <- grep(pattern, x)
+    if(length(res) == 0){
+        return(FALSE)
+    } else {
+        return(TRUE)
+    }
+}
+
 # Build Omni List
 vim.bol <- function(omnilist, what = "loaded", allnames = FALSE) {
-
-    vim.grepl <- function(pattern, x){
-        res <- grep(pattern, x)
-        if(length(res) == 0){
-            return(FALSE)
-        } else {
-            return(TRUE)
-        }
-    }
 
     vim.omni.line <- function(x, envir, printenv, curlevel){
         if(curlevel == 0){
@@ -85,7 +85,8 @@ vim.bol <- function(omnilist, what = "loaded", allnames = FALSE) {
 
         if(x.group == "function"){
             if(curlevel == 0){
-                cat(x, "\x06function\x06function\x06", printenv, "\x06", vim.args(x, "", printenv), "\n", sep="")
+                cat(x, "\x06function\x06function\x06", printenv, "\x06",
+                    vim.args(x, txt = "", pkg = printenv), "\n", sep="")
             } else {
                 # some libraries have functions as list elements
                 cat(x, "\x06function\x06function\x06", printenv, "\x06Unknown arguments", "\n", sep="")
