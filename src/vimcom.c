@@ -458,7 +458,7 @@ static void vimcom_eval_expr(const char *buf, char *rep)
                     break;
                 case STRSXP:
                     if(length(ans) > 0)
-                        sprintf(rep, "%s", CHAR(STRING_ELT(ans, 0)));
+                        snprintf(rep, 5011, "%s", CHAR(STRING_ELT(ans, 0)));
                     else
                         sprintf(rep, "EMPTY");
                     break;
@@ -549,7 +549,7 @@ static void *vimcom_server_thread(void *arg)
     unsigned short bindportn = 9998;
     ssize_t nsent;
     ssize_t nread;
-    int bsize = 1024;
+    int bsize = 5012;
     char buf[bsize];
     char rep[bsize];
     int result;
@@ -875,7 +875,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
         if(verbose > 0)
             REprintf("vimcom 0.9-1 loaded\n");
         if(verbose > 1)
-            REprintf("Last change in vimcom.c: 2012-03-28 10:27\n");
+            REprintf("Last change in vimcom.c: 2012-04-07 20:51\n");
     }
 }
 
