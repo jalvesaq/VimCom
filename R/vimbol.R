@@ -20,7 +20,7 @@
 # functions and to complete the names of objects and the arguments of
 # functions.
 
-vim.grepl <- function(pattern, x){
+vim.grepl <- function(pattern, x) {
     res <- grep(pattern, x)
     if(length(res) == 0){
         return(FALSE)
@@ -29,95 +29,95 @@ vim.grepl <- function(pattern, x){
     }
 }
 
-# Build Omni List
-vim.bol <- function(omnilist, what = "loaded", allnames = FALSE) {
+vim.omni.line <- function(x, envir, printenv, curlevel) {
+    if(curlevel == 0){
+        xx <- get(x, envir)
+    } else {
+        x.clean <- gsub("$", "", x, fixed = TRUE)
+        x.clean <- gsub("_", "", x.clean, fixed = TRUE)
+        haspunct <- vim.grepl("[[:punct:]]", x.clean)
+        if(haspunct[1]){
+            ok <- vim.grepl("[[:alnum:]]\\.[[:alnum:]]", x.clean)
+            if(ok[1]){
+                haspunct  <- FALSE
+                haspp <- vim.grepl("[[:punct:]][[:punct:]]", x.clean)
+                if(haspp[1]) haspunct <- TRUE
+            }
+        }
 
-    vim.omni.line <- function(x, envir, printenv, curlevel){
-        if(curlevel == 0){
-            xx <- get(x, envir)
+        # No support for names with spaces
+        if(vim.grepl(" ", x)){
+            haspunct <- TRUE
+        }
+
+        if(haspunct[1]){
+            xx <- NULL
         } else {
-            x.clean <- gsub("$", "", x, fixed = TRUE)
-            x.clean <- gsub("_", "", x.clean, fixed = TRUE)
-            haspunct <- vim.grepl("[[:punct:]]", x.clean)
-            if(haspunct[1]){
-                ok <- vim.grepl("[[:alnum:]]\\.[[:alnum:]]", x.clean)
-                if(ok[1]){
-                    haspunct  <- FALSE
-                    haspp <- vim.grepl("[[:punct:]][[:punct:]]", x.clean)
-                    if(haspp[1]) haspunct <- TRUE
-                }
-            }
-
-            # No support for names with spaces
-            if(vim.grepl(" ", x)){
-                haspunct <- TRUE
-            }
-
-            if(haspunct[1]){
+            xx <- try(eval(parse(text=x)), silent = TRUE)
+            if(class(xx)[1] == "try-error"){
                 xx <- NULL
-            } else {
-                xx <- try(eval(parse(text=x)), silent = TRUE)
-                if(class(xx)[1] == "try-error"){
-                    xx <- NULL
-                }
-            }
-        }
-
-        if(is.null(xx)){
-            x.group <- " "
-            x.class <- "unknown"
-        } else {
-            if(x == "break" || x == "next" || x == "for" || x == "if" || x == "repeat" || x == "while"){
-                x.group <- "flow-control"
-                x.class <- "flow-control"
-            } else {
-                if(is.function(xx)) x.group <- "function"
-                else if(is.numeric(xx)) x.group <- "numeric"
-                else if(is.factor(xx)) x.group <- "factor"
-                else if(is.character(xx)) x.group <- "character"
-                else if(is.logical(xx)) x.group <- "logical"
-                else if(is.data.frame(xx)) x.group <- "data.frame"
-                else if(is.list(xx)) x.group <- "list"
-                else x.group <- " "
-                x.class <- class(xx)[1]
-            }
-        }
-
-        if(x.group == "function"){
-            if(curlevel == 0){
-                cat(x, "\x06function\x06function\x06", printenv, "\x06",
-                    vim.args(x, txt = "", pkg = printenv), "\n", sep="")
-            } else {
-                # some libraries have functions as list elements
-                cat(x, "\x06function\x06function\x06", printenv, "\x06Unknown arguments", "\n", sep="")
-            }
-        } else {
-            if(is.list(xx)){
-                if(curlevel == 0){
-                    cat(x, "\x06", x.class, "\x06", x.group, "\x06", printenv, "\x06Not a function", "\n", sep="")
-                } else {
-                    cat(x, "\x06", x.class, "\x06", " ", "\x06", printenv, "\x06Not a function", "\n", sep="")
-                }
-            } else {
-                cat(x, "\x06", x.class, "\x06", x.group, "\x06", printenv, "\x06Not a function", "\n", sep="")
-            }
-        }
-
-        if(is.list(xx) && curlevel == 0){
-            obj.names <- names(xx)
-            curlevel <- curlevel + 1
-            if(length(xx) > 0){
-                for(k in obj.names){
-                    vim.omni.line(paste(x, "$", k, sep=""), envir, printenv, curlevel)
-                }
             }
         }
     }
 
-    # Begin of vim.bol()
+    if(is.null(xx)){
+        x.group <- " "
+        x.class <- "unknown"
+    } else {
+        if(x == "break" || x == "next" || x == "for" || x == "if" || x == "repeat" || x == "while"){
+            x.group <- "flow-control"
+            x.class <- "flow-control"
+        } else {
+            if(is.function(xx)) x.group <- "function"
+            else if(is.numeric(xx)) x.group <- "numeric"
+            else if(is.factor(xx)) x.group <- "factor"
+            else if(is.character(xx)) x.group <- "character"
+            else if(is.logical(xx)) x.group <- "logical"
+            else if(is.data.frame(xx)) x.group <- "data.frame"
+            else if(is.list(xx)) x.group <- "list"
+            else x.group <- " "
+            x.class <- class(xx)[1]
+        }
+    }
+
+    if(x.group == "function"){
+        if(curlevel == 0){
+            if(vim.grepl("GlobalEnv", printenv)){
+                cat(x, "\x06function\x06function\x06", printenv, "\x06", vim.args(x, txt = ""), "\n", sep="")
+            } else {
+                cat(x, "\x06function\x06function\x06", printenv, "\x06", vim.args(x, txt = "", pkg = printenv), "\n", sep="")
+            }
+        } else {
+            # some libraries have functions as list elements
+            cat(x, "\x06function\x06function\x06", printenv, "\x06Unknown arguments", "\n", sep="")
+        }
+    } else {
+        if(is.list(xx)){
+            if(curlevel == 0){
+                cat(x, "\x06", x.class, "\x06", x.group, "\x06", printenv, "\x06Not a function", "\n", sep="")
+            } else {
+                cat(x, "\x06", x.class, "\x06", " ", "\x06", printenv, "\x06Not a function", "\n", sep="")
+            }
+        } else {
+            cat(x, "\x06", x.class, "\x06", x.group, "\x06", printenv, "\x06Not a function", "\n", sep="")
+        }
+    }
+
+    if(is.list(xx) && curlevel == 0){
+        obj.names <- names(xx)
+        curlevel <- curlevel + 1
+        if(length(xx) > 0){
+            for(k in obj.names){
+                vim.omni.line(paste(x, "$", k, sep=""), envir, printenv, curlevel)
+            }
+        }
+    }
+}
+
+# Build Omni List
+vim.bol <- function(omnilist, what = "loaded", allnames = FALSE) {
     vim.OutDec <- options("OutDec")[[1]]
     options(OutDec = ".")
-
 
     if(vim.grepl("/r-plugin/omnils", omnilist) == FALSE){
         sink(omnilist, append = FALSE)
