@@ -142,3 +142,10 @@ vim.plot <- function(x)
     }
 }
 
+vim.names <- function(x)
+{
+    if(isS4(x))
+        slotNames(x)
+    else
+        names(x)
+}

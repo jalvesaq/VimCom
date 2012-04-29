@@ -1,1 +1,1 @@
-export(vim.list.args, vim.srcdir, vim.plot, vim.help, vim.interlace, vim.print, vim.bol, etags2ctags)
+export(vim.list.args, vim.srcdir, vim.plot, vim.help, vim.interlace, vim.print, vim.bol, vim.names, etags2ctags)
