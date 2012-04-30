@@ -181,6 +181,9 @@ static void vimcom_browser_line(SEXP *x, const char *xname, const char *curenv, 
     } else if(Rf_isNewList(*x)){
         strcpy(xclass, "list");
         fprintf(f, "%s[#", prefix);
+    } else if(Rf_isS4(*x)){
+        strcpy(xclass, "s4");
+        fprintf(f, "%s<#", prefix);
     } else {
         strcpy(xclass, "other");
         fprintf(f, "%s=#", prefix);
@@ -875,7 +878,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
         if(verbose > 0)
             REprintf("vimcom 0.9-1 loaded\n");
         if(verbose > 1)
-            REprintf("Last change in vimcom.c: 2012-04-14 14:28\n");
+            REprintf("Last change in vimcom.c: 2012-04-30 12:45\n");
     }
 }
 
