@@ -1,6 +1,6 @@
 Package: vimcom
-Version: 0.9-1
-Date: 2012-04-01
+Version: 0.9-2
+Date: 2012-05-01
 Title: Intermediate the communication between Vim and R
 Author: Jakson Aquino
 Maintainer: Jakson Alves de Aquino <jalvesaq@gmail.com>
