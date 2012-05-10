@@ -1,15 +1,19 @@
 
 vim.interlace <- function(rnowebfile, latexcmd = "pdflatex", bibtex = FALSE,
-                          knit = FALSE, view = TRUE, ...)
+                          knit = FALSE, view = TRUE, quiet = TRUE, ...)
 {
-    if(knit){
+    if(knit)
         Sres <- knit(rnowebfile, ...)
-    } else {
+    else
         Sres <- Sweave(rnowebfile, ...)
-    }
     if(exists('Sres')){
+        # From RStudio: Check for spaces in path (Sweave chokes on these)
+        if(length(grep(" ", Sres)) > 0)
+            stop(paste("Invalid filename: '", Sres, "' (TeX does not understand paths with spaces).", sep=""))
         if(.Platform$OS.type == "windows"){
-            tools::texi2pdf(Sres, quiet = bibtex == FALSE)
+            # From RStudio:
+            idx = !identical(.Platform$pkgType, "source")
+            tools::texi2dvi(file = Sres, pdf = TRUE, index = idx, quiet = quiet)
         } else {
             system(paste(latexcmd, Sres))
             if(bibtex){
@@ -19,11 +23,11 @@ vim.interlace <- function(rnowebfile, latexcmd = "pdflatex", bibtex = FALSE,
             }
         }
         if(view){
-            # Copyed from RShowDoc()
+            # From RShowDoc()
             pdfviewer <- getOption("pdfviewer")
             path <- sub("\\.tex$", ".pdf", Sres)
-            if (!identical(pdfviewer, "false")) {
-                if (.Platform$OS.type == "windows" && identical(pdfviewer, file.path(R.home("bin"), "open.exe")))
+            if(!identical(pdfviewer, "false")){
+                if(.Platform$OS.type == "windows" && identical(pdfviewer, file.path(R.home("bin"), "open.exe")))
                     shell.exec(path)
                 else 
                     system2(pdfviewer, shQuote(path), wait = FALSE)

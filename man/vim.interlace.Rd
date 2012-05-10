@@ -6,7 +6,7 @@
 }
 \usage{
 vim.interlace(rnowebfile, latexcmd = "pdflatex", bibtex = FALSE,
-           knit = FALSE, view = TRUE, ...)
+           knit = FALSE, view = TRUE, quiet = TRUE, ...)
 }
 \arguments{
   \item{rnowebfile}{The path to the Rnoweb file.}
@@ -14,5 +14,6 @@ vim.interlace(rnowebfile, latexcmd = "pdflatex", bibtex = FALSE,
   \item{bibtex}{Whether to run bibtex.}
   \item{knit}{Whether to use knitr instead of Sweave.}
   \item{view}{Logical value indicating whether to show the generated PDF document.}
+  \item{quiet}{Whether to pass \code{quiet = TRUE} to \link[tools]{texi2pdf} (Windows only).}
   \item{\dots}{Further arguments to be passed to \code{Sweave}.}
 }
