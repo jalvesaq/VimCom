@@ -1,4 +1,16 @@
 
+vim.openpdf <- function(x)
+{
+    pdfviewer <- getOption("pdfviewer")
+    path <- sub("\\.tex$", ".pdf", x)
+    if(!identical(pdfviewer, "false")){
+        if(.Platform$OS.type == "windows" && identical(pdfviewer, file.path(R.home("bin"), "open.exe")))
+            shell.exec(path)
+        else 
+            system2(pdfviewer, shQuote(path), wait = FALSE)
+    }
+}
+
 vim.interlace <- function(rnowebfile, latexcmd = "pdflatex", bibtex = FALSE,
                           knit = FALSE, view = TRUE, quiet = TRUE, ...)
 {
@@ -22,16 +34,7 @@ vim.interlace <- function(rnowebfile, latexcmd = "pdflatex", bibtex = FALSE,
                 system(paste(latexcmd, Sres))
             }
         }
-        if(view){
-            # From RShowDoc()
-            pdfviewer <- getOption("pdfviewer")
-            path <- sub("\\.tex$", ".pdf", Sres)
-            if(!identical(pdfviewer, "false")){
-                if(.Platform$OS.type == "windows" && identical(pdfviewer, file.path(R.home("bin"), "open.exe")))
-                    shell.exec(path)
-                else 
-                    system2(pdfviewer, shQuote(path), wait = FALSE)
-            }
-        }
+        if(view)
+            vim.openpdf(Sres)
     }
 }
