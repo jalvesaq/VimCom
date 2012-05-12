@@ -7,7 +7,7 @@ vim.openpdf <- function(x)
         if(.Platform$OS.type == "windows" && identical(pdfviewer, file.path(R.home("bin"), "open.exe")))
             shell.exec(path)
         else 
-            system2(pdfviewer, shQuote(path), wait = FALSE)
+            system2(pdfviewer, shQuote(path), wait = FALSE, stdout = FALSE, stderr = FALSE)
     }
 }
 
