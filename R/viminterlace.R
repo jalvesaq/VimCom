@@ -1,5 +1,5 @@
 
-vim.openpdf <- function(x)
+vim.openpdf <- function(x, quiet = FALSE)
 {
     pdfviewer <- getOption("pdfviewer")
     path <- sub("\\.tex$", ".pdf", x)
@@ -7,15 +7,18 @@ vim.openpdf <- function(x)
         if(.Platform$OS.type == "windows" && identical(pdfviewer, file.path(R.home("bin"), "open.exe")))
             shell.exec(path)
         else 
-            system2(pdfviewer, shQuote(path), wait = FALSE, stdout = FALSE, stderr = FALSE)
+            if(quiet)
+                system2(pdfviewer, shQuote(path), wait = FALSE, stdout = FALSE, stderr = FALSE)
+            else
+                system2(pdfviewer, shQuote(path), wait = FALSE)
     }
 }
 
 vim.interlace <- function(rnowebfile, latexcmd = "pdflatex", bibtex = FALSE,
-                          knit = FALSE, view = TRUE, quiet = TRUE, ...)
+                          knit = FALSE, view = TRUE, quiet = TRUE, pdfquiet = FALSE, ...)
 {
     if(knit)
-        Sres <- knit(rnowebfile, ...)
+        Sres <- knit(rnowebfile)
     else
         Sres <- Sweave(rnowebfile, ...)
     if(exists('Sres')){
@@ -35,6 +38,9 @@ vim.interlace <- function(rnowebfile, latexcmd = "pdflatex", bibtex = FALSE,
             }
         }
         if(view)
-            vim.openpdf(Sres)
+            if(pdfquiet)
+                vim.openpdf(Sres, TRUE)
+            else
+                vim.openpdf(Sres)
     }
 }
