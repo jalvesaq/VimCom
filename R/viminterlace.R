@@ -1,4 +1,3 @@
-
 vim.openpdf <- function(x, quiet = FALSE)
 {
     pdfviewer <- getOption("pdfviewer")
@@ -14,7 +13,7 @@ vim.openpdf <- function(x, quiet = FALSE)
     }
 }
 
-vim.interlace <- function(rnowebfile, latexcmd = "pdflatex", bibtex = FALSE,
+vim.interlace.rnoweb <- function(rnowebfile, latexcmd = "pdflatex", bibtex = FALSE,
                           knit = FALSE, view = TRUE, quiet = TRUE, pdfquiet = FALSE, ...)
 {
     if(knit)
@@ -43,4 +42,15 @@ vim.interlace <- function(rnowebfile, latexcmd = "pdflatex", bibtex = FALSE,
             else
                 vim.openpdf(Sres)
     }
+}
+
+vim.interlace.rrst <- function(Rrstfile, view = TRUE, pdfquiet = FALSE, ...)
+{
+   knit2pdf(Rrstfile, ...)
+   if (view) {
+       Sys.sleep(.2)
+       pdffile = sub('.Rrst$', ".pdf", Rrstfile, ignore.case=TRUE)
+       if(pdfquiet) vim.openpdf(pdffile, TRUE)
+       else vim.openpdf(pdffile)
+   }
 }
