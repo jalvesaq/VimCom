@@ -1,11 +1,11 @@
-\name{vim.interlace}
-\alias{vim.interlace}
-\title{Run either Sweave or knit and, then, pdflatex}
+\name{vim.interlace.rnoweb}
+\alias{vim.interlace.rnoweb}
+\title{Run either Sweave or knit and, then, pdflatex on a Rnoweb file}
 \description{
   Run the R function Sweave() or knit() and, then, the application pdflatex.
 }
 \usage{
-vim.interlace(rnowebfile, latexcmd = "pdflatex", bibtex = FALSE,
+vim.interlace.rnoweb(rnowebfile, latexcmd = "pdflatex", bibtex = FALSE,
            knit = FALSE, view = TRUE, quiet = TRUE,
            pdfquiet = FALSE, ...)
 }
