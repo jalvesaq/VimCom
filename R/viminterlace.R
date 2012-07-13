@@ -57,13 +57,14 @@ vim.interlace.rrst <- function(Rrstfile, view = TRUE, pdfquiet = FALSE, ...)
 
 vim.interlace.rmd <- 
     function(Rmdfile, view = TRUE, 
-             pdfquiet = FALSE, pandoc_args = "",  ...)
+             pdfquiet = FALSE, pandoc_args = "",  beamer = FALSE, ...)
 {
    require('knitr', quietly = TRUE)
    knit(Rmdfile, ...)
    tex.file <- sub("[Rr]md", "tex", Rmdfile)
    pandoc.cmd <- 
-       paste("pandoc -s", pandoc_args ,"-f markdown -t latex", 
+       paste("pandoc -s", pandoc_args ,"-f markdown -t", 
+             {if (beamer) "beamer" else "latex"}, 
              sub("[Rr]md", "md", Rmdfile),
              ">", tex.file)
    system(pandoc.cmd)
