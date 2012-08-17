@@ -59,7 +59,6 @@ vim.interlace.rmd <-
     function(Rmdfile, view = TRUE, 
              pdfquiet = FALSE, pandoc_args = "",  pdfout = "latex", ...)
 {
-   require('knitr', quietly = TRUE)
    knit(Rmdfile, ...)
    tex.file <- sub("[Rr]md", "tex", Rmdfile)
    pandoc.cmd <- 
