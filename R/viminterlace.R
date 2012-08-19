@@ -17,7 +17,7 @@ vim.interlace.rnoweb <- function(rnowebfile, latexcmd = "pdflatex", bibtex = FAL
                           knit = FALSE, view = TRUE, quiet = TRUE, pdfquiet = FALSE, ...)
 {
     if(knit)
-        Sres <- knit(rnowebfile, envir = 0)
+        Sres <- knit(rnowebfile, envir = globalenv())
     else
         Sres <- Sweave(rnowebfile, ...)
     if(exists('Sres')){
