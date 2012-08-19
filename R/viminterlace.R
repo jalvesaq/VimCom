@@ -16,10 +16,13 @@ vim.openpdf <- function(x, quiet = FALSE)
 vim.interlace.rnoweb <- function(rnowebfile, latexcmd = "pdflatex", bibtex = FALSE,
                           knit = FALSE, view = TRUE, quiet = TRUE, pdfquiet = FALSE, ...)
 {
-    if(knit)
+    if(knit){
+        if(!require(knitr))
+            stop("Please, install the 'knitr' package.")
         Sres <- knit(rnowebfile, envir = globalenv())
-    else
+    } else {
         Sres <- Sweave(rnowebfile, ...)
+    }
     if(exists('Sres')){
         # From RStudio: Check for spaces in path (Sweave chokes on these)
         if(length(grep(" ", Sres)) > 0)
@@ -46,31 +49,32 @@ vim.interlace.rnoweb <- function(rnowebfile, latexcmd = "pdflatex", bibtex = FAL
 
 vim.interlace.rrst <- function(Rrstfile, view = TRUE, pdfquiet = FALSE, ...)
 {
-   knit2pdf(Rrstfile, ...)
-   if (view) {
-       Sys.sleep(.2)
-       pdffile = sub('.Rrst$', ".pdf", Rrstfile, ignore.case=TRUE)
-       if(pdfquiet) vim.openpdf(pdffile, TRUE)
-       else vim.openpdf(pdffile)
-   }
+    if(!require(knitr))
+        stop("Please, install the 'knitr' package.")
+    knit2pdf(Rrstfile, ...)
+    if (view) {
+        Sys.sleep(.2)
+        pdffile = sub('.Rrst$', ".pdf", Rrstfile, ignore.case=TRUE)
+        if(pdfquiet) vim.openpdf(pdffile, TRUE)
+        else vim.openpdf(pdffile)
+    }
 }
 
-vim.interlace.rmd <- 
-    function(Rmdfile, view = TRUE, 
-             pdfquiet = FALSE, pandoc_args = "",  pdfout = "latex", ...)
+vim.interlace.rmd <- function(Rmdfile, view = TRUE, pdfquiet = FALSE,
+                              pandoc_args = "",  pdfout = "latex", ...)
 {
-   knit(Rmdfile, ...)
-   tex.file <- sub("[Rr]md", "tex", Rmdfile)
-   pandoc.cmd <- 
-       paste("pandoc -s", pandoc_args ,"-f markdown -t", pdfout,
-             sub("[Rr]md", "md", Rmdfile),
-             ">", tex.file)
-   system(pandoc.cmd)
-   system(paste("pdflatex", tex.file, {if (pdfquiet) "> /dev/null" else ""}))
-   if (view) {
-       Sys.sleep(.2)
-       pdffile = sub('.[Rr]md$', ".pdf", Rmdfile, ignore.case=TRUE)
-       if(pdfquiet) vim.openpdf(pdffile, TRUE)
-       else vim.openpdf(pdffile)
-   }
+    if(!require(knitr))
+        stop("Please, install the 'knitr' package.")
+    knit(Rmdfile, ...)
+    tex.file <- sub("[Rr]md", "tex", Rmdfile)
+    pandoc.cmd <- paste("pandoc -s", pandoc_args ,"-f markdown -t", pdfout,
+                        sub("[Rr]md", "md", Rmdfile), ">", tex.file)
+    system(pandoc.cmd)
+    system(paste("pdflatex", tex.file, {if (pdfquiet) "> /dev/null" else ""}))
+    if (view) {
+        Sys.sleep(.2)
+        pdffile = sub('.[Rr]md$', ".pdf", Rmdfile, ignore.case=TRUE)
+        if(pdfquiet) vim.openpdf(pdffile, TRUE)
+        else vim.openpdf(pdffile)
+    }
 }
