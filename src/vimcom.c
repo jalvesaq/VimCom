@@ -825,7 +825,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
             REprintf("vimcom tmpdir = %s\n", tmpdir);
     } else {
         if(verbose)
-            REprintf("vimcom: environment variable VIMRPLUGIN_TMPDIR not found.\n");
+            REprintf("vimcom: It seems that R was not started by Vim. The communication with Vim-R-plugin will not work.\n");
         tmpdir[0] = 0;
         return;
     }
@@ -878,7 +878,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
         if(verbose > 0)
             REprintf("vimcom 0.9-3 loaded\n");
         if(verbose > 1)
-            REprintf("Last change in vimcom.c: 2012-05-07 17:00\n");
+            REprintf("Last change in vimcom.c: 2012-09-24 07:19\n");
     }
 }
 
