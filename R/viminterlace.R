@@ -51,12 +51,14 @@ vim.interlace.rrst <- function(Rrstfile, view = TRUE, pdfquiet = FALSE, ...)
 {
     if(!require(knitr))
         stop("Please, install the 'knitr' package.")
-    knit2pdf(Rrstfile, ...)
+    knit2pdf(Rrstfile, compiler = "rst2pdf")
     if (view) {
-        Sys.sleep(.2)
-        pdffile = sub('.Rrst$', ".pdf", Rrstfile, ignore.case=TRUE)
-        if(pdfquiet) vim.openpdf(pdffile, TRUE)
-        else vim.openpdf(pdffile)
+        Sys.sleep(0.2)
+        pdffile = sub('\\.Rrst$', ".pdf", Rrstfile, ignore.case = TRUE)
+        if(pdfquiet)
+            vim.openpdf(pdffile, TRUE)
+        else
+            vim.openpdf(pdffile)
     }
 }
 
