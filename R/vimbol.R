@@ -115,11 +115,11 @@ vim.omni.line <- function(x, envir, printenv, curlevel) {
 }
 
 # Build Omni List
-vim.bol <- function(omnilist, what = "loaded", allnames = FALSE) {
+vim.bol <- function(omnilist, packlist, allnames = FALSE) {
     vim.OutDec <- options("OutDec")[[1]]
     options(OutDec = ".")
 
-    if(vim.grepl("/r-plugin/omnils", omnilist) == FALSE){
+    if(vim.grepl("/r-plugin/objlist", omnilist) == FALSE){
         sink(omnilist, append = FALSE)
         obj.list <- objects(".GlobalEnv", all.names = allnames)
         l <- length(obj.list)
@@ -131,24 +131,20 @@ vim.bol <- function(omnilist, what = "loaded", allnames = FALSE) {
         return(invisible(NULL))
     }
 
-    cat("Building file with list of objects in", what, "packages for omni completion and Object Browser...\n")
-    loadpack <- search()
-    loadpack <- loadpack[grep("^package:", loadpack)]
-    if(what == "installed"){
-        listpack <- paste("package:", installed.packages()[, "Package"], sep = "")
-    } else {
-        listpack <- loadpack
-    }
+    cat("Building files with lists of objects in loaded packages for omni completion and Object Browser...\n")
 
-    sink(omnilist, append = FALSE)
+    loadpack <- search()
+    if(missing(packlist))
+        listpack <- loadpack[grep("^package:", loadpack)]
+    else
+        listpack <- paste0("package:", packlist)
+
     needunload <- FALSE
     for(curpack in listpack){
         curlib <- sub("^package:", "", curpack)
         if(vim.grepl(curlib, loadpack) == FALSE){
-            sink()
             cat("Loading   '", curlib, "'...\n", sep = "")
             needunload <- try(require(curlib, character.only = TRUE))
-            sink(omnilist, append = TRUE)
             if(needunload != TRUE){
                 needunload <- FALSE
                 next
@@ -156,17 +152,17 @@ vim.bol <- function(omnilist, what = "loaded", allnames = FALSE) {
         }
         obj.list <- objects(curpack, all.names = allnames)
         l <- length(obj.list)
-        if(l > 0)
+        if(l > 0){
+            sink(paste0(omnilist, "omnils_", curlib), append = TRUE)
             for(obj in obj.list) vim.omni.line(obj, curpack, curlib, 0)
-        if(needunload){
             sink()
+        }
+        if(needunload){
             cat("Detaching '", curlib, "'...\n", sep = "")
             try(detach(curpack, unload = TRUE, character.only = TRUE), silent = TRUE)
             needunload <- FALSE
-            sink(omnilist, append = TRUE)
         }
     }
-    sink()
     options(OutDec = vim.OutDec)
     writeLines(text = "Finished",
                con = paste(Sys.getenv("VIMRPLUGIN_TMPDIR"), "/vimbol_finished", sep = ""))
