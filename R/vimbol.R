@@ -133,11 +133,24 @@ vim.bol <- function(omnilist, packlist, allnames = FALSE) {
 
     cat("Building files with lists of objects in loaded packages for omni completion and Object Browser...\n")
 
+    if(file.exists(omnilist)){
+        if(file.info(omnilist)$isdir == FALSE){
+            msg <- paste('"', omnilist, '" exists but is not a directory.',
+                         sep = "")
+            stop(msg)
+        }
+    } else {
+        if(!dir.create(omnilist)){
+            msg <- paste("Could not create directory: ", omnilist)
+            stop(msg)
+        }
+    }
+
     loadpack <- search()
     if(missing(packlist))
         listpack <- loadpack[grep("^package:", loadpack)]
     else
-        listpack <- paste0("package:", packlist)
+        listpack <- paste("package:", packlist, sep = "")
 
     needunload <- FALSE
     for(curpack in listpack){
@@ -153,7 +166,7 @@ vim.bol <- function(omnilist, packlist, allnames = FALSE) {
         obj.list <- objects(curpack, all.names = allnames)
         l <- length(obj.list)
         if(l > 0){
-            sink(paste0(omnilist, "omnils_", curlib), append = TRUE)
+            sink(paste(omnilist, "omnils_", curlib, sep = ""), append = TRUE)
             for(obj in obj.list) vim.omni.line(obj, curpack, curlib, 0)
             sink()
         }
