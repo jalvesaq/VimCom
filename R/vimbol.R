@@ -133,18 +133,7 @@ vim.bol <- function(omnilist, packlist, allnames = FALSE) {
 
     cat("Building files with lists of objects in loaded packages for omni completion and Object Browser...\n")
 
-    if(file.exists(omnilist)){
-        if(file.info(omnilist)$isdir == FALSE){
-            msg <- paste('"', omnilist, '" exists but is not a directory.',
-                         sep = "")
-            stop(msg)
-        }
-    } else {
-        if(!dir.create(omnilist)){
-            msg <- paste("Could not create directory: ", omnilist)
-            stop(msg)
-        }
-    }
+    dir.create(omnilist, showWarnings = FALSE)
 
     loadpack <- search()
     if(missing(packlist))
