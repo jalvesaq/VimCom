@@ -13,6 +13,18 @@
 
 ### Jakson Alves de Aquino
 
+vim.primitive.args <- function(x)
+{
+    fun <- get(x)
+    f <- capture.output(args(x))
+    f <- sub(") $", "", sub("^function \\(", "", f[1]))
+    f <- strsplit(f, ",")[[1]]
+    f <- sub("^ ", "", f)
+    f <- sub(" = ", "\x07", f)
+    paste(f, collapse = "\x09")
+}
+
+
 # Adapted from: https://stat.ethz.ch/pipermail/ess-help/2011-March/006791.html
 vim.args <- function(funcname, txt, pkg = NULL, classfor)
 {
@@ -47,7 +59,10 @@ vim.args <- function(funcname, txt, pkg = NULL, classfor)
             } else if(!existsFunction(funcname)) {
                 return("NOT_EXISTS")
             }
-            frm <- formals(funcname)
+            if(is.primitive(get(funcname)))
+                return(vim.primitive.args(funcname))
+            else
+                frm <- formals(funcname)
         } else {
             idx <- grep(paste(":", pkg, "$", sep = ""), search())
             ff <- "NULL"
@@ -81,7 +96,7 @@ vim.args <- function(funcname, txt, pkg = NULL, classfor)
     res <- sub("^\x09", "", res)
     res <- gsub("\n", "\\\\n", res)
 
-    if(length(res) == 0){
+    if(length(res) == 0 || res == ""){
         res <- "NO_ARGS"
     } else {
         if(is.null(pkg)){
