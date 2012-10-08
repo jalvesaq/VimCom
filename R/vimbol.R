@@ -155,7 +155,7 @@ vim.bol <- function(omnilist, packlist, allnames = FALSE) {
         obj.list <- objects(curpack, all.names = allnames)
         l <- length(obj.list)
         if(l > 0){
-            sink(paste(omnilist, "omnils_", curlib, sep = ""), append = TRUE)
+            sink(paste(omnilist, "omnils_", curlib, sep = ""), append = FALSE)
             for(obj in obj.list) vim.omni.line(obj, curpack, curlib, 0)
             sink()
         }
