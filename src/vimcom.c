@@ -684,25 +684,23 @@ static void *vimcom_server_thread(void *arg)
                 bbuf++;
                 status = atoi(bbuf);
                 ListStatus *tmp = firstList;
-                if(status == 0 || status == 2){
-                    while(tmp){
-                        tmp->status = 0;
-                        tmp = tmp->next;
-                    }
-                    vimcom_list_libs(0);
-                    vimcom_list_env(0);
-                    if(status > 1)
-                        vimcom_vimclient("UpdateOB('both')");
-                } else {
+                if(status == 1 || status == 3){
                     while(tmp){
                         if(strstr(tmp->key, "package:") != tmp->key)
                             tmp->status = 1;
                         tmp = tmp->next;
                     }
                     vimcom_list_env(0);
-                    if(status > 1)
-                        vimcom_vimclient("UpdateOB('GlobalEnv')");
+                } else {
+                    while(tmp){
+                        tmp->status = 0;
+                        tmp = tmp->next;
+                    }
+                    vimcom_list_libs(0);
+                    vimcom_list_env(0);
                 }
+                if(status > 1)
+                    vimcom_vimclient("UpdateOB('both')");
                 break;
             case 7: // Set Object Browser server name
 #ifdef WIN32
@@ -852,7 +850,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
         if(verbose > 0)
             REprintf("vimcom 0.9-4 loaded\n");
         if(verbose > 1)
-            REprintf("Last change in vimcom.c: 2012-11-15 10:06\n");
+            REprintf("Last change in vimcom.c: 2012-11-15 18:35\n");
     }
 }
 
