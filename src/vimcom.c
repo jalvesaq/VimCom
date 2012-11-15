@@ -28,6 +28,7 @@ static void (*save_pt_R_Busy)(int);
 #endif
 #include "vimremote.h"
 
+static int Xdisp = 0;
 extern unsigned long R_CStackLimit;
 
 static int vimcom_initialized = 0;
@@ -478,6 +479,8 @@ static void vimcom_eval_expr(const char *buf, char *rep)
 static void vimcom_vimclient(const char *expr)
 {
     char *result = NULL;
+    if(!Xdisp)
+        return;
     if(verbose > 3)
         Rprintf("vimcom_client(%s): %s\n", expr, obsname);
     if(vimremote_remoteexpr(obsname, expr, &result) != 0){
@@ -703,15 +706,7 @@ static void *vimcom_server_thread(void *arg)
                     vimcom_vimclient("UpdateOB('both')");
                 break;
             case 7: // Set Object Browser server name
-#ifdef WIN32
-                status = 1;
-#else
-                if(getenv("DISPLAY"))
-                    status = 1;
-                else
-                    status = 0;
-#endif
-                if(status){
+                if(Xdisp){
                     bbuf = buf;
                     bbuf++;
                     objbr_auto = 1;
@@ -784,6 +779,15 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
     opendf = *odf;
     openls = *ols;
     allnames = *anm;
+    strcpy(obsname, "NONE");
+#ifdef WIN32
+    Xdisp = 1;
+#else
+    if(getenv("DISPLAY"))
+        Xdisp = 1;
+    else
+        Xdisp = 0;
+#endif
 
     if(getenv("VIMRPLUGIN_TMPDIR")){
         strncpy(tmpdir, getenv("VIMRPLUGIN_TMPDIR"), 500);
@@ -850,7 +854,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
         if(verbose > 0)
             REprintf("vimcom 0.9-4 loaded\n");
         if(verbose > 1)
-            REprintf("Last change in vimcom.c: 2012-11-15 18:35\n");
+            REprintf("Last change in vimcom.c: 2012-11-15 19:02\n");
     }
 }
 
