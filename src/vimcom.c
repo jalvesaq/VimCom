@@ -142,7 +142,7 @@ static int vimcom_count_objects()
             if(Rf_isNewList(varSEXP))
                 vimcom_count_elements(&varSEXP);
         } else {
-            REprintf("Unexpected R_UnboundValue returned from R_lsInternal");
+            REprintf("Unexpected R_UnboundValue returned from R_lsInternal\n");
         }
         UNPROTECT(1);
     }
@@ -801,7 +801,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
     if(vimremote_init() == 0){
         vimremote_initialized = 1;
     } else {
-        REprintf("vimcom: vimremote_init() failed");
+        REprintf("vimcom: vimremote_init() failed\n");
     }
 
     char envstr[1024];
@@ -852,14 +852,14 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
         if(verbose > 0)
             REprintf("vimcom 0.9-4 loaded\n");
         if(verbose > 1)
-            REprintf("Last change in vimcom.c: 2012-11-14 13:42\n");
+            REprintf("Last change in vimcom.c: 2012-11-15 10:06\n");
     }
 }
 
 void vimcom_Stop()
 {
     if(vimremote_initialized && vimremote_uninit() != 0){
-        REprintf("Error: vimremote_uninit() failed");
+        REprintf("Error: vimremote_uninit() failed\n");
     }
     vimremote_initialized = 0;
 
