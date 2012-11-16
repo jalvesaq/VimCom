@@ -800,10 +800,11 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
         return;
     }
 
-    if(vimremote_init() == 0){
-        vimremote_initialized = 1;
-    } else {
-        REprintf("vimcom: vimremote_init() failed\n");
+    if(Xdisp){
+        if(vimremote_init() == 0)
+            vimremote_initialized = 1;
+        else
+            REprintf("vimcom: vimremote_init() failed\n");
     }
 
     char envstr[1024];
@@ -854,7 +855,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
         if(verbose > 0)
             REprintf("vimcom 0.9-4 loaded\n");
         if(verbose > 1)
-            REprintf("Last change in vimcom.c: 2012-11-15 19:02\n");
+            REprintf("Last change in vimcom.c: 2012-11-16 08:42\n");
     }
 }
 
@@ -868,7 +869,6 @@ void vimcom_Stop()
     if(vimcom_initialized){
 #ifdef WIN32
         closesocket(sfd);
-//	_endthread(tid);
 #else
         Rf_removeTaskCallbackByName("VimComHandler");
         ptr_R_Busy = save_pt_R_Busy;
