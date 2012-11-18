@@ -1,11 +1,7 @@
 
-#define R_INTERFACE_PTRS 1
 
 #include <R.h>  /* to include Rconfig.h */
 #include <Rinternals.h>
-#ifndef WIN32
-#include <Rinterface.h>
-#endif
 #include <R_ext/Parse.h>
 #include <R_ext/Callbacks.h>
 
@@ -15,17 +11,17 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <sys/types.h>
+
 #ifdef WIN32
 #include <winsock2.h>
 #include <Ws2tcpip.h>
 #include <process.h>
-HWND gvimHwnd = 0;
 #else
 #include <sys/socket.h>
 #include <netdb.h>
 #include <pthread.h>
-static void (*save_pt_R_Busy)(int);
 #endif
+
 #include "vimremote.h"
 
 static int Xdisp = 0;
@@ -520,6 +516,7 @@ Rboolean vimcom_task(SEXP expr, SEXP value, Rboolean succeeded,
         has_new_lib = 0;
         has_new_obj = 0;
     }
+    r_is_busy = 0;
     return(TRUE);
 }
 
@@ -666,12 +663,22 @@ static void *vimcom_server_thread(void *arg)
                     REprintf("vimcom: the environment variable VIMINSTANCEID is not set.\n");
                 break;
             case 3: // Update Object Browser (.GlobalEnv)
-                vimcom_list_env(0);
+                if(r_is_busy)
+                    strcpy(rep, "R is busy.");
+                else
+                    vimcom_list_env(0);
                 break;
             case 4: // Update Object Browser (libraries)
-                vimcom_list_libs(0);
+                if(r_is_busy)
+                    strcpy(rep, "R is busy.");
+                else
+                    vimcom_list_libs(0);
                 break;
             case 5: // Toggle list status
+                if(r_is_busy){
+                    strcpy(rep, "R is busy.");
+                    break;
+                }
                 bbuf = buf;
                 bbuf++;
                 vimcom_toggle_list_status(bbuf);
@@ -693,11 +700,19 @@ static void *vimcom_server_thread(void *arg)
                             tmp->status = 1;
                         tmp = tmp->next;
                     }
+                    if(r_is_busy){
+                        strcpy(rep, "R is busy.");
+                        break;
+                    }
                     vimcom_list_env(0);
                 } else {
                     while(tmp){
                         tmp->status = 0;
                         tmp = tmp->next;
+                    }
+                    if(r_is_busy){
+                        strcpy(rep, "R is busy.");
+                        break;
                     }
                     vimcom_list_libs(0);
                     vimcom_list_env(0);
@@ -719,20 +734,9 @@ static void *vimcom_server_thread(void *arg)
             case 8: // Stop automatic update of Object Browser info
                 objbr_auto = 0;
                 break;
-            case 9: // Set GVim window handle
-#ifdef WIN32
-                bbuf = buf;
-                bbuf++;
-                gvimHwnd = FindWindow(NULL, bbuf);
-                if(gvimHwnd)
-                    SetForegroundWindow(gvimHwnd);
-#endif
-                break;
-            case 10: // Raise GVim window
-#ifdef WIN32
-                if(gvimHwnd)
-                    SetForegroundWindow(gvimHwnd);
-#endif
+            case 9: // Set R as busy
+                r_is_busy = 1;
+                strcpy(rep, "R set as busy.");
                 break;
             default: // eval expression
                 if(r_is_busy)
@@ -764,14 +768,6 @@ static void *vimcom_server_thread(void *arg)
 #endif
 }
 
-#ifndef WIN32
-static void vimcom_R_Busy(int which)
-{
-    if(verbose > 3)
-        REprintf("vimcom_busy: %d\n", which);
-    r_is_busy = which;
-}
-#endif
 
 void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
 {
@@ -847,15 +843,11 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
         }
 
         Rf_addTaskCallback(vimcom_task, NULL, free, "VimComHandler", NULL);
-#ifndef WIN32
-        save_pt_R_Busy = ptr_R_Busy;
-        ptr_R_Busy = vimcom_R_Busy;
-#endif
         vimcom_initialized = 1;
         if(verbose > 0)
             REprintf("vimcom 0.9-4 loaded\n");
         if(verbose > 1)
-            REprintf("Last change in vimcom.c: 2012-11-16 08:42\n");
+            REprintf("Last change in vimcom.c: 2012-11-17 19:25\n");
     }
 }
 
@@ -867,11 +859,10 @@ void vimcom_Stop()
     vimremote_initialized = 0;
 
     if(vimcom_initialized){
+        Rf_removeTaskCallbackByName("VimComHandler");
 #ifdef WIN32
         closesocket(sfd);
 #else
-        Rf_removeTaskCallbackByName("VimComHandler");
-        ptr_R_Busy = save_pt_R_Busy;
         close(sfd);
         pthread_cancel(tid);
 #endif
