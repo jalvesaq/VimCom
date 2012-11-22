@@ -275,12 +275,12 @@ static void vimcom_browser_line(SEXP *x, const char *xname, const char *curenv, 
     }
 }
 
-static void vimcom_list_env(int checkcount)
+static void vimcom_list_env()
 {
     const char *varName;
     SEXP envVarsSEXP, varSEXP;
 
-    if(checkcount && vimcom_count_objects() == 0)
+    if(vimcom_count_objects() == 0)
         return;
     if(verbose > 1 && objbr_auto)
         Rprintf("New number of Objects: %d\n", nobjs);
@@ -352,7 +352,7 @@ static int check_tcltk()
     return(newnlibs);
 }
 
-static void vimcom_list_libs(int checkcount)
+static void vimcom_list_libs()
 {
     int newnlibs;
     int len, len1;
@@ -367,12 +367,10 @@ static void vimcom_list_libs(int checkcount)
 
     newnlibs = check_tcltk();
 
-    if(checkcount){
-        if(newnlibs == nlibs)
-            return;
-        else
-            nlibs = newnlibs;
-    }
+    if(newnlibs == nlibs)
+        return;
+    else
+        nlibs = newnlibs;
 
     snprintf(fn, 510, "%s/liblist", tmpdir);
     FILE *f = fopen(fn, "w");
@@ -494,8 +492,8 @@ Rboolean vimcom_task(SEXP expr, SEXP value, Rboolean succeeded,
     if(verbose > 3)
         Rprintf("vimcom_task() :: %d\n", objbr_auto);
     if(objbr_auto){
-        vimcom_list_env(1);
-        vimcom_list_libs(1);
+        vimcom_list_env();
+        vimcom_list_libs();
         switch(has_new_lib + has_new_obj){
             case 1:
                 vimcom_vimclient("UpdateOB('GlobalEnv')");
@@ -666,13 +664,13 @@ static void *vimcom_server_thread(void *arg)
                 if(r_is_busy)
                     strcpy(rep, "R is busy.");
                 else
-                    vimcom_list_env(0);
+                    vimcom_list_env();
                 break;
             case 4: // Update Object Browser (libraries)
                 if(r_is_busy)
                     strcpy(rep, "R is busy.");
                 else
-                    vimcom_list_libs(0);
+                    vimcom_list_libs();
                 break;
             case 5: // Toggle list status
                 if(r_is_busy){
@@ -683,9 +681,9 @@ static void *vimcom_server_thread(void *arg)
                 bbuf++;
                 vimcom_toggle_list_status(bbuf);
                 if(strstr(bbuf, "package:") == bbuf){
-                    vimcom_list_libs(0);
+                    vimcom_list_libs();
                 } else {
-                    vimcom_list_env(0);
+                    vimcom_list_env();
                 }
                 strcpy(rep, "OK");
                 break;
@@ -704,7 +702,7 @@ static void *vimcom_server_thread(void *arg)
                         strcpy(rep, "R is busy.");
                         break;
                     }
-                    vimcom_list_env(0);
+                    vimcom_list_env();
                 } else {
                     while(tmp){
                         tmp->status = 0;
@@ -714,8 +712,8 @@ static void *vimcom_server_thread(void *arg)
                         strcpy(rep, "R is busy.");
                         break;
                     }
-                    vimcom_list_libs(0);
-                    vimcom_list_env(0);
+                    vimcom_list_libs();
+                    vimcom_list_env();
                 }
                 if(status > 1)
                     vimcom_vimclient("UpdateOB('both')");
@@ -847,7 +845,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
         if(verbose > 0)
             REprintf("vimcom 0.9-4 loaded\n");
         if(verbose > 1)
-            REprintf("Last change in vimcom.c: 2012-11-17 19:25\n");
+            REprintf("Last change in vimcom.c: 2012-11-22 15:36\n");
     }
 }
 
