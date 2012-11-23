@@ -475,13 +475,12 @@ static void vimcom_vimclient(const char *expr)
     char *result = NULL;
     if(!Xdisp)
         return;
-    if(verbose > 3)
+    if(verbose > 2)
         Rprintf("vimcom_client(%s): %s\n", expr, obsname);
-    if(vimremote_remoteexpr(obsname, expr, &result) != 0){
-        if(verbose > 2)
-            Rprintf("Error sending expression to Vim: %s\n", result == NULL ? "" : result);
+    if(vimremote_remoteexpr(obsname, expr, &result) != 0)
         objbr_auto = 0;
-    }
+    if(verbose > 3)
+        Rprintf("Remoteexpr result: %s\n", result == NULL ? "" : result);
     if(result)
         free(result);
 }
@@ -489,7 +488,7 @@ static void vimcom_vimclient(const char *expr)
 Rboolean vimcom_task(SEXP expr, SEXP value, Rboolean succeeded,
         Rboolean visible, void *userData)
 {
-    if(verbose > 3)
+    if(verbose > 2)
         Rprintf("vimcom_task() :: %d\n", objbr_auto);
     if(objbr_auto){
         vimcom_list_env();
@@ -681,8 +680,10 @@ static void *vimcom_server_thread(void *arg)
                 bbuf++;
                 vimcom_toggle_list_status(bbuf);
                 if(strstr(bbuf, "package:") == bbuf){
+                    nlibs = 0;
                     vimcom_list_libs();
                 } else {
+                    nobjs = 0;
                     vimcom_list_env();
                 }
                 strcpy(rep, "OK");
@@ -702,6 +703,7 @@ static void *vimcom_server_thread(void *arg)
                         strcpy(rep, "R is busy.");
                         break;
                     }
+                    nobjs = 0;
                     vimcom_list_env();
                 } else {
                     while(tmp){
@@ -712,6 +714,8 @@ static void *vimcom_server_thread(void *arg)
                         strcpy(rep, "R is busy.");
                         break;
                     }
+                    nobjs = 0;
+                    nlibs = 0;
                     vimcom_list_libs();
                     vimcom_list_env();
                 }
@@ -845,7 +849,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
         if(verbose > 0)
             REprintf("vimcom 0.9-4 loaded\n");
         if(verbose > 1)
-            REprintf("Last change in vimcom.c: 2012-11-22 15:36\n");
+            REprintf("Last change in vimcom.c: 2012-11-22 20:06\n");
     }
 }
 
