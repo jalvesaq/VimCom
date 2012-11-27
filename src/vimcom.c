@@ -848,8 +848,6 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
         vimcom_initialized = 1;
         if(verbose > 0)
             REprintf("vimcom 0.9-4 loaded\n");
-        if(verbose > 1)
-            REprintf("Last change in vimcom.c: 2012-11-22 20:06\n");
     }
 }
 
