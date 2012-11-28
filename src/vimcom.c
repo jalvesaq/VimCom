@@ -655,7 +655,7 @@ static void *vimcom_server_thread(void *arg)
                 }
                 break;
             case 2: // Confirm port number
-                sprintf(rep, "0.9-4 %s", getenv("VIMINSTANCEID"));
+                sprintf(rep, "0.9-5 %s", getenv("VIMINSTANCEID"));
                 if(strcmp(rep, "(null)") == 0)
                     REprintf("vimcom: the environment variable VIMINSTANCEID is not set.\n");
                 break;
@@ -847,7 +847,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
         Rf_addTaskCallback(vimcom_task, NULL, free, "VimComHandler", NULL);
         vimcom_initialized = 1;
         if(verbose > 0)
-            REprintf("vimcom 0.9-4 loaded\n");
+            REprintf("vimcom 0.9-5 loaded\n");
     }
 }
 

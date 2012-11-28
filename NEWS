@@ -1,3 +1,7 @@
+Version 0.9-5 (2012-11-28)
+
+   - Remove unnecessary header X11/Intrinsic.h.
+
 Version 0.9-4 (2012-11-27)
 
    - Use Vim's clientserver feature.
