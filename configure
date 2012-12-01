@@ -4674,4 +4674,13 @@ if test -n "$ac_unrecognized_opts" && test "$enable_option_checking" != no; then
 $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
 
+echo ""
+echo "Debugging info:"
+echo "    X_CFLAGS       : $X_CFLAGS"
+echo "    XINCLUDES      : $XINCLUDES"
+echo "    X_PRE_LIBS     : $X_PRE_LIBS"
+echo "    X_EXTRA_LIBS   : $X_EXTRA_LIBS"
+echo "    X_LIBS         : $X_LIBS"
+echo "    X_LIBRARY_PATH : $X_LIBRARY_PATH"
+echo ""
 
