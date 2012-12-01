@@ -1,9 +1,9 @@
-Version 0.9-5 (2012-11-29)
+Version 0.9-5 (2012-12-01)
 
    - Remove reference to unnecessary headers X11/Intrinsic.h and X11/Xutil.h.
 
    - Fix linking bug on Mac OS X (thanks to Federico Calboli and Jochen
-     Laubrock, and Simon Urbanek).
+     Laubrock, Simon Urbanek, and Brian Ripley).
 
    - Add stdint.h to fix compile bug in OpenBSD (thanks to Zé Loff).
 
