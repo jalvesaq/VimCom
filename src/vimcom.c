@@ -17,6 +17,7 @@
 #include <Ws2tcpip.h>
 #include <process.h>
 #else
+#include <stdint.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <pthread.h>

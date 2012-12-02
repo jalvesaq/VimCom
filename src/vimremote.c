@@ -11,7 +11,6 @@
 #include <windows.h>
 #else
 #include <time.h>
-#include <stdint.h>
 #include <unistd.h>
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
