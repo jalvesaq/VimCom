@@ -294,7 +294,7 @@ static void vimcom_list_env()
     snprintf(fn, 510, "%s/object_browser", tmpdir);
     FILE *f = fopen(fn, "w");
     if(f == NULL){
-        REprintf("Error: could not write to '%s'\n", fn);
+        REprintf("Error: Could not write to '%s'.\n", fn);
         return;
     }
 
@@ -376,7 +376,7 @@ static void vimcom_list_libs()
     snprintf(fn, 510, "%s/liblist", tmpdir);
     FILE *f = fopen(fn, "w");
     if(f == NULL){
-        REprintf("Error: could not write to '%s'\n", fn);
+        REprintf("Error: Could not write to '%s'.\n", fn);
         return;
     }
     fprintf(f, "\n");
@@ -392,7 +392,7 @@ static void vimcom_list_libs()
         fprintf(f, "   ##%s\t\n", libn);
         if(vimcom_get_list_status(loadedlibs[i], "library") == 1){
             if(tcltkerr){
-                REprintf("Error: cannot open libraries due to conflict between \"vimcom\" and \"tcltk\" packages.\n");
+                REprintf("Error: Cannot open libraries due to conflict between \"vimcom\" and \"tcltk\" packages.\n");
                 i++;
                 continue;
             }
@@ -537,6 +537,9 @@ static void *vimcom_server_thread(void *arg)
     SOCKADDR_IN RecvAddr;
     SOCKADDR_IN peer_addr;
     int peer_addr_len = sizeof (peer_addr);
+    int nattp = 0;
+    int nfail = 0;
+    int lastfail = 0;
 
     result = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if (result != NO_ERROR) {
@@ -556,9 +559,26 @@ static void *vimcom_server_thread(void *arg)
         RecvAddr.sin_port = htons(bindportn);
         RecvAddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
+        nattp++;
         if(bind(sfd, (SOCKADDR *) & RecvAddr, sizeof (RecvAddr)) == 0)
             break;
-        REprintf("bind failed with error %d\n", WSAGetLastError());
+        lastfail = WSAGetLastError();
+        nfail++;
+        if(verbose > 1)
+            REprintf("vimcom: Could not bind to port %d [error  %d].\n", bindportn, lastfail);
+    }
+    if(nfail > 0 && verbose > 0){
+        if(nfail == 1)
+            REprintf("vimcom: bind failed once with error %d.\n", lastfail);
+        else
+            REprintf("vimcom: bind failed %d times and the last error was %d.\n", nfail, lastfail);
+        if(nattp > nfail)
+            REprintf("vimcom: finally, bind to port %d was successful.\n", bindportn);
+    }
+    if(nattp == nfail){
+        REprintf("Error: Could not bind. [vimcom]\n");
+        vimcom_failure = 1;
+        return;
     }
 #else
     struct addrinfo hints;
@@ -583,7 +603,7 @@ static void *vimcom_server_thread(void *arg)
         sprintf(bindport, "%d", bindportn);
         result = getaddrinfo(NULL, bindport, &hints, &res);
         if(result != 0){
-            REprintf("getaddrinfo: %s [vimcom]\n", gai_strerror(result));
+            REprintf("Error at getaddrinfo: %s [vimcom]\n", gai_strerror(result));
             vimcom_failure = 1;
             return(NULL);
         }
@@ -600,7 +620,7 @@ static void *vimcom_server_thread(void *arg)
     }
 
     if (rp == NULL) {		   /* No address succeeded */
-        REprintf("Could not bind. [vimcom]\n");
+        REprintf("Error: Could not bind. [vimcom]\n");
         vimcom_failure = 1;
         return(NULL);
     }
@@ -647,7 +667,7 @@ static void *vimcom_server_thread(void *arg)
                 snprintf(fn, 510, "%s/rpane", tmpdir);
                 f = fopen(fn, "w");
                 if(f == NULL){
-                    REprintf("Error: could not write to '%s'\n", fn);
+                    REprintf("Error: Could not write to '%s'.\n", fn);
                     strcpy(rep, "ERROR");
                 } else {
                     fprintf(f, "%s\n", getenv("TMUX_PANE"));
@@ -656,7 +676,7 @@ static void *vimcom_server_thread(void *arg)
                 }
                 break;
             case 2: // Confirm port number
-                sprintf(rep, "0.9-5 %s", getenv("VIMINSTANCEID"));
+                sprintf(rep, "0.9-6 %s", getenv("VIMINSTANCEID"));
                 if(strcmp(rep, "(null)") == 0)
                     REprintf("vimcom: the environment variable VIMINSTANCEID is not set.\n");
                 break;
@@ -803,7 +823,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
         if(vimremote_init() == 0)
             vimremote_initialized = 1;
         else
-            REprintf("vimcom: vimremote_init() failed\n");
+            REprintf("vimcom: vimremote_init() failed.\n");
     }
 
     char envstr[1024];
@@ -848,14 +868,14 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
         Rf_addTaskCallback(vimcom_task, NULL, free, "VimComHandler", NULL);
         vimcom_initialized = 1;
         if(verbose > 0)
-            REprintf("vimcom 0.9-5 loaded\n");
+            REprintf("vimcom 0.9-6 loaded\n");
     }
 }
 
 void vimcom_Stop()
 {
     if(vimremote_initialized && vimremote_uninit() != 0){
-        REprintf("Error: vimremote_uninit() failed\n");
+        REprintf("Error: vimremote_uninit() failed.\n");
     }
     vimremote_initialized = 0;
 
