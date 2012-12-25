@@ -4,6 +4,9 @@
 #include <Rinternals.h>
 #include <R_ext/Parse.h>
 #include <R_ext/Callbacks.h>
+#ifndef WIN32
+#include <R_ext/eventloop.h>
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -46,7 +49,16 @@ static int objbr_auto = 0;
 static int has_new_lib = 0;
 static int has_new_obj = 0;
 static int r_is_busy = 0;
+
+#ifdef WIN32
 static int tcltkerr = 0;
+#else
+static int fired = 0;
+static char flag_eval[512];
+static int flag_lsenv = 0;
+static int flag_lslibs = 0;
+static int ifd, ofd;
+#endif
 
 typedef struct liststatus_ {
     char *key;
@@ -294,7 +306,7 @@ static void vimcom_list_env()
     snprintf(fn, 510, "%s/object_browser", tmpdir);
     FILE *f = fopen(fn, "w");
     if(f == NULL){
-        REprintf("Error: Could not write to '%s'.\n", fn);
+        REprintf("Error: Could not write to '%s'. [vimcom]\n", fn);
         return;
     }
 
@@ -339,12 +351,14 @@ static int check_tcltk()
         if(libn != NULL){
             strncpy(loadedlibs[k], libname, 63);
             loadedlibs[k+1][0] = 0;
+#ifdef WIN32
             if(tcltkerr == 0){
                 if(strstr(libn, "tcltk") != NULL){
                     REprintf("Error: \"vimcom\" and \"tcltk\" packages are incompatible!\n");
                     tcltkerr = 1;
                 }
             }
+#endif
             k++;
         }
         UNPROTECT(1);
@@ -376,7 +390,7 @@ static void vimcom_list_libs()
     snprintf(fn, 510, "%s/liblist", tmpdir);
     FILE *f = fopen(fn, "w");
     if(f == NULL){
-        REprintf("Error: Could not write to '%s'.\n", fn);
+        REprintf("Error: Could not write to '%s'. [vimcom]\n", fn);
         return;
     }
     fprintf(f, "\n");
@@ -391,11 +405,13 @@ static void vimcom_list_libs()
         libn = loadedlibs[i] + 8;
         fprintf(f, "   ##%s\t\n", libn);
         if(vimcom_get_list_status(loadedlibs[i], "library") == 1){
+#ifdef WIN32
             if(tcltkerr){
                 REprintf("Error: Cannot open libraries due to conflict between \"vimcom\" and \"tcltk\" packages.\n");
                 i++;
                 continue;
             }
+#endif
             PROTECT(x = allocVector(STRSXP, 1));
             SET_STRING_ELT(x, 0, mkChar(loadedlibs[i]));
             PROTECT(oblist = eval(lang2(install("objects"), x), R_GlobalEnv));
@@ -417,19 +433,29 @@ static void vimcom_list_libs()
     has_new_lib = 2;
 }
 
-static void vimcom_eval_expr(const char *buf, char *rep)
+static void vimcom_eval_expr(const char *buf)
 {
+    char fn[512];
+    snprintf(fn, 510, "%s/eval_reply", tmpdir);
+    FILE *rep = fopen(fn, "w");
+    if(rep == NULL){
+        REprintf("Error: Could not write to '%s'. [vimcom]\n", fn);
+        return;
+    }
+
+#ifdef WIN32
     if(tcltkerr){
-        sprintf(rep, "Error: \"vimcom\" and \"tcltk\" packages are incompatible!");
+        fprintf(rep, "Error: \"vimcom\" and \"tcltk\" packages are incompatible!\n");
         return;
     } else {
         if(objbr_auto == 0)
             check_tcltk();
         if(tcltkerr){
-            sprintf(rep, "Error!");
+            fprintf(rep, "Error: \"vimcom\" and \"tcltk\" packages are incompatible!\n");
             return;
         }
     }
+#endif
 
     SEXP cmdSexp, cmdexpr, ans;
     ParseStatus status;
@@ -440,35 +466,36 @@ static void vimcom_eval_expr(const char *buf, char *rep)
     PROTECT(cmdexpr = R_ParseVector(cmdSexp, -1, &status, R_NilValue));
 
     if (status != PARSE_OK) {
-        sprintf(rep, "INVALID");
+        fprintf(rep, "INVALID\n");
     } else {
         /* Only the first command will be executed if the expression includes
          * a semicolon. */
         PROTECT(ans = R_tryEval(VECTOR_ELT(cmdexpr, 0), R_GlobalEnv, &er));
         if(er){
-            strcpy(rep, "ERROR");
+            fprintf(rep, "ERROR\n");
         } else {
             switch(TYPEOF(ans)) {
                 case REALSXP:
-                    sprintf(rep, "%f", REAL(ans)[0]);
+                    fprintf(rep, "%f\n", REAL(ans)[0]);
                     break;
                 case LGLSXP:
                 case INTSXP:
-                    sprintf(rep, "%d", INTEGER(ans)[0]);
+                    fprintf(rep, "%d\n", INTEGER(ans)[0]);
                     break;
                 case STRSXP:
                     if(length(ans) > 0)
-                        snprintf(rep, 5011, "%s", CHAR(STRING_ELT(ans, 0)));
+                        fprintf(rep, "%s\n", CHAR(STRING_ELT(ans, 0)));
                     else
-                        sprintf(rep, "EMPTY");
+                        fprintf(rep, "EMPTY\n");
                     break;
                 default:
-                    sprintf(rep, "RTYPE");
+                    fprintf(rep, "RTYPE\n");
             }
         }
         UNPROTECT(1);
     }
     UNPROTECT(2);
+    fclose(rep);
 }
 
 static void vimcom_vimclient(const char *expr)
@@ -501,7 +528,7 @@ Rboolean vimcom_task(SEXP expr, SEXP value, Rboolean succeeded,
                     Rprintf("G\n");
                 break;
             case 2:
-                vimcom_vimclient("UpdateOB('Libraries')");
+                vimcom_vimclient("UpdateOB('libraries')");
                 if(verbose > 3)
                     Rprintf("L\n");
                 break;
@@ -517,6 +544,67 @@ Rboolean vimcom_task(SEXP expr, SEXP value, Rboolean succeeded,
     r_is_busy = 0;
     return(TRUE);
 }
+
+#ifndef WIN32
+static void vimcom_exec(){
+    if(verbose > 3)
+        REprintf("vimcom_exec\n");
+    if(*flag_eval){
+        vimcom_eval_expr(flag_eval);
+        *flag_eval = 0;
+    }
+    if(flag_lsenv)
+        vimcom_list_env();
+    if(flag_lslibs)
+        vimcom_list_libs();
+    switch(has_new_lib + has_new_obj){
+        case 1:
+            vimcom_vimclient("UpdateOB('GlobalEnv')");
+            if(verbose > 3)
+                Rprintf("G\n");
+            break;
+        case 2:
+            vimcom_vimclient("UpdateOB('libraries')");
+            if(verbose > 3)
+                Rprintf("L\n");
+            break;
+        case 3:
+            vimcom_vimclient("UpdateOB('both')");
+            if(verbose > 3)
+                Rprintf("B\n");
+            break;
+    }
+    has_new_lib = 0;
+    has_new_obj = 0;
+    flag_lsenv = 0;
+    flag_lslibs = 0;
+}
+
+/* Code adapted from CarbonEL.
+ * Thanks to Simon Urbanek for the suggestion on r-devel mailing list. */
+static void vimcom_uih(void *data) {
+    if(verbose > 3)
+        REprintf("vimcom_uih\n");
+    char buf[16];
+    if(read(ifd, buf, 1) < 1)
+        REprintf("vimcom error: read < 1\n");
+    R_ToplevelExec(vimcom_exec, NULL);
+    fired = 0;
+}
+
+static void vimcom_fire()
+{
+    if(verbose > 3)
+        REprintf("vimcom_fire\n");
+    if(fired)
+        return;
+    fired = 1;
+    char buf[16];
+    *buf = 0;
+    if(write(ofd, buf, 1) <= 0)
+        REprintf("vimcom error: write <= 0\n");
+}
+#endif
 
 #ifdef WIN32
 static void vimcom_server_thread(void *arg)
@@ -551,7 +639,7 @@ static void *vimcom_server_thread(void *arg)
         bindportn++;
         sfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
         if (sfd == INVALID_SOCKET) {
-            REprintf("socket failed with error %d\n", WSAGetLastError());
+            REprintf("Error: socket failed with error %d [vimcom]\n", WSAGetLastError());
             return;
         }
 
@@ -667,7 +755,7 @@ static void *vimcom_server_thread(void *arg)
                 snprintf(fn, 510, "%s/rpane", tmpdir);
                 f = fopen(fn, "w");
                 if(f == NULL){
-                    REprintf("Error: Could not write to '%s'.\n", fn);
+                    REprintf("Error: Could not write to '%s'. [vimcom]\n", fn);
                     strcpy(rep, "ERROR");
                 } else {
                     fprintf(f, "%s\n", getenv("TMUX_PANE"));
@@ -681,16 +769,28 @@ static void *vimcom_server_thread(void *arg)
                     REprintf("vimcom: the environment variable VIMINSTANCEID is not set.\n");
                 break;
             case 3: // Update Object Browser (.GlobalEnv)
-                if(r_is_busy)
+                if(r_is_busy){
                     strcpy(rep, "R is busy.");
-                else
+                } else {
+#ifdef WIN32
                     vimcom_list_env();
+#else
+                    flag_lsenv = 1;
+                    vimcom_fire();
+#endif
+                }
                 break;
             case 4: // Update Object Browser (libraries)
-                if(r_is_busy)
+                if(r_is_busy){
                     strcpy(rep, "R is busy.");
-                else
+                } else {
+#ifdef WIN32
                     vimcom_list_libs();
+#else
+                    flag_lslibs = 1;
+                    vimcom_fire();
+#endif
+                }
                 break;
             case 5: // Toggle list status
                 if(r_is_busy){
@@ -702,11 +802,22 @@ static void *vimcom_server_thread(void *arg)
                 vimcom_toggle_list_status(bbuf);
                 if(strstr(bbuf, "package:") == bbuf){
                     nlibs = 0;
+#ifdef WIN32
                     vimcom_list_libs();
+#else
+                    flag_lslibs = 1;
+#endif
                 } else {
                     nobjs = 0;
+#ifdef WIN32
                     vimcom_list_env();
+#else
+                    flag_lsenv = 1;
+#endif
                 }
+#ifndef WIN32
+                vimcom_fire();
+#endif
                 strcpy(rep, "OK");
                 break;
             case 6: // Close/open all lists
@@ -725,7 +836,11 @@ static void *vimcom_server_thread(void *arg)
                         break;
                     }
                     nobjs = 0;
+#ifdef WIN32
                     vimcom_list_env();
+#else
+                    flag_lsenv = 1;
+#endif
                 } else {
                     while(tmp){
                         tmp->status = 0;
@@ -737,11 +852,20 @@ static void *vimcom_server_thread(void *arg)
                     }
                     nobjs = 0;
                     nlibs = 0;
+#ifdef WIN32
                     vimcom_list_libs();
                     vimcom_list_env();
+#else
+                    flag_lsenv = 1;
+                    flag_lslibs = 1;
+#endif
                 }
+#ifdef WIN32
                 if(status > 1)
                     vimcom_vimclient("UpdateOB('both')");
+#else
+                vimcom_fire();
+#endif
                 break;
             case 7: // Set Object Browser server name
                 if(Xdisp){
@@ -765,7 +889,12 @@ static void *vimcom_server_thread(void *arg)
                 if(r_is_busy)
                     strcpy(rep, "R is busy.");
                 else
-                    vimcom_eval_expr(buf, rep);
+#ifdef WIN32
+                    vimcom_eval_expr(buf);
+#else
+                    strncpy(flag_eval, buf, 510);
+                    vimcom_fire();
+#endif
                 break;
         }
 
@@ -846,6 +975,18 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
         strcpy(strL, "`- ");
         strcpy(strT, "|- ");
     }
+
+#ifndef WIN32
+    *flag_eval = 0;
+    int fds[2];
+    if(pipe(fds) == 0){
+        ifd = fds[0];
+        ofd = fds[1];
+        addInputHandler(R_InputHandlers, ifd, &vimcom_uih, 32);
+    } else {
+        REprintf("setwidth error: pipe != 0\n");
+    }
+#endif
 
 #ifdef WIN32
     tid = _beginthread(vimcom_server_thread, 0, NULL);
