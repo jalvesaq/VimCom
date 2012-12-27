@@ -48,9 +48,9 @@ static char tmpdir[512];
 static int objbr_auto = 0;
 static int has_new_lib = 0;
 static int has_new_obj = 0;
-static int r_is_busy = 0;
 
 #ifdef WIN32
+static int r_is_busy = 0;
 static int tcltkerr = 0;
 #else
 static int fired = 0;
@@ -541,7 +541,9 @@ Rboolean vimcom_task(SEXP expr, SEXP value, Rboolean succeeded,
         has_new_lib = 0;
         has_new_obj = 0;
     }
+#ifdef WIN32
     r_is_busy = 0;
+#endif
     return(TRUE);
 }
 
@@ -769,34 +771,34 @@ static void *vimcom_server_thread(void *arg)
                     REprintf("vimcom: the environment variable VIMINSTANCEID is not set.\n");
                 break;
             case 3: // Update Object Browser (.GlobalEnv)
-                if(r_is_busy){
-                    strcpy(rep, "R is busy.");
-                } else {
 #ifdef WIN32
+                if(r_is_busy)
+                    strcpy(rep, "R is busy.");
+                else
                     vimcom_list_env();
 #else
-                    flag_lsenv = 1;
-                    vimcom_fire();
+                flag_lsenv = 1;
+                vimcom_fire();
 #endif
-                }
                 break;
             case 4: // Update Object Browser (libraries)
-                if(r_is_busy){
-                    strcpy(rep, "R is busy.");
-                } else {
 #ifdef WIN32
+                if(r_is_busy)
+                    strcpy(rep, "R is busy.");
+                else
                     vimcom_list_libs();
 #else
-                    flag_lslibs = 1;
-                    vimcom_fire();
+                flag_lslibs = 1;
+                vimcom_fire();
 #endif
-                }
                 break;
             case 5: // Toggle list status
+#ifdef WIN32
                 if(r_is_busy){
                     strcpy(rep, "R is busy.");
                     break;
                 }
+#endif
                 bbuf = buf;
                 bbuf++;
                 vimcom_toggle_list_status(bbuf);
@@ -821,6 +823,12 @@ static void *vimcom_server_thread(void *arg)
                 strcpy(rep, "OK");
                 break;
             case 6: // Close/open all lists
+#ifdef WIN32
+                if(r_is_busy){
+                    strcpy(rep, "R is busy.");
+                    break;
+                }
+#endif
                 bbuf = buf;
                 bbuf++;
                 status = atoi(bbuf);
@@ -830,10 +838,6 @@ static void *vimcom_server_thread(void *arg)
                         if(strstr(tmp->key, "package:") != tmp->key)
                             tmp->status = 1;
                         tmp = tmp->next;
-                    }
-                    if(r_is_busy){
-                        strcpy(rep, "R is busy.");
-                        break;
                     }
                     nobjs = 0;
 #ifdef WIN32
@@ -845,10 +849,6 @@ static void *vimcom_server_thread(void *arg)
                     while(tmp){
                         tmp->status = 0;
                         tmp = tmp->next;
-                    }
-                    if(r_is_busy){
-                        strcpy(rep, "R is busy.");
-                        break;
                     }
                     nobjs = 0;
                     nlibs = 0;
@@ -881,15 +881,17 @@ static void *vimcom_server_thread(void *arg)
             case 8: // Stop automatic update of Object Browser info
                 objbr_auto = 0;
                 break;
+#ifdef WIN32
             case 9: // Set R as busy
                 r_is_busy = 1;
                 strcpy(rep, "R set as busy.");
                 break;
+#endif
             default: // eval expression
+#ifdef WIN32
                 if(r_is_busy)
                     strcpy(rep, "R is busy.");
                 else
-#ifdef WIN32
                     vimcom_eval_expr(buf);
 #else
                     strncpy(flag_eval, buf, 510);
