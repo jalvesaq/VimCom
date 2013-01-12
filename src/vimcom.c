@@ -941,8 +941,6 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
 
     if(getenv("VIMRPLUGIN_TMPDIR")){
         strncpy(tmpdir, getenv("VIMRPLUGIN_TMPDIR"), 500);
-        if(verbose > 1)
-            REprintf("vimcom tmpdir = %s\n", tmpdir);
     } else {
         if(verbose)
             REprintf("vimcom: It seems that R was not started by Vim. The communication with Vim-R-plugin will not work.\n");
@@ -1012,6 +1010,9 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
         vimcom_initialized = 1;
         if(verbose > 0)
             REprintf("vimcom 0.9-6 loaded\n");
+        if(verbose > 1)
+            REprintf("    VIMTMPDIR = %s\n    VIMINSTANCEID = %s\n",
+                    tmpdir, getenv("VIMINSTANCEID"));
     }
 }
 
