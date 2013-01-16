@@ -58,6 +58,7 @@ static char flag_eval[512];
 static int flag_lsenv = 0;
 static int flag_lslibs = 0;
 static int ifd, ofd;
+static InputHandler *ih;
 #endif
 
 typedef struct liststatus_ {
@@ -982,9 +983,10 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
     if(pipe(fds) == 0){
         ifd = fds[0];
         ofd = fds[1];
-        addInputHandler(R_InputHandlers, ifd, &vimcom_uih, 32);
+        ih = addInputHandler(R_InputHandlers, ifd, &vimcom_uih, 32);
     } else {
         REprintf("setwidth error: pipe != 0\n");
+        ih = NULL;
     }
 #endif
 
@@ -1022,6 +1024,14 @@ void vimcom_Stop()
         REprintf("Error: vimremote_uninit() failed.\n");
     }
     vimremote_initialized = 0;
+
+#ifndef WIN32
+    if(ih){
+        removeInputHandler(&R_InputHandlers, ih);
+        close(ifd);
+        close(ofd);
+    }
+#endif
 
     if(vimcom_initialized){
         Rf_removeTaskCallbackByName("VimComHandler");
