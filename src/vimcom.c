@@ -29,7 +29,6 @@
 #include "vimremote.h"
 
 static int Xdisp = 0;
-extern unsigned long R_CStackLimit;
 
 static int vimcom_initialized = 0;
 static int vimremote_initialized = 0;
@@ -767,7 +766,7 @@ static void *vimcom_server_thread(void *arg)
                 }
                 break;
             case 2: // Confirm port number
-                sprintf(rep, "0.9-6 %s", getenv("VIMINSTANCEID"));
+                sprintf(rep, "0.9-7 %s", getenv("VIMINSTANCEID"));
                 if(strcmp(rep, "(null)") == 0)
                     REprintf("vimcom: the environment variable VIMINSTANCEID is not set.\n");
                 break;
@@ -993,7 +992,6 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
 #ifdef WIN32
     tid = _beginthread(vimcom_server_thread, 0, NULL);
 #else
-    R_CStackLimit = (uintptr_t)-1;
     pthread_create(&tid, NULL, vimcom_server_thread, NULL);
 #endif
 
@@ -1011,7 +1009,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
         Rf_addTaskCallback(vimcom_task, NULL, free, "VimComHandler", NULL);
         vimcom_initialized = 1;
         if(verbose > 0)
-            REprintf("vimcom 0.9-6 loaded\n");
+            REprintf("vimcom 0.9-7 loaded\n");
         if(verbose > 1)
             REprintf("    VIMTMPDIR = %s\n    VIMINSTANCEID = %s\n",
                     tmpdir, getenv("VIMINSTANCEID"));

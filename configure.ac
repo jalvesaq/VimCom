@@ -1,4 +1,4 @@
-AC_INIT(vimcom, 0.9-6)
+AC_INIT(vimcom, 0.9-7)
 
 AC_PATH_XTRA
 

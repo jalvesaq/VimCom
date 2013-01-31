@@ -1,3 +1,7 @@
+Version 0.9-7 (2013-01-31)
+
+   - Don't use R_CStackLimit.
+
 Version 0.9-6 (2013-01-31)
 
    - Add stdint.h to vimcom.c, not to vimremote.c (thanks to Zé Loff).
