@@ -11,7 +11,7 @@ vim.help <- function(topic, w, classfor, package)
         if(exists(".theclass")){
             for(i in 1:length(.theclass)){
                 newtopic <- paste(topic, ".", .theclass[i], sep = "")
-                if(length(utils:::index.search(newtopic, .find.package(NULL, NULL))) > 0){
+                if(length(utils:::index.search(newtopic, find.package(NULL, NULL))) > 0){
                     topic <- newtopic
                     break
                 }
@@ -21,7 +21,7 @@ vim.help <- function(topic, w, classfor, package)
     if(version$major < "2" || (version$major == "2" && version$minor < "11.0"))
         return("The use of Vim as pager for R requires R >= 2.11.0. Please, put in your vimrc: let vimrplugin_vimpager = \"no\"")
     o <- paste(Sys.getenv("VIMRPLUGIN_TMPDIR"), "/Rdoc", sep = "")
-    f <- utils:::index.search(topic, .find.package(NULL, NULL))
+    f <- utils:::index.search(topic, find.package(NULL, NULL))
     if(length(f) == 0){
         msg <- paste('No documentation for "', topic, '" in loaded packages and libraries.', sep = "")
         return(msg)
