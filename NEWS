@@ -1,3 +1,7 @@
+Version 0.9-8 (2013-04-09)
+
+   - Don't use deprecated function .find.package().
+
 Version 0.9-7 (2013-01-31)
 
    - Don't use R_CStackLimit.

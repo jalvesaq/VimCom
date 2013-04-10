@@ -3,7 +3,7 @@ To download and build it do the following in a terminal emulator:
 
 git clone git://github.com/jalvesaq/VimCom.git
 R CMD build VimCom
-R CMD INSTALL vimcom_0.9-7.tar.gz
+R CMD INSTALL vimcom_0.9-8.tar.gz
 
 However, note that you only need the version of VimCom available in the
 github repository if you are using the development version of Vim-R-plugin.
