@@ -47,11 +47,12 @@ vim.interlace.rnoweb <- function(rnowebfile, latexcmd = "pdflatex", bibtex = FAL
     }
 }
 
-vim.interlace.rrst <- function(Rrstfile, view = TRUE, pdfquiet = FALSE, ...)
+vim.interlace.rrst <- function(Rrstfile, view = TRUE, pdfquiet = FALSE,
+                               compiler = "rst2pdf", ...)
 {
     if(!require(knitr))
         stop("Please, install the 'knitr' package.")
-    knit2pdf(Rrstfile, compiler = "rst2pdf")
+    knit2pdf(Rrstfile, compiler = compiler, ...)
     if (view) {
         Sys.sleep(0.2)
         pdffile = sub('\\.Rrst$', ".pdf", Rrstfile, ignore.case = TRUE)
