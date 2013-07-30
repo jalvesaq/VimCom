@@ -16,6 +16,7 @@
     vimcom.opendf   \tab Show data.frames elements.      \tab TRUE    \cr
     vimcom.openlist \tab Show lists elements.            \tab FALSE   \cr
     vimcom.allnames \tab Show .GlobalEnv hidden objects. \tab FALSE   \cr
+    vimcom.texerrs  \tab Output TeX errors and warnings. \tab FALSE   \cr
   }
 
   You may want to put the options above in your Rprofile rather than setting
@@ -24,8 +25,8 @@
 
   \preformatted{
     if(interactive()){
-      options(vimcom.verbose = 1)
-      options(vimcom.allnames = TRUE)
+      options(vimcom.verbose = 1, vimcom.allnames = TRUE,
+              vimcom.texerrs = TRUE)
       library(vimcom)
     }
 }

@@ -1,3 +1,18 @@
+vim.showTexErrors <- function(x)
+{
+    l <- readLines(x)
+    idx <- rep(FALSE, length(l))
+    idx[grepl("^(Over|Under)full \\\\(h|v)box ", l, useBytes = TRUE)] <- TRUE
+    idx[grepl("^Class \\w+ (Error|Warning):", l, useBytes = TRUE)] <- TRUE
+    idx[grepl("^LaTeX (Error|Warning):", l, useBytes = TRUE)] <- TRUE
+    idx[grepl("^Package \\w+ (Error|Warning):", l, useBytes = TRUE)] <- TRUE
+    idx[grepl("^No pages of output", l, useBytes = TRUE)] <- TRUE
+    if(sum(idx) > 0){
+        msg <- paste0("\nLaTeX errors and warnings:\n\n", paste(l[idx], collapse = "\n"), "\n")
+        cat(msg)
+    }
+}
+
 vim.openpdf <- function(x, quiet = FALSE)
 {
     pdfviewer <- getOption("pdfviewer")
@@ -44,6 +59,8 @@ vim.interlace.rnoweb <- function(rnowebfile, latexcmd = "pdflatex", bibtex = FAL
                 vim.openpdf(Sres, TRUE)
             else
                 vim.openpdf(Sres)
+        if(getOption("vimcom.texerrs"))
+            vim.showTexErrors(sub("\\.tex$", ".log", Sres))
     }
 }
 

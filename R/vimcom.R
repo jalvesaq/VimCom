@@ -22,6 +22,9 @@
     if(is.null(getOption("vimcom.allnames")))
         options(vimcom.allnames = FALSE)
 
+    if(is.null(getOption("vimcom.texerrs")))
+        options(vimcom.texerrs = FALSE)
+
     if(version$os == "mingw32")
         termenv <- "MinGW"
     else
