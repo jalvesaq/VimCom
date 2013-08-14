@@ -1,3 +1,11 @@
+Version 0.9-9 (2013-08-14)
+
+  - Minor improvements in rrst support.
+
+  - Minor bug fixes.
+
+  - New option: vimcom.texerrs.
+
 Version 0.9-8 (2013-04-09)
 
    - Don't use deprecated function .find.package().
