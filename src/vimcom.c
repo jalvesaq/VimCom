@@ -730,7 +730,7 @@ static void *vimcom_server_thread(void *arg)
                 (SOCKADDR *) &peer_addr, &peer_addr_len);
         if (nread == SOCKET_ERROR) {
             REprintf("recvfrom failed with error %d\n", WSAGetLastError());
-            continue;
+            return;
         }
 #else
         nread = recvfrom(sfd, buf, bsize, 0,
@@ -1035,6 +1035,7 @@ void vimcom_Stop()
         Rf_removeTaskCallbackByName("VimComHandler");
 #ifdef WIN32
         closesocket(sfd);
+        WSACleanup();
 #else
         close(sfd);
         pthread_cancel(tid);
