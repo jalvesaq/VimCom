@@ -116,7 +116,8 @@ vim.omni.line <- function(x, envir, printenv, curlevel) {
 
 # Build Omni List
 vim.bol <- function(omnilist, packlist, allnames = FALSE) {
-    vim.OutDec <- options("OutDec")[[1]]
+    vim.OutDec <- options("OutDec")
+    on.exit(options(vim.OutDec))
     options(OutDec = ".")
 
     if(vim.grepl("/r-plugin/objlist", omnilist) == FALSE){
@@ -165,7 +166,6 @@ vim.bol <- function(omnilist, packlist, allnames = FALSE) {
             needunload <- FALSE
         }
     }
-    options(OutDec = vim.OutDec)
     writeLines(text = "Finished",
                con = paste(Sys.getenv("VIMRPLUGIN_TMPDIR"), "/vimbol_finished", sep = ""))
     cat("Finished.\n")
