@@ -119,8 +119,23 @@ vim.args <- function(funcname, txt, pkg = NULL, classfor)
 
 
 vim.list.args <- function(ff){
-    knownGenerics <- c(names(.knownS3Generics),
-                       tools:::.get_internal_S3_generics()) # from methods()
+    # The code to get the list of generic methods added manually is:
+    # x <- c(names(.knownS3Generics), .S3PrimitiveGenerics, tools:::.get_internal_S3_generics())
+    # x <- x[!duplicated(x)]
+    # y <- c(names(.knownS3Generics), .S3PrimitiveGenerics)
+    # rpt <- x %in% y
+    # x <- x[!rpt]
+    # dput(x)
+    knownGenerics <- c(names(.knownS3Generics), .S3PrimitiveGenerics,
+                       "unlist", "abs", "sign", "sqrt", "floor", "ceiling",
+                       "trunc", "round", "signif", "exp", "log", "expm1",
+                       "log1p", "cos", "sin", "tan", "acos", "asin", "atan",
+                       "cosh", "sinh", "tanh", "acosh", "asinh", "atanh",
+                       "lgamma", "gamma", "digamma", "trigamma", "cumsum",
+                       "cumprod", "cummax", "cummin", "all", "any", "sum",
+                       "prod", "max", "min", "range", "Arg", "Conj", "Im",
+                       "Mod", "Re")
+
     ff <- deparse(substitute(ff))
     keyf <- paste("^", ff, "$", sep="")
     is.generic <- (length(grep(keyf, knownGenerics)) > 0)
