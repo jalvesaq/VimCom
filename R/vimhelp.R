@@ -1,7 +1,17 @@
 
-# Code based on all.R (src/library/utils)
+vim.pager <- function(files, header, title, delete.file)
+{
+    if(Sys.getenv("VIMRPLUGIN_TMPDIR") == "")
+        stop("VIMRPLUGIN_TMPDIR not set.")
+    file.copy(files[1],
+              paste(Sys.getenv("VIMRPLUGIN_TMPDIR"), "/Rdoc", sep = ""))
+}
+
 vim.help <- function(topic, w, classfor, package)
 {
+    if(version$major < "2" || (version$major == "2" && version$minor < "12.0"))
+        return("The use of Vim as pager for R requires R >= 2.12.0. Please, put in your vimrc: let vimrplugin_vimpager = \"no\"")
+
     if(!missing(classfor) & length(grep(topic, names(.knownS3Generics))) > 0){
         curwarn <- getOption("warn")
         options(warn = -1)
@@ -11,44 +21,48 @@ vim.help <- function(topic, w, classfor, package)
         if(exists(".theclass")){
             for(i in 1:length(.theclass)){
                 newtopic <- paste(topic, ".", .theclass[i], sep = "")
-                if(length(utils:::index.search(newtopic, find.package(NULL, NULL))) > 0){
+                if(length(help(newtopic))){
                     topic <- newtopic
                     break
                 }
             }
         }
     }
-    if(version$major < "2" || (version$major == "2" && version$minor < "11.0"))
-        return("The use of Vim as pager for R requires R >= 2.11.0. Please, put in your vimrc: let vimrplugin_vimpager = \"no\"")
-    o <- paste(Sys.getenv("VIMRPLUGIN_TMPDIR"), "/Rdoc", sep = "")
-    f <- utils:::index.search(topic, find.package(NULL, NULL))
-    if(length(f) == 0){
+
+    # Requires at least R 2.12
+    oldRdOp <- tools::Rd2txt_options()
+    on.exit(tools::Rd2txt_options(oldRdOp))
+    tools::Rd2txt_options(width = w)
+
+    oldpager <- getOption("pager")
+    on.exit(options(pager = oldpager), add = TRUE)
+    options(pager = vim.pager)
+
+    if(missing(package))
+        h <- help(topic, help_type = "text")
+    else
+        h <- help(topic, package = as.character(package), help_type = "text")
+
+    if(length(h) == 0){
         msg <- paste('No documentation for "', topic, '" in loaded packages and libraries.', sep = "")
         return(msg)
     }
-    if(length(f) > 1){
+    if(length(h) > 1){
         if(missing(package)){
-            f <- sub("/help/.*", "", f)
-            f <- sub(".*/", "", f)
+            h <- sub("/help/.*", "", h)
+            h <- sub(".*/", "", h)
             msg <- "MULTILIB"
-            for(l in f)
+            for(l in h)
                 msg <- paste(msg, l)
             return(msg)
         } else {
-            f <- f[grep(paste("/", package, "/", sep = ""), f)]
-            if(length(f) == 0)
+            h <- h[grep(paste("/", package, "/", sep = ""), h)]
+            if(length(h) == 0)
                 return(paste("Package '", package, "' has no documentation for '", topic, "'", sep = ""))
         }
     }
-    p <- basename(dirname(dirname(f)))
-    if(version$major > "2" || (version$major == "2" && version$minor >= "12.0")){
-        tools::Rd2txt_options(width = w)
-        res <- tools::Rd2txt(utils:::.getHelpFile(f), out = o, package = p)
-    } else {
-        res <- tools::Rd2txt(utils:::.getHelpFile(f), width = w, out = o, package = p)
-    }
-    if(length(res) == 0)
-        return("Error on Rd2txt.")
+    print(h)
+
     return("VIMHELP")
 }
 
