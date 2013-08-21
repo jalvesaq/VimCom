@@ -1007,6 +1007,18 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
         }
 
         Rf_addTaskCallback(vimcom_task, NULL, free, "VimComHandler", NULL);
+
+        // Save a file to indicate that vimcom is running
+        char fn[512];
+        snprintf(fn, 510, "%s/vimcom_running", tmpdir);
+        FILE *f = fopen(fn, "w");
+        if(f == NULL){
+            REprintf("Error: Could not write to '%s'. [vimcom]\n", fn);
+            return;
+        }
+        fprintf(f, "VimCom is running\n");
+        fclose(f);
+
         vimcom_initialized = 1;
         if(verbose > 0)
             REprintf("vimcom 0.9-9 loaded\n");
