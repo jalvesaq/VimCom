@@ -741,9 +741,6 @@ static void *vimcom_server_thread(void *arg)
 
         int status;
         char *bbuf;
-        char fn[512];
-        FILE *f;
-
 
         if(verbose > 1){
             bbuf = buf;
@@ -754,7 +751,7 @@ static void *vimcom_server_thread(void *arg)
 
         switch(buf[0]){
             case 1: // Save Tmux pane on file
-                REprintf("Warning: Deprecated message to vimcom: Save Tmux pane.\n", fn);
+                REprintf("Warning: Deprecated message to vimcom: Save Tmux pane.\n");
                 break;
             case 2: // Confirm port number
                 sprintf(rep, "0.9-9 %s", getenv("VIMINSTANCEID"));
