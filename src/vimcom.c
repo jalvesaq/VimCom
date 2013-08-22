@@ -754,16 +754,7 @@ static void *vimcom_server_thread(void *arg)
 
         switch(buf[0]){
             case 1: // Save Tmux pane on file
-                snprintf(fn, 510, "%s/rpane", tmpdir);
-                f = fopen(fn, "w");
-                if(f == NULL){
-                    REprintf("Error: Could not write to '%s'. [vimcom]\n", fn);
-                    strcpy(rep, "ERROR");
-                } else {
-                    fprintf(f, "%s\n", getenv("TMUX_PANE"));
-                    strcpy(rep, "OK");
-                    fclose(f);
-                }
+                REprintf("Warning: Deprecated message to vimcom: Save Tmux pane.\n", fn);
                 break;
             case 2: // Confirm port number
                 sprintf(rep, "0.9-9 %s", getenv("VIMINSTANCEID"));
@@ -1016,7 +1007,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
             REprintf("Error: Could not write to '%s'. [vimcom]\n", fn);
             return;
         }
-        fprintf(f, "VimCom is running\n");
+        fprintf(f, "VimCom is running\n0.9-9\n%s\n", getenv("VIMINSTANCEID"));
         fclose(f);
 
         vimcom_initialized = 1;
