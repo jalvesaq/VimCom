@@ -525,17 +525,17 @@ Rboolean vimcom_task(SEXP expr, SEXP value, Rboolean succeeded,
             case 1:
                 vimcom_vimclient("UpdateOB('GlobalEnv')");
                 if(verbose > 3)
-                    Rprintf("G\n");
+                    Rprintf("G: vimcom_task\n");
                 break;
             case 2:
                 vimcom_vimclient("UpdateOB('libraries')");
                 if(verbose > 3)
-                    Rprintf("L\n");
+                    Rprintf("L: vimcom_task\n");
                 break;
             case 3:
                 vimcom_vimclient("UpdateOB('both')");
                 if(verbose > 3)
-                    Rprintf("B\n");
+                    Rprintf("B: vimcom_task\n");
                 break;
         }
         has_new_lib = 0;
@@ -550,7 +550,7 @@ Rboolean vimcom_task(SEXP expr, SEXP value, Rboolean succeeded,
 #ifndef WIN32
 static void vimcom_exec(){
     if(verbose > 3)
-        REprintf("vimcom_exec\n");
+        REprintf("vimcom_exec %d %d\n", flag_lsenv, flag_lslibs);
     if(*flag_eval){
         vimcom_eval_expr(flag_eval);
         *flag_eval = 0;
@@ -559,21 +559,23 @@ static void vimcom_exec(){
         vimcom_list_env();
     if(flag_lslibs)
         vimcom_list_libs();
+    if(verbose > 3)
+        REprintf("vimcom_exec %d + %d\n", has_new_lib, has_new_obj);
     switch(has_new_lib + has_new_obj){
         case 1:
             vimcom_vimclient("UpdateOB('GlobalEnv')");
             if(verbose > 3)
-                Rprintf("G\n");
+                Rprintf("G: vimcom_exec\n");
             break;
         case 2:
             vimcom_vimclient("UpdateOB('libraries')");
             if(verbose > 3)
-                Rprintf("L\n");
+                Rprintf("L: vimcom_exec\n");
             break;
         case 3:
             vimcom_vimclient("UpdateOB('both')");
             if(verbose > 3)
-                Rprintf("B\n");
+                Rprintf("B: vimcom_exec\n");
             break;
     }
     has_new_lib = 0;
