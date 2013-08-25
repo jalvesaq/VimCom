@@ -165,11 +165,18 @@ static void vimcom_browser_line(SEXP *x, const char *xname, const char *curenv, 
 {
     char xclass[64];
     char newenv[512];
+    char curenvB[512];
     char ebuf[64];
     char pre[128];
     char newpre[128];
+    int len;
     const char *ename;
     SEXP listNames, label, lablab, eexp, elmt = R_NilValue;
+    SEXP cmdSexp, cmdexpr, ans, cmdSexp2, cmdexpr2;
+    ParseStatus status, status2;
+    int er = 0;
+    char buf[128];
+
 
     if(Rf_isLogical(*x)){
         strcpy(xclass, "logical");
@@ -209,10 +216,17 @@ static void vimcom_browser_line(SEXP *x, const char *xname, const char *curenv, 
         fprintf(f, "%s\t\n", xname);
     UNPROTECT(2);
 
-    if(strcmp(xclass, "list") == 0 || strcmp(xclass, "data.frame") == 0){
-        snprintf(newenv, 500, "%s-%s", curenv, xname);
+    if(strcmp(xclass, "list") == 0 || strcmp(xclass, "data.frame") == 0 || strcmp(xclass, "s4") == 0){
+        strncpy(curenvB, curenv, 500);
+        if(xname[0] == '[' && xname[1] == '['){
+            curenvB[strlen(curenvB) - 1] = 0;
+        }
+        if(strcmp(xclass, "s4") == 0)
+            snprintf(newenv, 500, "%s%s@", curenvB, xname);
+        else
+            snprintf(newenv, 500, "%s%s$", curenvB, xname);
         if((vimcom_get_list_status(newenv, xclass) == 1)){
-            int len = strlen(prefix);
+            len = strlen(prefix);
             if(vimcom_is_utf8){
                 int j = 0, i = 0;
                 while(i < len){
@@ -240,50 +254,90 @@ static void vimcom_browser_line(SEXP *x, const char *xname, const char *curenv, 
                 }
                 pre[len] = 0;
             }
-
             sprintf(newpre, "%s%s", pre, strT);
-            PROTECT(listNames = getAttrib(*x, R_NamesSymbol));
-            len = length(listNames);
-            if(len == 0){ /* Empty list? */
-                int len1 = length(*x);
-                if(len1 > 0){ /* List without names */
-                    len1 -= 1;
-                    for(int i = 0; i < len1; i++){
-                        sprintf(ebuf, "[[%d]]", i + 1);
-                        elmt = VECTOR_ELT(*x, i);
-                        vimcom_browser_line(&elmt, ebuf, newenv, newpre, f);
+
+            if(strcmp(xclass, "s4") == 0){
+                snprintf(buf, 127, "slotNames(%s%s)", curenvB, xname);
+                PROTECT(cmdSexp = allocVector(STRSXP, 1));
+                SET_STRING_ELT(cmdSexp, 0, mkChar(buf));
+                PROTECT(cmdexpr = R_ParseVector(cmdSexp, -1, &status, R_NilValue));
+
+                if (status != PARSE_OK) {
+                    fprintf(f, "vimcom error: invalid value in slotNames(%s)\n", xname);
+                } else {
+                    PROTECT(ans = R_tryEval(VECTOR_ELT(cmdexpr, 0), R_GlobalEnv, &er));
+                    if(er){
+                        fprintf(f, "vimcom error: %s\n", xname);
+                    } else {
+                        len = length(ans);
+                        if(len > 0){
+                            int len1 = len - 1;
+                            for(int i = 0; i < len; i++){
+                                ename = CHAR(STRING_ELT(ans, i));
+                                snprintf(buf, 127, "%s%s@%s", curenvB, xname, ename);
+                                PROTECT(cmdSexp2 = allocVector(STRSXP, 1));
+                                SET_STRING_ELT(cmdSexp2, 0, mkChar(buf));
+                                PROTECT(cmdexpr2 = R_ParseVector(cmdSexp2, -1, &status2, R_NilValue));
+                                if (status2 != PARSE_OK) {
+                                    fprintf(f, "vimcom error: invalid code \"%s@%s\"\n", xname, ename);
+                                } else {
+                                    PROTECT(elmt = R_tryEval(VECTOR_ELT(cmdexpr2, 0), R_GlobalEnv, &er));
+                                    if(i == len1)
+                                        sprintf(newpre, "%s%s", pre, strL);
+                                    vimcom_browser_line(&elmt, ename, newenv, newpre, f);
+                                    UNPROTECT(1);
+                                }
+                                UNPROTECT(2);
+                            }
+                        }
                     }
-                    sprintf(newpre, "%s%s", pre, strL);
-                    sprintf(ebuf, "[[%d]]", len1 + 1);
-                    PROTECT(elmt = VECTOR_ELT(*x, len));
-                    vimcom_browser_line(&elmt, ebuf, newenv, newpre, f);
                     UNPROTECT(1);
                 }
-            } else { /* Named list */
-                len -= 1;
-                for(int i = 0; i < len; i++){
-                    PROTECT(eexp = STRING_ELT(listNames, i));
-                    ename = CHAR(eexp);
-                    UNPROTECT(1);
+                UNPROTECT(2);
+            } else {
+                PROTECT(listNames = getAttrib(*x, R_NamesSymbol));
+                len = length(listNames);
+                if(len == 0){ /* Empty list? */
+                    int len1 = length(*x);
+                    if(len1 > 0){ /* List without names */
+                        len1 -= 1;
+                        for(int i = 0; i < len1; i++){
+                            sprintf(ebuf, "[[%d]]", i + 1);
+                            elmt = VECTOR_ELT(*x, i);
+                            vimcom_browser_line(&elmt, ebuf, newenv, newpre, f);
+                        }
+                        sprintf(newpre, "%s%s", pre, strL);
+                        sprintf(ebuf, "[[%d]]", len1 + 1);
+                        PROTECT(elmt = VECTOR_ELT(*x, len));
+                        vimcom_browser_line(&elmt, ebuf, newenv, newpre, f);
+                        UNPROTECT(1);
+                    }
+                } else { /* Named list */
+                    len -= 1;
+                    for(int i = 0; i < len; i++){
+                        PROTECT(eexp = STRING_ELT(listNames, i));
+                        ename = CHAR(eexp);
+                        UNPROTECT(1);
+                        if(ename[0] == 0){
+                            sprintf(ebuf, "[[%d]]", i + 1);
+                            ename = ebuf;
+                        }
+                        PROTECT(elmt = VECTOR_ELT(*x, i));
+                        vimcom_browser_line(&elmt, ename, newenv, newpre, f);
+                        UNPROTECT(1);
+                    }
+                    sprintf(newpre, "%s%s", pre, strL);
+                    ename = CHAR(STRING_ELT(listNames, len));
                     if(ename[0] == 0){
-                        sprintf(ebuf, "[[%d]]", i + 1);
+                        sprintf(ebuf, "[[%d]]", len + 1);
                         ename = ebuf;
                     }
-                    PROTECT(elmt = VECTOR_ELT(*x, i));
+                    PROTECT(elmt = VECTOR_ELT(*x, len));
                     vimcom_browser_line(&elmt, ename, newenv, newpre, f);
                     UNPROTECT(1);
                 }
-                sprintf(newpre, "%s%s", pre, strL);
-                ename = CHAR(STRING_ELT(listNames, len));
-                if(ename[0] == 0){
-                    sprintf(ebuf, "[[%d]]", len + 1);
-                    ename = ebuf;
-                }
-                PROTECT(elmt = VECTOR_ELT(*x, len));
-                vimcom_browser_line(&elmt, ename, newenv, newpre, f);
-                UNPROTECT(1);
+                UNPROTECT(1); /* listNames */
             }
-            UNPROTECT(1); /* listNames */
         }
     }
 }
