@@ -357,7 +357,7 @@ static void vimcom_list_env()
     if(tmpdir[0] == 0)
         return;
 
-    snprintf(fn, 510, "%s/object_browser", tmpdir);
+    snprintf(fn, 510, "%s/globenv_%s", tmpdir, obsname);
     FILE *f = fopen(fn, "w");
     if(f == NULL){
         REprintf("Error: Could not write to '%s'. [vimcom]\n", fn);
@@ -441,7 +441,7 @@ static void vimcom_list_libs()
     else
         nlibs = newnlibs;
 
-    snprintf(fn, 510, "%s/liblist", tmpdir);
+    snprintf(fn, 510, "%s/liblist_%s", tmpdir, obsname);
     FILE *f = fopen(fn, "w");
     if(f == NULL){
         REprintf("Error: Could not write to '%s'. [vimcom]\n", fn);
@@ -558,7 +558,11 @@ static void vimcom_vimclient(const char *expr)
     if(!Xdisp)
         return;
     if(verbose > 2)
-        Rprintf("vimcom_client(%s): %s\n", expr, obsname);
+        Rprintf("vimcom_client(%s): '%s'\n", expr, obsname);
+    if(obsname[0] == 0){
+        REprintf("Error: vimcom_vimclient() called although Vim servername is undefined\n");
+        return;
+    }
     if(vimremote_remoteexpr(obsname, expr, &result) != 0)
         objbr_auto = 0;
     if(verbose > 3)
@@ -973,7 +977,6 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
     opendf = *odf;
     openls = *ols;
     allnames = *anm;
-    strcpy(obsname, "NONE");
 #ifdef WIN32
     Xdisp = 1;
 #else
