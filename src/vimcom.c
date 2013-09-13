@@ -364,7 +364,7 @@ static void vimcom_list_env()
         return;
     }
 
-    fprintf(f, "\n");
+    fprintf(f, ".GlobalEnv | Libraries\n\n");
 
     PROTECT(envVarsSEXP = R_lsInternal(R_GlobalEnv, allnames));
     for(int i = 0; i < Rf_length(envVarsSEXP); i++){
@@ -447,7 +447,7 @@ static void vimcom_list_libs()
         REprintf("Error: Could not write to '%s'. [vimcom]\n", fn);
         return;
     }
-    fprintf(f, "\n");
+    fprintf(f, "Libraries | .GlobalEnv\n\n");
 
     strcpy(prefixT, "   ");
     strcpy(prefixL, "   ");
@@ -560,7 +560,8 @@ static void vimcom_vimclient(const char *expr)
     if(verbose > 2)
         Rprintf("vimcom_client(%s): '%s'\n", expr, obsname);
     if(obsname[0] == 0){
-        REprintf("Error: vimcom_vimclient() called although Vim servername is undefined\n");
+        if(verbose > 3)
+            REprintf("vimcom_vimclient() called although Vim servername is undefined\n");
         return;
     }
     if(vimremote_remoteexpr(obsname, expr, &result) != 0)
