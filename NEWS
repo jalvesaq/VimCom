@@ -1,10 +1,12 @@
-Version 0.9-9 (2013-08-14)
+Version 0.9-9 (2013-09-13)
 
-  - Minor improvements in rrst support.
+   - Minor bug fixes.
 
-  - Minor bug fixes.
+   - Minor improvements in rrst support.
 
-  - New option: vimcom.texerrs.
+   - New option: vimcom.texerrs.
+
+   - Show S4 elements in the object browser.
 
 Version 0.9-8 (2013-04-09)
 
