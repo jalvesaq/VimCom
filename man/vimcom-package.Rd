@@ -25,7 +25,8 @@
 
   \preformatted{
     if(interactive()){
-      options(vimcom.verbose = 1, vimcom.allnames = TRUE,
+      options(vimcom.verbose = 1,
+              vimcom.allnames = TRUE,
               vimcom.texerrs = TRUE)
       library(vimcom)
     }

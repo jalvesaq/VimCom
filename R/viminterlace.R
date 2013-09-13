@@ -62,6 +62,7 @@ vim.interlace.rnoweb <- function(rnowebfile, latexcmd = "pdflatex", bibtex = FAL
         if(getOption("vimcom.texerrs"))
             vim.showTexErrors(sub("\\.tex$", ".log", Sres))
     }
+    return(invisible(NULL))
 }
 
 vim.interlace.rrst <- function(Rrstfile, view = TRUE, pdfquiet = FALSE,
