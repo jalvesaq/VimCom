@@ -14,3 +14,9 @@ etags2ctags(etagsfile, ctagsfile)
   \item{ctagsfile}{Path to the CTags file to be created.}
 }
 \author{Jakson Alves de Aquino <jalvesaq@gmail.com>}
+\examples{
+\dontrun{
+rtags(path = "/path/to/R/source/code", recursive = TRUE, ofile = "RTAGS")
+etags2ctags("RTAGS", "Rtags")
+}
+}
