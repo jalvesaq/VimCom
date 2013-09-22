@@ -1,4 +1,4 @@
-Version 0.9-9 (2013-09-13)
+Version 0.9-9 (2013-09-22)
 
    - Minor bug fixes.
 
@@ -7,6 +7,9 @@ Version 0.9-9 (2013-09-13)
    - New option: vimcom.texerrs.
 
    - Show S4 elements in the object browser.
+
+   - Remove Rf_addTaskCallback and Rf_removeTaskCallbackByName from CRAN
+     version of vimcom.
 
 Version 0.9-8 (2013-04-09)
 

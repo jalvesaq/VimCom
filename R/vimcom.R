@@ -8,7 +8,7 @@
 ###############################################################
 
 .onLoad <- function(libname, pkgname) {
-    library.dynam("vimcom", pkgname, libname, local = FALSE)
+    library.dynam("vimcom.plus", pkgname, libname, local = FALSE)
 
     if(is.null(getOption("vimcom.verbose")))
         options(vimcom.verbose = 0)
@@ -35,12 +35,12 @@
            as.integer(getOption("vimcom.opendf")),
            as.integer(getOption("vimcom.openlist")),
            as.integer(getOption("vimcom.allnames")),
-           PACKAGE="vimcom")
+           PACKAGE="vimcom.plus")
     }
 }
 
 .onUnload <- function(libpath) {
-    .C("vimcom_Stop", PACKAGE="vimcom")
-    library.dynam.unload("vimcom", libpath)
+    .C("vimcom_Stop", PACKAGE="vimcom.plus")
+    library.dynam.unload("vimcom.plus", libpath)
 }
 
