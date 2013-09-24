@@ -1,10 +1,13 @@
-The development version of the R package "VimCom" is available at github.
+This is the development version of the R package "VimCom".
 To download and build it do the following in a terminal emulator:
 
 git clone git://github.com/jalvesaq/VimCom.git
 R CMD build VimCom
 R CMD INSTALL vimcom.plus_0.9-9.tar.gz
+# If you want to check the package:
+R CMD check vimcom.plus_0.9-9.tar.gz
 
 However, note that you only need the version of VimCom available in the
-github repository if you are using the development version of Vim-R-plugin.
+github repository if you are using the development version of Vim-R-plugin,
+which is available at https://github.com/jcfaria/Vim-R-plugin .
 
