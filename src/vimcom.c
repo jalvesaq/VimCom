@@ -815,7 +815,7 @@ static void *vimcom_server_thread(void *arg)
                 REprintf("Warning: Deprecated message to vimcom: Save Tmux pane.\n");
                 break;
             case 2: // Confirm port number
-                sprintf(rep, "0.9-9 %s", getenv("VIMINSTANCEID"));
+                sprintf(rep, "0.9-9 vimcom.plus %s", getenv("VIMINSTANCEID"));
                 if(strcmp(rep, "(null)") == 0)
                     REprintf("vimcom: the environment variable VIMINSTANCEID is not set.\n");
                 break;
