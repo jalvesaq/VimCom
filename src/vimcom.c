@@ -47,6 +47,7 @@ static char tmpdir[512];
 static int objbr_auto = 0;
 static int has_new_lib = 0;
 static int has_new_obj = 0;
+static int always_ls_env = 0;
 
 #ifdef WIN32
 static int r_is_busy = 0;
@@ -347,10 +348,10 @@ static void vimcom_list_env()
     const char *varName;
     SEXP envVarsSEXP, varSEXP;
 
-    if(vimcom_count_objects() == 0)
+    if(always_ls_env == 0 && vimcom_count_objects() == 0)
         return;
     if(verbose > 1 && objbr_auto)
-        Rprintf("New number of Objects: %d\n", nobjs);
+        Rprintf("Current number of Objects: %d\n", nobjs);
 
     char fn[512];
 
@@ -972,12 +973,13 @@ static void *vimcom_server_thread(void *arg)
 }
 
 
-void vimcom_Start(int *vrb, int *odf, int *ols, int *anm)
+void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw)
 {
     verbose = *vrb;
     opendf = *odf;
     openls = *ols;
     allnames = *anm;
+    always_ls_env = *alw;
 #ifdef WIN32
     Xdisp = 1;
 #else

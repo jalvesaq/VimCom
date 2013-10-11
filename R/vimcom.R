@@ -25,6 +25,9 @@
     if(is.null(getOption("vimcom.texerrs")))
         options(vimcom.texerrs = FALSE)
 
+    if(is.null(getOption("vimcom.texerrs")))
+        options(vimcom.alwaysls = TRUE)
+
     if(version$os == "mingw32")
         termenv <- "MinGW"
     else
@@ -35,6 +38,7 @@
            as.integer(getOption("vimcom.opendf")),
            as.integer(getOption("vimcom.openlist")),
            as.integer(getOption("vimcom.allnames")),
+           as.integer(getOption("vimcom.alwaysls")),
            PACKAGE="vimcom.plus")
     }
 }

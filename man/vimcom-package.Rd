@@ -16,17 +16,39 @@
     vimcom.opendf   \tab Show data.frames elements.      \tab TRUE    \cr
     vimcom.openlist \tab Show lists elements.            \tab FALSE   \cr
     vimcom.allnames \tab Show .GlobalEnv hidden objects. \tab FALSE   \cr
+    vimcom.alwaysls \tab Update the Object Browser more. \tab TRUE    \cr
     vimcom.texerrs  \tab Output TeX errors and warnings. \tab FALSE   \cr
   }
 
-  You may want to put the options above in your Rprofile rather than setting
-  them and loading the vimcom package manually. Below is an example of
-  ~/.Rprofile
+  The \samp{vimcom.verbose} option controls the amount of debugging
+  information printed on R Console. If the value is 1, the package version is
+  output on startup. Higher values, up to 4, will make the package print
+  information verbosely which is useful only if you want either to fix a bug
+  or to understand how vimcom works.
+
+  By default, when a \samp{data.frame} appears in the Object Browser for the
+  first time, its elements are immediately displayed, but the elements of a
+  \samp{list} are displayed only if it is explicitly opened (see the
+  Vim-R-plugin documentation for details). The options \samp{vimcom.opendf}
+  and \samp{vimcom.openlist} controls the initial status (either opened or
+  closed) of, respectively, data.frames and lists.
+
+  If the value of \samp{vimcom.alwaysls} is \samp{FALSE}, the Object Browser
+  will update the R's workspace list of objects only when the number of
+  objects changes.
+
+  If you set the value of \samp{vimcom.texerrs} to \samp{TRUE}, LaTeX errors
+  and warnings produced by the compilation of the .tex document into .pdf file
+  will be output to R Console at the end of the compilation. So, you do not
+  have to scroll the R Console seeking for these messages.
+
+  You may want to put the some of the options above in your Rprofile rather
+  than setting them and loading the vimcom package manually. Below is an
+  example of ~/.Rprofile
 
   \preformatted{
     if(interactive()){
       options(vimcom.verbose = 1,
-              vimcom.allnames = TRUE,
               vimcom.texerrs = TRUE)
       library(vimcom)
     }
