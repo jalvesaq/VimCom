@@ -31,13 +31,28 @@ vim.openpdf <- function(x, quiet = FALSE)
 vim.interlace.rnoweb <- function(rnowebfile, latexcmd = "pdflatex", bibtex = FALSE,
                           knit = FALSE, view = TRUE, quiet = TRUE, pdfquiet = FALSE, ...)
 {
-    if(knit){
-        if(!require(knitr))
-            stop("Please, install the 'knitr' package.")
-        Sres <- knit(rnowebfile, envir = globalenv())
-    } else {
-        Sres <- Sweave(rnowebfile, ...)
+    Sres <- NA
+
+    # Check whether the .tex was already compiled
+    twofiles <- c(rnowebfile, sub("\\....$", ".tex", rnowebfile))
+    if(sum(file.exists(twofiles)) == 2){
+        fi <- file.info(twofiles)$mtime
+        if(fi[1] < fi[2])
+            Sres <- twofiles[2]
     }
+
+    # Compile the .tex file
+    if(is.na(Sres)){
+        if(knit){
+            if(!require(knitr))
+                stop("Please, install the 'knitr' package.")
+            Sres <- knit(rnowebfile, envir = globalenv())
+        } else {
+            Sres <- Sweave(rnowebfile, ...)
+        }
+    }
+
+    # Compile the .pdf
     if(exists('Sres')){
         # From RStudio: Check for spaces in path (Sweave chokes on these)
         if(length(grep(" ", Sres)) > 0)
