@@ -17,7 +17,7 @@
     vimcom.openlist \tab Show lists elements.            \tab FALSE   \cr
     vimcom.allnames \tab Show .GlobalEnv hidden objects. \tab FALSE   \cr
     vimcom.alwaysls \tab Update the Object Browser more. \tab TRUE    \cr
-    vimcom.texerrs  \tab Output TeX errors and warnings. \tab FALSE   \cr
+    vimcom.texerrs  \tab Output TeX errors and warnings. \tab TRUE    \cr
   }
 
   The \samp{vimcom.verbose} option controls the amount of debugging
@@ -37,8 +37,8 @@
   will update the R's workspace list of objects only when the number of
   objects changes.
 
-  If you set the value of \samp{vimcom.texerrs} to \samp{TRUE}, LaTeX errors
-  and warnings produced by the compilation of the .tex document into .pdf file
+  If the value of \samp{vimcom.texerrs} is \samp{TRUE}, LaTeX errors and
+  warnings produced by the compilation of the .tex document into .pdf file
   will be output to R Console at the end of the compilation. So, you do not
   have to scroll the R Console seeking for these messages.
 
