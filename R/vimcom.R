@@ -23,9 +23,9 @@
         options(vimcom.allnames = FALSE)
 
     if(is.null(getOption("vimcom.texerrs")))
-        options(vimcom.texerrs = FALSE)
+        options(vimcom.texerrs = TRUE)
 
-    if(is.null(getOption("vimcom.texerrs")))
+    if(is.null(getOption("vimcom.alwaysls")))
         options(vimcom.alwaysls = TRUE)
 
     if(version$os == "mingw32")
