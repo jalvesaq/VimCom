@@ -1,3 +1,9 @@
+Version 0.9-91 (2013-11-01)
+
+  - New option: vimcom.alwaysls (TRUE as default).
+
+  - Minor bug fixes.
+
 Version 0.9-9 (2013-09-22)
 
    - Minor bug fixes.

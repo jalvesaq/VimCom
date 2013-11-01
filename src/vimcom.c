@@ -816,8 +816,8 @@ static void *vimcom_server_thread(void *arg)
                 REprintf("Warning: Deprecated message to vimcom: Save Tmux pane.\n");
                 break;
             case 2: // Confirm port number
-                sprintf(rep, "0.9-9 vimcom.plus %s", getenv("VIMINSTANCEID"));
-                if(strcmp(rep, "(null)") == 0)
+                sprintf(rep, "0.9-91 vimcom.plus %s", getenv("VIMINSTANCEID"));
+                if(getenv("VIMINSTANCEID") == NULL)
                     REprintf("vimcom: the environment variable VIMINSTANCEID is not set.\n");
                 break;
             case 3: // Update Object Browser (.GlobalEnv)
@@ -1066,12 +1066,12 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw)
             REprintf("Error: Could not write to '%s'. [vimcom]\n", fn);
             return;
         }
-        fprintf(f, "vimcom.plus is running\n0.9-9\n%s\n", getenv("VIMINSTANCEID"));
+        fprintf(f, "vimcom.plus is running\n0.9-91\n%s\n", getenv("VIMINSTANCEID"));
         fclose(f);
 
         vimcom_initialized = 1;
         if(verbose > 0)
-            REprintf("vimcom.plus 0.9-9 loaded\n");
+            REprintf("vimcom.plus 0.9-91 loaded\n");
         if(verbose > 1)
             REprintf("    VIMTMPDIR = %s\n    VIMINSTANCEID = %s\n",
                     tmpdir, getenv("VIMINSTANCEID"));
