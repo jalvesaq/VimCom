@@ -45,6 +45,7 @@
 
 .onUnload <- function(libpath) {
     .C("vimcom_Stop", PACKAGE="vimcom.plus")
+    Sys.sleep(1)
     library.dynam.unload("vimcom.plus", libpath)
 }
 
