@@ -32,6 +32,12 @@
         termenv <- "MinGW"
     else
         termenv <- Sys.getenv("TERM")
+
+
+    if(Sys.getenv("VIMRPLUGIN_HOME") != "")
+        dir.create(paste0(Sys.getenv("VIMRPLUGIN_HOME"), "/r-plugin/objlist/"),
+                   showWarnings = FALSE)
+
     if(interactive() && termenv != "" && termenv != "dumb"){
         .C("vimcom_Start",
            as.integer(getOption("vimcom.verbose")),

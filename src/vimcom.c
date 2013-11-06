@@ -40,7 +40,8 @@ static int vimcom_is_utf8;
 static int vimcom_failure = 0;
 static int nlibs = 0;
 static int nobjs = 0;
-static char obsname[124];
+static char obsname[128];
+static char edsname[128];
 static char strL[16];
 static char strT[16];
 static char tmpdir[512];
@@ -70,6 +71,7 @@ typedef struct liststatus_ {
 static ListStatus *firstList = NULL;
 
 static char *loadedlibs[64];
+static char *builtlibs[64];
 
 #ifdef WIN32
 SOCKET sfd;
@@ -78,6 +80,26 @@ static int tid;
 static int sfd = -1;
 static pthread_t tid;
 #endif
+
+static void vimcom_vimclient(const char *expr, const char *svrnm)
+{
+    char *result = NULL;
+    if(!Xdisp)
+        return;
+    if(verbose > 2)
+        Rprintf("vimcom_client(%s): '%s'\n", expr, svrnm);
+    if(svrnm[0] == 0){
+        if(verbose > 3)
+            REprintf("vimcom_vimclient() called although Vim servername is undefined\n");
+        return;
+    }
+    if(vimremote_remoteexpr(svrnm, expr, &result) != 0)
+        objbr_auto = 0;
+    if(verbose > 3)
+        Rprintf("Remoteexpr result: %s\n", result == NULL ? "" : result);
+    if(result)
+        free(result);
+}
 
 static void vimcom_toggle_list_status(const char *x)
 {
@@ -384,11 +406,11 @@ static void vimcom_list_env()
     has_new_obj = 1;
 }
 
-static int check_tcltk()
+static int vimcom_checklibs()
 {
     const char *libname;
     char *libn;
-    SEXP a, l;
+    SEXP a, l, x;
 
     PROTECT(a = eval(lang1(install("search")), R_GlobalEnv));
     
@@ -419,6 +441,40 @@ static int check_tcltk()
         UNPROTECT(1);
     }
     UNPROTECT(1);
+    for(int i = 0; i < 64; i++){
+        if(loadedlibs[i][0] == 0)
+            break;
+        for(int j = 0; j < 64; j++){
+            libn = strstr(loadedlibs[i], ":");
+            libn++;
+            if(strcmp(builtlibs[j], libn) == 0)
+                break;
+            if(builtlibs[j][0] == 0){
+                strcpy(builtlibs[j], libn);
+                PROTECT(x = allocVector(STRSXP, 1));
+                SET_STRING_ELT(x, 0, mkChar(libn));
+                eval(lang2(install("vim.buildomnils"), x), R_GlobalEnv);
+                UNPROTECT(1);
+                break;
+            }
+        }
+    }
+
+    char fn[512];
+    snprintf(fn, 510, "%s/libnames_%s", tmpdir, getenv("VIMINSTANCEID"));
+    FILE *f = fopen(fn, "w");
+    if(f == NULL){
+        REprintf("Error: Could not write to '%s'. [vimcom]\n", fn);
+        return(newnlibs);
+    }
+    for(int i = 0; i < 64; i++){
+        if(builtlibs[i][0] == 0)
+            break;
+        fprintf(f, "%s\n", builtlibs[i]);
+    }
+    fclose(f);
+    vimcom_vimclient("RFillLibList()", edsname);
+
     return(newnlibs);
 }
 
@@ -435,7 +491,7 @@ static void vimcom_list_libs()
     if(tmpdir[0] == 0)
         return;
 
-    newnlibs = check_tcltk();
+    newnlibs = vimcom_checklibs();
 
     if(newnlibs == nlibs)
         return;
@@ -504,7 +560,7 @@ static void vimcom_eval_expr(const char *buf)
         return;
     } else {
         if(objbr_auto == 0)
-            check_tcltk();
+            vimcom_checklibs();
         if(tcltkerr){
             fprintf(rep, "Error: \"vimcom\" and \"tcltk\" packages are incompatible!\n");
             return;
@@ -553,47 +609,27 @@ static void vimcom_eval_expr(const char *buf)
     fclose(rep);
 }
 
-static void vimcom_vimclient(const char *expr)
-{
-    char *result = NULL;
-    if(!Xdisp)
-        return;
-    if(verbose > 2)
-        Rprintf("vimcom_client(%s): '%s'\n", expr, obsname);
-    if(obsname[0] == 0){
-        if(verbose > 3)
-            REprintf("vimcom_vimclient() called although Vim servername is undefined\n");
-        return;
-    }
-    if(vimremote_remoteexpr(obsname, expr, &result) != 0)
-        objbr_auto = 0;
-    if(verbose > 3)
-        Rprintf("Remoteexpr result: %s\n", result == NULL ? "" : result);
-    if(result)
-        free(result);
-}
-
 Rboolean vimcom_task(SEXP expr, SEXP value, Rboolean succeeded,
         Rboolean visible, void *userData)
 {
     if(verbose > 2)
         Rprintf("vimcom_task() :: %d\n", objbr_auto);
+    vimcom_list_libs();
     if(objbr_auto){
         vimcom_list_env();
-        vimcom_list_libs();
         switch(has_new_lib + has_new_obj){
             case 1:
-                vimcom_vimclient("UpdateOB('GlobalEnv')");
+                vimcom_vimclient("UpdateOB('GlobalEnv')", obsname);
                 if(verbose > 3)
                     Rprintf("G: vimcom_task\n");
                 break;
             case 2:
-                vimcom_vimclient("UpdateOB('libraries')");
+                vimcom_vimclient("UpdateOB('libraries')", obsname);
                 if(verbose > 3)
                     Rprintf("L: vimcom_task\n");
                 break;
             case 3:
-                vimcom_vimclient("UpdateOB('both')");
+                vimcom_vimclient("UpdateOB('both')", obsname);
                 if(verbose > 3)
                     Rprintf("B: vimcom_task\n");
                 break;
@@ -623,17 +659,17 @@ static void vimcom_exec(){
         REprintf("vimcom_exec %d + %d\n", has_new_lib, has_new_obj);
     switch(has_new_lib + has_new_obj){
         case 1:
-            vimcom_vimclient("UpdateOB('GlobalEnv')");
+            vimcom_vimclient("UpdateOB('GlobalEnv')", obsname);
             if(verbose > 3)
                 Rprintf("G: vimcom_exec\n");
             break;
         case 2:
-            vimcom_vimclient("UpdateOB('libraries')");
+            vimcom_vimclient("UpdateOB('libraries')", obsname);
             if(verbose > 3)
                 Rprintf("L: vimcom_exec\n");
             break;
         case 3:
-            vimcom_vimclient("UpdateOB('both')");
+            vimcom_vimclient("UpdateOB('both')", obsname);
             if(verbose > 3)
                 Rprintf("B: vimcom_exec\n");
             break;
@@ -816,7 +852,7 @@ static void *vimcom_server_thread(void *arg)
                 REprintf("Warning: Deprecated message to vimcom: Save Tmux pane.\n");
                 break;
             case 2: // Confirm port number
-                sprintf(rep, "0.9-91 vimcom.plus %s", getenv("VIMINSTANCEID"));
+                sprintf(rep, "0.9-92 vimcom.plus %s", getenv("VIMINSTANCEID"));
                 if(getenv("VIMINSTANCEID") == NULL)
                     REprintf("vimcom: the environment variable VIMINSTANCEID is not set.\n");
                 break;
@@ -912,7 +948,7 @@ static void *vimcom_server_thread(void *arg)
                 }
 #ifdef WIN32
                 if(status > 1)
-                    vimcom_vimclient("UpdateOB('both')");
+                    vimcom_vimclient("UpdateOB('both')", obsname);
 #else
                 vimcom_fire();
 #endif
@@ -991,6 +1027,11 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw)
 
     if(getenv("VIMRPLUGIN_TMPDIR")){
         strncpy(tmpdir, getenv("VIMRPLUGIN_TMPDIR"), 500);
+        if(getenv("VIMEDITOR_SVRNM")){
+            strncpy(edsname, getenv("VIMEDITOR_SVRNM"), 127);
+        } else {
+            REprintf("vimcom: VIMEDITOR_SVRNM environment variable not found.");
+        }
     } else {
         if(verbose)
             REprintf("vimcom: It seems that R was not started by Vim. The communication with Vim-R-plugin will not work.\n");
@@ -1055,6 +1096,10 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw)
             loadedlibs[i] = (char*)malloc(64 * sizeof(char));
             loadedlibs[i][0] = 0;
         }
+        for(int i = 0; i < 64; i++){
+            builtlibs[i] = (char*)malloc(64 * sizeof(char));
+            builtlibs[i][0] = 0;
+        }
 
         Rf_addTaskCallback(vimcom_task, NULL, free, "VimComHandler", NULL);
 
@@ -1066,12 +1111,12 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw)
             REprintf("Error: Could not write to '%s'. [vimcom]\n", fn);
             return;
         }
-        fprintf(f, "vimcom.plus is running\n0.9-91\n%s\n", getenv("VIMINSTANCEID"));
+        fprintf(f, "vimcom.plus is running\n0.9-92\n%s\n", getenv("VIMINSTANCEID"));
         fclose(f);
 
         vimcom_initialized = 1;
         if(verbose > 0)
-            REprintf("vimcom.plus 0.9-91 loaded\n");
+            REprintf("vimcom.plus 0.9-92 loaded\n");
         if(verbose > 1)
             REprintf("    VIMTMPDIR = %s\n    VIMINSTANCEID = %s\n",
                     tmpdir, getenv("VIMINSTANCEID"));

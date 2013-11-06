@@ -125,6 +125,7 @@ vim.bol <- function(omnilist, packlist, allnames = FALSE) {
         obj.list <- objects(".GlobalEnv", all.names = allnames)
         l <- length(obj.list)
         if(l > 0)
+            # FIXME: Use lapply
             for(obj in obj.list) vim.omni.line(obj, ".GlobalEnv", ".GlobalEnv", 0)
         sink()
         writeLines(text = "Finished",
@@ -132,9 +133,9 @@ vim.bol <- function(omnilist, packlist, allnames = FALSE) {
         return(invisible(NULL))
     }
 
-    cat("Building files with lists of objects in loaded packages for omni completion and Object Browser...\n")
-
-    dir.create(omnilist, showWarnings = FALSE)
+    if(getOption("vimcom.verbose") > 3)
+        cat("Building files with lists of objects in loaded packages for",
+            "omni completion and Object Browser...\n")
 
     loadpack <- search()
     if(missing(packlist))
@@ -156,9 +157,25 @@ vim.bol <- function(omnilist, packlist, allnames = FALSE) {
         obj.list <- objects(curpack, all.names = allnames)
         l <- length(obj.list)
         if(l > 0){
-            sink(paste(omnilist, "omnils_", curlib, sep = ""), append = FALSE)
+            sink(omnilist, append = FALSE)
+            # FIXME: Use lapply
             for(obj in obj.list) vim.omni.line(obj, curpack, curlib, 0)
             sink()
+            # Build list of functions for syntax highlight
+            fl <- readLines(omnilist)
+            fl <- fl[grep("\x06function\x06function", fl)]
+            fl <- sub("\x06.*", "", fl)
+            fl <- fl[!grepl("[<%\\[\\+\\*&=\\$:{|@\\(\\^>/~!]", fl)]
+            fl <- fl[!grepl("-", fl)]
+            if(length(fl) > 0){
+                fl <- paste("syn keyword rFunction", fl)
+                writeLines(text = fl, con = sub("omnils_", "fun_", omnilist))
+            } else {
+                writeLines(text = '" No functions found.', con = sub("omnils_", "fun_", omnilist))
+            }
+        } else {
+            writeLines(text = '', con = omnilist)
+            writeLines(text = '" No functions found.', con = sub("omnils_", "fun_", omnilist))
         }
         if(needunload){
             cat("Detaching '", curlib, "'...\n", sep = "")
@@ -168,7 +185,34 @@ vim.bol <- function(omnilist, packlist, allnames = FALSE) {
     }
     writeLines(text = "Finished",
                con = paste(Sys.getenv("VIMRPLUGIN_TMPDIR"), "/vimbol_finished", sep = ""))
-    cat("Finished.\n")
     return(invisible(NULL))
 }
 
+vim.buildomnils <- function(p){
+    pvi <- packageDescription(p)$Version
+    bdir <- paste0(Sys.getenv("VIMRPLUGIN_HOME"), "/r-plugin/objlist/")
+    odir <- dir(bdir)
+    pbuilt <- odir[grep(paste0("omnils_", p, "_"), odir)]
+    fbuilt <- odir[grep(paste0("fun_", p, "_"), odir)]
+    if(length(pbuilt) > 1 || length(fbuilt) > 1 || length(fbuilt) == 0){
+        unlink(paste0(bdir, c(pbuilt, fbuilt)))
+        pbuilt <- character()
+        fbuilt <- character()
+    }
+    if(length(pbuilt) > 0){
+        pvb <- sub(".*_.*_", "", pbuilt)
+        if(pvb == pvi){
+            if(getOption("vimcom.verbose") > 3)
+                cat("vimcom R: No need to build omnils:", p, pvi, "\n")
+        } else {
+            if(getOption("vimcom.verbose") > 3)
+                cat("vimcom R: omnils is outdated: ", p, " (", pvb, " x ", pvi, ")\n", sep = "")
+            unlink(c(pbuilt, fbuilt))
+            vim.bol(paste0(bdir, "omnils_", p, "_", pvi), p, getOption("vimcom.allnames"))
+        }
+    } else {
+        if(getOption("vimcom.verbose") > 3)
+            cat("vimcom R: omnils does not exist:", p, "\n")
+        vim.bol(paste0(bdir, "omnils_", p, "_", pvi), p, getOption("vimcom.allnames"))
+    }
+}

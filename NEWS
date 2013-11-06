@@ -1,3 +1,10 @@
+Version 0.9-92 (2013-11-06)
+
+  - Minor bug fixes.
+
+  - Dynamically update list of objects for omnicompletion and syntax
+    highlight.
+
 Version 0.9-91 (2013-11-01)
 
   - New option: vimcom.alwaysls (TRUE as default).
