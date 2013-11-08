@@ -511,6 +511,10 @@ static void vimcom_list_libs()
     strcat(prefixT, strT);
     strcat(prefixL, strL);
 
+    int save_opendf = opendf;
+    int save_openls = openls;
+    opendf = 0;
+    openls = 0;
     int i = 0;
     while(loadedlibs[i][0] != 0){
         libn = loadedlibs[i] + 8;
@@ -541,6 +545,8 @@ static void vimcom_list_libs()
         i++;
     }
     fclose(f);
+    opendf = save_opendf;
+    openls = save_openls;
     has_new_lib = 2;
 }
 

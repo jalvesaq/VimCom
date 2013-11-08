@@ -31,7 +31,8 @@
   \samp{list} are displayed only if it is explicitly opened (see the
   Vim-R-plugin documentation for details). The options \samp{vimcom.opendf}
   and \samp{vimcom.openlist} controls the initial status (either opened or
-  closed) of, respectively, data.frames and lists.
+  closed) of, respectively, data.frames and lists. The options are ignored for
+  data.frames and lists of libraries which are always started closed.
 
   If the value of \samp{vimcom.alwaysls} is \samp{FALSE}, the Object Browser
   will update the R's workspace list of objects only when the number of
