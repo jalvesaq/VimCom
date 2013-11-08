@@ -485,6 +485,7 @@ static void vimcom_list_libs()
     char *libn;
     char prefixT[64];
     char prefixL[64];
+    char libasenv[64];
     char fn[512];
     SEXP x, oblist, obj;
 
@@ -534,10 +535,11 @@ static void vimcom_list_libs()
             len1 = len - 1;
             for(int j = 0; j < len; j++){
                 PROTECT(obj = eval(lang3(install("get"), ScalarString(STRING_ELT(oblist, j)), x), R_GlobalEnv));
+                snprintf(libasenv, 63, "%s-", loadedlibs[i]);
                 if(j == len1)
-                    vimcom_browser_line(&obj, CHAR(STRING_ELT(oblist, j)), loadedlibs[i], prefixL, f);
+                    vimcom_browser_line(&obj, CHAR(STRING_ELT(oblist, j)), libasenv, prefixL, f);
                 else
-                    vimcom_browser_line(&obj, CHAR(STRING_ELT(oblist, j)), loadedlibs[i], prefixT, f);
+                    vimcom_browser_line(&obj, CHAR(STRING_ELT(oblist, j)), libasenv, prefixT, f);
                 UNPROTECT(1);
             }
             UNPROTECT(2);
