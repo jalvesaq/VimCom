@@ -167,6 +167,25 @@ vim.bol <- function(omnilist, packlist, allnames = FALSE) {
             fl <- sub("\x06.*", "", fl)
             fl <- fl[!grepl("[<%\\[\\+\\*&=\\$:{|@\\(\\^>/~!]", fl)]
             fl <- fl[!grepl("-", fl)]
+            if(curlib == "base"){
+                fl <- fl[!grepl("^array$", fl)]
+                fl <- fl[!grepl("^attach$", fl)]
+                fl <- fl[!grepl("^character$", fl)]
+                fl <- fl[!grepl("^complex$", fl)]
+                fl <- fl[!grepl("^data.frame$", fl)]
+                fl <- fl[!grepl("^detach$", fl)]
+                fl <- fl[!grepl("^double$", fl)]
+                fl <- fl[!grepl("^function$", fl)]
+                fl <- fl[!grepl("^integer$", fl)]
+                fl <- fl[!grepl("^library$", fl)]
+                fl <- fl[!grepl("^list$", fl)]
+                fl <- fl[!grepl("^logical$", fl)]
+                fl <- fl[!grepl("^matrix$", fl)]
+                fl <- fl[!grepl("^numeric$", fl)]
+                fl <- fl[!grepl("^require$", fl)]
+                fl <- fl[!grepl("^source$", fl)]
+                fl <- fl[!grepl("^vector$", fl)]
+            }
             if(length(fl) > 0){
                 fl <- paste("syn keyword rFunction", fl)
                 writeLines(text = fl, con = sub("omnils_", "fun_", omnilist))
