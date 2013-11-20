@@ -473,7 +473,8 @@ static int vimcom_checklibs()
         fprintf(f, "%s\n", builtlibs[i]);
     }
     fclose(f);
-    vimcom_vimclient("RFillLibList()", edsname);
+    if(edsname[0])
+        vimcom_vimclient("RFillLibList()", edsname);
 
     return(newnlibs);
 }
@@ -1038,7 +1039,8 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw)
         if(getenv("VIMEDITOR_SVRNM")){
             strncpy(edsname, getenv("VIMEDITOR_SVRNM"), 127);
         } else {
-            REprintf("vimcom: VIMEDITOR_SVRNM environment variable not found.");
+            if(verbose)
+                REprintf("vimcom: VIMEDITOR_SVRNM environment variable not found.\n");
         }
     } else {
         if(verbose)
