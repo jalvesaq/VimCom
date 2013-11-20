@@ -1,10 +1,25 @@
 
-vim.pager <- function(files, header, title, delete.file)
+vim.pgr <- function(files, header, title, delete.file)
 {
     if(Sys.getenv("VIMRPLUGIN_TMPDIR") == "")
         stop("VIMRPLUGIN_TMPDIR not set.")
     file.copy(files[1],
               paste(Sys.getenv("VIMRPLUGIN_TMPDIR"), "/Rdoc", sep = ""))
+}
+
+vim.pager <- function(files, header, title, delete.file)
+{
+    if(Sys.getenv("VIM_PANE") == "")
+        stop("VIM_PANE not set.")
+
+    keyword <- sub(".* '", "", title)
+    keyword <- sub(".* \u2018", "", keyword)
+    keyword <- sub("'", "", keyword)
+    keyword <- sub("\u2019", "", keyword)
+
+    system(paste0("tmux set-buffer '\u001c\u000e:Rhelp ", keyword, "\u000d'",
+                  " && tmux select-pane -t ", Sys.getenv("VIM_PANE"),
+                  " && tmux paste-buffer -t ", Sys.getenv("VIM_PANE")))
 }
 
 vim.help <- function(topic, w, classfor, package)
@@ -36,7 +51,7 @@ vim.help <- function(topic, w, classfor, package)
 
     oldpager <- getOption("pager")
     on.exit(options(pager = oldpager), add = TRUE)
-    options(pager = vim.pager)
+    options(pager = vim.pgr)
 
     if(missing(package))
         h <- help(topic, help_type = "text")
