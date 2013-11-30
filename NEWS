@@ -1,9 +1,11 @@
-Version 0.9-92 (2013-11-06)
+Version 0.9-92 (2013-11-30)
 
   - Minor bug fixes.
 
   - Dynamically update list of objects for omnicompletion and syntax
     highlight.
+
+  - New function vim.pager() shows the result of help() in a Vim's buffer.
 
 Version 0.9-91 (2013-11-01)
 
