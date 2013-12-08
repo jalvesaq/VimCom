@@ -42,6 +42,8 @@ static int nlibs = 0;
 static int nobjs = 0;
 static char obsname[128];
 static char edsname[128];
+static char liblist[512];
+static char globenv[512];
 static char strL[16];
 static char strT[16];
 static char tmpdir[512];
@@ -375,15 +377,12 @@ static void vimcom_list_env()
     if(verbose > 1 && objbr_auto)
         Rprintf("Current number of Objects: %d\n", nobjs);
 
-    char fn[512];
-
     if(tmpdir[0] == 0)
         return;
 
-    snprintf(fn, 510, "%s/globenv_%s", tmpdir, obsname);
-    FILE *f = fopen(fn, "w");
+    FILE *f = fopen(globenv, "w");
     if(f == NULL){
-        REprintf("Error: Could not write to '%s'. [vimcom]\n", fn);
+        REprintf("Error: Could not write to '%s'. [vimcom]\n", globenv);
         return;
     }
 
@@ -487,7 +486,6 @@ static void vimcom_list_libs()
     char prefixT[64];
     char prefixL[64];
     char libasenv[64];
-    char fn[512];
     SEXP x, oblist, obj;
 
     if(tmpdir[0] == 0)
@@ -500,10 +498,9 @@ static void vimcom_list_libs()
     else
         nlibs = newnlibs;
 
-    snprintf(fn, 510, "%s/liblist_%s", tmpdir, obsname);
-    FILE *f = fopen(fn, "w");
+    FILE *f = fopen(liblist, "w");
     if(f == NULL){
-        REprintf("Error: Could not write to '%s'. [vimcom]\n", fn);
+        REprintf("Error: Could not write to '%s'. [vimcom]\n", liblist);
         return;
     }
     fprintf(f, "Libraries | .GlobalEnv\n\n");
@@ -861,7 +858,7 @@ static void *vimcom_server_thread(void *arg)
                 REprintf("Warning: Deprecated message to vimcom: Save Tmux pane.\n");
                 break;
             case 2: // Confirm port number
-                sprintf(rep, "0.9-92 vimcom.plus %s", getenv("VIMINSTANCEID"));
+                sprintf(rep, "0.9-93 vimcom.plus %s", getenv("VIMINSTANCEID"));
                 if(getenv("VIMINSTANCEID") == NULL)
                     REprintf("vimcom: the environment variable VIMINSTANCEID is not set.\n");
                 break;
@@ -1056,6 +1053,9 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw)
             REprintf("vimcom: vimremote_init() failed.\n");
     }
 
+    snprintf(liblist, 510, "%s/liblist_%s", tmpdir, getenv("VIMINSTANCEID"));
+    snprintf(globenv, 510, "%s/globenv_%s", tmpdir, getenv("VIMINSTANCEID"));
+
     char envstr[1024];
     envstr[0] = 0;
     if(getenv("LC_MESSAGES"))
@@ -1121,12 +1121,12 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw)
             REprintf("Error: Could not write to '%s'. [vimcom]\n", fn);
             return;
         }
-        fprintf(f, "vimcom.plus is running\n0.9-92\n%s\n", getenv("VIMINSTANCEID"));
+        fprintf(f, "vimcom.plus is running\n0.9-93\n%s\n", getenv("VIMINSTANCEID"));
         fclose(f);
 
         vimcom_initialized = 1;
         if(verbose > 0)
-            REprintf("vimcom.plus 0.9-92 loaded\n");
+            REprintf("vimcom.plus 0.9-93 loaded\n");
         if(verbose > 1)
             REprintf("    VIMTMPDIR = %s\n    VIMINSTANCEID = %s\n",
                     tmpdir, getenv("VIMINSTANCEID"));
