@@ -226,7 +226,7 @@ vim.buildomnils <- function(p){
         } else {
             if(getOption("vimcom.verbose") > 3)
                 cat("vimcom R: omnils is outdated: ", p, " (", pvb, " x ", pvi, ")\n", sep = "")
-            unlink(c(pbuilt, fbuilt))
+            unlink(c(paste0(bdir, pbuilt), paste0(bdir, fbuilt)))
             vim.bol(paste0(bdir, "omnils_", p, "_", pvi), p, getOption("vimcom.allnames"))
         }
     } else {
