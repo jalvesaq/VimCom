@@ -1,3 +1,7 @@
+Version 0.9-93 (2013-12-08)
+
+  - Change names of some temporary files to fix bug in Object Browser.
+
 Version 0.9-92 (2013-11-30)
 
   - Minor bug fixes.
