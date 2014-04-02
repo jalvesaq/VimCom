@@ -28,17 +28,17 @@
     if(is.null(getOption("vimcom.alwaysls")))
         options(vimcom.alwaysls = TRUE)
 
+}
+
+.onAttach <- function(libname, pkgname) {
     if(version$os == "mingw32")
         termenv <- "MinGW"
     else
         termenv <- Sys.getenv("TERM")
 
-
-    if(Sys.getenv("VIMRPLUGIN_HOME") != "")
+    if(interactive() && termenv != "" && termenv != "dumb" && Sys.getenv("VIMRPLUGIN_HOME") != ""){
         dir.create(paste0(Sys.getenv("VIMRPLUGIN_HOME"), "/r-plugin/objlist/"),
                    showWarnings = FALSE)
-
-    if(interactive() && termenv != "" && termenv != "dumb"){
         .C("vimcom_Start",
            as.integer(getOption("vimcom.verbose")),
            as.integer(getOption("vimcom.opendf")),
