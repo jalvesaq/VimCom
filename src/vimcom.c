@@ -865,11 +865,22 @@ static void *vimcom_server_thread(void *arg)
         }
 
         switch(buf[0]){
-            case 1: // Save Tmux pane on file
-                REprintf("Warning: Deprecated message to vimcom.plus: Save Tmux pane.\n");
+            case 1: // Update Object Browser (.GlobalEnv and Libraries)
+#ifdef WIN32
+                if(r_is_busy){
+                    strcpy(rep, "R is busy.");
+                } else {
+                    vimcom_list_env();
+                    vimcom_list_libs();
+                }
+#else
+                flag_lsenv = 1;
+                flag_lslibs = 1;
+                vimcom_fire();
+#endif
                 break;
             case 2: // Confirm port number
-                sprintf(rep, "0.9-93 vimcom.plus %s", getenv("VIMINSTANCEID"));
+                sprintf(rep, "1.0-0 vimcom.plus %s", getenv("VIMINSTANCEID"));
                 if(getenv("VIMINSTANCEID") == NULL)
                     REprintf("vimcom.plus: the environment variable VIMINSTANCEID is not set.\n");
                 break;
@@ -884,7 +895,7 @@ static void *vimcom_server_thread(void *arg)
                 vimcom_fire();
 #endif
                 break;
-            case 4: // Update Object Browser (libraries)
+            case 4: // Update Object Browser (Libraries)
 #ifdef WIN32
                 if(r_is_busy)
                     strcpy(rep, "R is busy.");
@@ -1134,12 +1145,12 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw)
             REprintf("Error: Could not write to '%s'. [vimcom.plus]\n", fn);
             return;
         }
-        fprintf(f, "vimcom.plus is running\n0.9-93\n%s\n", getenv("VIMINSTANCEID"));
+        fprintf(f, "vimcom.plus is running\n1.0-0\n%s\n", getenv("VIMINSTANCEID"));
         fclose(f);
 
         vimcom_initialized = 1;
         if(verbose > 0)
-            REprintf("vimcom.plus 0.9-93 loaded\n");
+            REprintf("vimcom.plus 1.0-0 loaded\n");
         if(verbose > 1)
             REprintf("    VIMTMPDIR = %s\n    VIMINSTANCEID = %s\n",
                     tmpdir, getenv("VIMINSTANCEID"));
