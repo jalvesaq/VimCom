@@ -208,7 +208,7 @@ vim.bol <- function(omnilist, packlist, allnames = FALSE) {
 }
 
 vim.buildomnils <- function(p){
-    pvi <- packageDescription(p)$Version
+    pvi <- utils::packageDescription(p)$Version
     bdir <- paste0(Sys.getenv("VIMRPLUGIN_HOME"), "/r-plugin/objlist/")
     odir <- dir(bdir)
     pbuilt <- odir[grep(paste0("omnils_", p, "_"), odir)]
