@@ -1060,8 +1060,13 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw)
         if(getenv("VIMEDITOR_SVRNM")){
             strncpy(edsname, getenv("VIMEDITOR_SVRNM"), 127);
         } else {
-            if(verbose)
-                REprintf("vimcom.plus: VIMEDITOR_SVRNM environment variable not found.\n");
+            if(verbose > -1){
+                REprintf("vimcom.plus: Vim's servername is unknown, and, thus,\n");
+                REprintf("             R won't be able to send messages to Vim.\n");
+                REprintf("             Omnicompletion and syntax highlight may not work, and\n");
+                REprintf("             automatic update of Object Browser will not work.\n");
+                REprintf("             Did you start Vim with the --servername argument?\n");
+            }
         }
     } else {
         if(verbose)
