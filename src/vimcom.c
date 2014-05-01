@@ -1061,11 +1061,15 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw)
             strncpy(edsname, getenv("VIMEDITOR_SVRNM"), 127);
         } else {
             if(verbose > -1){
-                REprintf("vimcom.plus: Vim's servername is unknown, and, thus,\n");
+                if(Xdisp)
+                    REprintf("vimcom.plus: Vim's servername is unknown, so\n");
+                else
+                    REprintf("vimcom.plus: It seems that there is no X Server running, so\n");
                 REprintf("             R won't be able to send messages to Vim.\n");
                 REprintf("             Omnicompletion and syntax highlight may not work, and\n");
                 REprintf("             automatic update of Object Browser will not work.\n");
-                REprintf("             Did you start Vim with the --servername argument?\n");
+                if(Xdisp)
+                    REprintf("             Did you start Vim with the --servername argument?\n");
             }
         }
     } else {
