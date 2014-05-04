@@ -1062,14 +1062,11 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw)
         } else {
             if(verbose > -1){
                 if(Xdisp)
-                    REprintf("vimcom.plus: Vim's servername is unknown, so\n");
+                    REprintf("vimcom.plus: Vim's servername is unknown.\n");
                 else
-                    REprintf("vimcom.plus: It seems that there is no X Server running, so\n");
-                REprintf("             R won't be able to send messages to Vim.\n");
-                REprintf("             Omnicompletion and syntax highlight may not work, and\n");
-                REprintf("             automatic update of Object Browser will not work.\n");
-                if(Xdisp)
-                    REprintf("             Did you start Vim with the --servername argument?\n");
+                    REprintf("vimcom.plus: There is no X Server running.\n");
+                REprintf("             Please, in Vim, enter Normal mode and type:\n");
+                REprintf("             :h r-plugin-nox\n");
             }
         }
     } else {
