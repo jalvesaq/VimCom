@@ -106,7 +106,7 @@ static void vimcom_vimclient(const char *expr, const char *svrnm)
     if(vimremote_remoteexpr(svrnm, expr, &result) != 0)
         objbr_auto = 0;
     if(verbose > 3)
-        Rprintf("Remoteexpr result: %s\n", result == NULL ? "" : result);
+        Rprintf("Remoteexpr result: \"%s\"\n", result == NULL ? "NULL" : result);
     if(result)
         free(result);
 }
