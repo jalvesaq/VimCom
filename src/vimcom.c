@@ -243,7 +243,7 @@ static void vimcom_browser_line(SEXP *x, const char *xname, const char *curenv, 
     PROTECT(lablab = allocVector(STRSXP, 1));
     SET_STRING_ELT(lablab, 0, mkChar("label"));
     PROTECT(label = getAttrib(*x, lablab));
-    if(length(label) > 0)
+    if(length(label) > 0 && Rf_isValidString(label))
         fprintf(f, "%s\t%s\n", xname, CHAR(STRING_ELT(label, 0)));
     else
         fprintf(f, "%s\t\n", xname);
