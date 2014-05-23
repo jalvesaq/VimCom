@@ -28,6 +28,9 @@
     if(is.null(getOption("vimcom.alwaysls")))
         options(vimcom.alwaysls = TRUE)
 
+    if(is.null(getOption("vimcom.labelerr")))
+        options(vimcom.labelwarn = TRUE)
+
 }
 
 .onAttach <- function(libname, pkgname) {
@@ -45,6 +48,7 @@
            as.integer(getOption("vimcom.openlist")),
            as.integer(getOption("vimcom.allnames")),
            as.integer(getOption("vimcom.alwaysls")),
+           as.integer(getOption("vimcom.labelerr")),
            PACKAGE="vimcom.plus")
     }
 }

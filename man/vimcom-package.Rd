@@ -11,13 +11,14 @@
   control the vimcom behavior:
 
   \tabular{lll}{
-    Option          \tab Description                     \tab Default \cr
-    vimcom.verbose  \tab Print information.              \tab 0       \cr
-    vimcom.opendf   \tab Show data.frames elements.      \tab TRUE    \cr
-    vimcom.openlist \tab Show lists elements.            \tab FALSE   \cr
-    vimcom.allnames \tab Show .GlobalEnv hidden objects. \tab FALSE   \cr
-    vimcom.alwaysls \tab Update the Object Browser more. \tab TRUE    \cr
-    vimcom.texerrs  \tab Output TeX errors and warnings. \tab TRUE    \cr
+    Option          \tab Description                            \tab Default \cr
+    vimcom.verbose  \tab Print information.                     \tab 0       \cr
+    vimcom.opendf   \tab Show data.frames elements.             \tab TRUE    \cr
+    vimcom.openlist \tab Show lists elements.                   \tab FALSE   \cr
+    vimcom.allnames \tab Show .GlobalEnv hidden objects.        \tab FALSE   \cr
+    vimcom.alwaysls \tab Update the Object Browser more.        \tab TRUE    \cr
+    vimcom.labelerr \tab Warn if label is not \samp{character}. \tab TRUE    \cr
+    vimcom.texerrs  \tab Output TeX errors and warnings.        \tab TRUE    \cr
   }
 
   The \samp{vimcom.verbose} option controls the amount of debugging
@@ -40,6 +41,11 @@
   If the value of \samp{vimcom.alwaysls} is \samp{FALSE}, the Object Browser
   will update the R's workspace list of objects only when the number of
   objects changes.
+
+  If an object R's workspace has the attribute \samp{label}, it is displayed
+  in Vim's Object Browser. If the \samp{label} attribute is not of class
+  \samp{"character"}, and if  \samp{vimcom.labelerr} is \samp{TRUE}, an error
+  message is printed in the Object Browser.
 
   If the value of \samp{vimcom.texerrs} is \samp{TRUE}, LaTeX errors and
   warnings produced by the compilation of the .tex document into .pdf file

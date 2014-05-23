@@ -36,6 +36,7 @@ static int verbose = 0;
 static int opendf = 1;
 static int openls = 0;
 static int allnames = 0;
+static int labelerr = 1;
 static int vimcom_is_utf8;
 static int vimcom_failure = 0;
 static int nlibs = 0;
@@ -243,10 +244,18 @@ static void vimcom_browser_line(SEXP *x, const char *xname, const char *curenv, 
     PROTECT(lablab = allocVector(STRSXP, 1));
     SET_STRING_ELT(lablab, 0, mkChar("label"));
     PROTECT(label = getAttrib(*x, lablab));
-    if(length(label) > 0 && Rf_isValidString(label))
-        fprintf(f, "%s\t%s\n", xname, CHAR(STRING_ELT(label, 0)));
-    else
+    if(length(label) > 0){
+        if(Rf_isValidString(label)){
+            fprintf(f, "%s\t%s\n", xname, CHAR(STRING_ELT(label, 0)));
+        } else {
+            if(labelerr)
+                fprintf(f, "%s\tError: label isn't \"character\".\n", xname);
+            else
+                fprintf(f, "%s\t\n", xname);
+        }
+    } else {
         fprintf(f, "%s\t\n", xname);
+    }
     UNPROTECT(2);
 
     if(strcmp(xclass, "list") == 0 || strcmp(xclass, "data.frame") == 0 || strcmp(xclass, "s4") == 0){
@@ -1039,13 +1048,14 @@ static void *vimcom_server_thread(void *arg)
 }
 
 
-void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw)
+void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe)
 {
     verbose = *vrb;
     opendf = *odf;
     openls = *ols;
     allnames = *anm;
     always_ls_env = *alw;
+    labelerr = *lbe;
 #ifdef WIN32
     Xdisp = 1;
 #else
