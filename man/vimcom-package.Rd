@@ -27,7 +27,7 @@
   information verbosely which is useful only if you want either to fix a bug
   or to understand how vimcom works. If you run Vim in an terminal emulator
   without the \samp{--servername} argument, you have to set the value of
-  vimcom.verbose to -1 to avoid a message about Vim-R-plugin missing
+  vimcom.verbose to -1 to suppress the message about Vim-R-plugin missing
   features.
 
   By default, when a \samp{data.frame} appears in the Object Browser for the
