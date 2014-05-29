@@ -1068,7 +1068,14 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe)
     if(getenv("VIMRPLUGIN_TMPDIR")){
         strncpy(tmpdir, getenv("VIMRPLUGIN_TMPDIR"), 500);
         if(getenv("VIMEDITOR_SVRNM")){
-            strncpy(edsname, getenv("VIMEDITOR_SVRNM"), 127);
+            if(strcmp(getenv("VIMEDITOR_SVRNM"), "Mac\002Vim") == 0 && verbose > -1){
+                REprintf("vimcom.plus: Are you running MacVim?\n");
+                REprintf("             MacVim isn't fully supported by vimcom.plus.\n");
+                REprintf("             Please, in (Mac)Vim, enter Normal mode and type:\n");
+                REprintf("             :h r-plugin-nox\n");
+            } else {
+                strncpy(edsname, getenv("VIMEDITOR_SVRNM"), 127);
+            }
         } else {
             if(verbose > -1){
                 if(Xdisp)
