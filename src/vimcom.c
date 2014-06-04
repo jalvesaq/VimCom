@@ -1067,7 +1067,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe)
 
     if(getenv("VIMRPLUGIN_TMPDIR")){
         strncpy(tmpdir, getenv("VIMRPLUGIN_TMPDIR"), 500);
-        if(getenv("VIMEDITOR_SVRNM")){
+        if(getenv("VIMEDITOR_SVRNM") && strcmp(getenv("VIMEDITOR_SVRNM"), "NoServerName") != 0){
             if(strcmp(getenv("VIMEDITOR_SVRNM"), "Mac\002Vim") == 0 && verbose > -1){
                 REprintf("vimcom.plus: Are you running MacVim?\n");
                 REprintf("             MacVim isn't fully supported by vimcom.plus.\n");
@@ -1086,6 +1086,8 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe)
                 REprintf("             :h r-plugin-nox\n");
             }
         }
+        if(verbose > 1)
+            Rprintf("vimcom.plus: VIMEDITOR_SVRNM=%s\n", getenv("VIMEDITOR_SVRNM"));
     } else {
         if(verbose)
             REprintf("vimcom.plus: It seems that R was not started by Vim. The communication with Vim-R-plugin will not work.\n");
