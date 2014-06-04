@@ -1067,14 +1067,14 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe)
 
     if(getenv("VIMRPLUGIN_TMPDIR")){
         strncpy(tmpdir, getenv("VIMRPLUGIN_TMPDIR"), 500);
-        if(getenv("VIMEDITOR_SVRNM") && strcmp(getenv("VIMEDITOR_SVRNM"), "NoServerName") != 0){
-            if(strcmp(getenv("VIMEDITOR_SVRNM"), "Mac\002Vim") == 0 && verbose > -1){
-                REprintf("vimcom.plus: Are you running MacVim?\n");
-                REprintf("             MacVim isn't fully supported by vimcom.plus.\n");
-                REprintf("             Please, in (Mac)Vim, enter Normal mode and type:\n");
+        char *svrnm = getenv("VIMEDITOR_SVRNM");
+        if(svrnm && strcmp(svrnm, "NoServerName") != 0){
+            if((strcmp(svrnm, "MacVim") == 0 || strcmp(svrnm, "NeoVim") == 0) && verbose > -1){
+                REprintf("vimcom.plus: %s isn't fully supported by vimcom.plus.\n", svrnm);
+                REprintf("             Please, in %s, enter Normal mode and type:\n", svrnm);
                 REprintf("             :h r-plugin-nox\n");
             } else {
-                strncpy(edsname, getenv("VIMEDITOR_SVRNM"), 127);
+                strncpy(edsname, svrnm, 127);
             }
         } else {
             if(verbose > -1){
@@ -1087,7 +1087,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe)
             }
         }
         if(verbose > 1)
-            Rprintf("vimcom.plus: VIMEDITOR_SVRNM=%s\n", getenv("VIMEDITOR_SVRNM"));
+            Rprintf("vimcom.plus: VIMEDITOR_SVRNM=%s\n", svrnm);
     } else {
         if(verbose)
             REprintf("vimcom.plus: It seems that R was not started by Vim. The communication with Vim-R-plugin will not work.\n");
