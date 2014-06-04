@@ -36,7 +36,7 @@ vim.help <- function(topic, w, classfor, package)
         if(exists(".theclass")){
             for(i in 1:length(.theclass)){
                 newtopic <- paste(topic, ".", .theclass[i], sep = "")
-                if(length(help(newtopic))){
+                if(length(utils::help(newtopic))){
                     topic <- newtopic
                     break
                 }
@@ -54,11 +54,21 @@ vim.help <- function(topic, w, classfor, package)
     options(pager = vim.pgr)
 
     if(missing(package))
-        h <- help(topic, help_type = "text")
+        h <- utils::help(topic, help_type = "text")
     else
-        h <- help(topic, package = as.character(package), help_type = "text")
+        h <- utils::help(topic, package = as.character(package), help_type = "text")
 
     if(length(h) == 0){
+        # No help found, try devtools instead (if loaded)
+        if ("devtools" %in% loadedNamespaces()) {
+          if (( missing(package) && !is.null(devtools:::find_topic(topic))) ||
+              (!missing(package) && package %in% dev_packages())) {
+              # Note: devtools does not offer a selection if multiple topics are found
+              # in different packages. First match will be displayed.
+              dev_help(topic)
+              return("VIMHELP")
+          }
+        }
         msg <- paste('No documentation for "', topic, '" in loaded packages and libraries.', sep = "")
         return(msg)
     }
