@@ -1068,10 +1068,18 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe)
     if(getenv("VIMRPLUGIN_TMPDIR")){
         strncpy(tmpdir, getenv("VIMRPLUGIN_TMPDIR"), 500);
         char *svrnm = getenv("VIMEDITOR_SVRNM");
-        if(svrnm && strcmp(svrnm, "NoServerName") != 0){
+        if(svrnm){
             if((strcmp(svrnm, "MacVim") == 0 || strcmp(svrnm, "NeoVim") == 0) && verbose > -1){
                 REprintf("vimcom.plus: %s isn't fully supported by vimcom.plus.\n", svrnm);
                 REprintf("             Please, in %s, enter Normal mode and type:\n", svrnm);
+                REprintf("             :h r-plugin-nox\n");
+            } else if(strcmp(svrnm, "NoClientServer") == 0 && verbose > -1){
+                REprintf("vimcom.plus: Vim was built without the 'clientserver' feature.\n");
+                REprintf("             Please, in Vim, enter Normal mode and type:\n");
+                REprintf("             :h r-plugin-nox\n");
+            } else if(strcmp(svrnm, "NoServerName") == 0 && verbose > -1){
+                REprintf("vimcom.plus: Did you pass the --servername argument to Vim?\n");
+                REprintf("             Please, in Vim, enter Normal mode and type:\n");
                 REprintf("             :h r-plugin-nox\n");
             } else {
                 strncpy(edsname, svrnm, 127);
