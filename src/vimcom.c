@@ -1069,7 +1069,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe)
         strncpy(tmpdir, getenv("VIMRPLUGIN_TMPDIR"), 500);
         char *svrnm = getenv("VIMEDITOR_SVRNM");
         if(svrnm){
-            if((strcmp(svrnm, "MacVim") == 0 || strcmp(svrnm, "NeoVim") == 0) && verbose > -1){
+            if((strcmp(svrnm, "MacVim") == 0 || strcmp(svrnm, "Neovim") == 0) && verbose > -1){
                 REprintf("vimcom.plus: %s isn't fully supported by vimcom.plus.\n", svrnm);
                 REprintf("             Please, in %s, enter Normal mode and type:\n", svrnm);
                 REprintf("             :h r-plugin-nox\n");
