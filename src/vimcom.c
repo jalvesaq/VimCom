@@ -973,48 +973,50 @@ static void *vimcom_server_thread(void *arg)
         }
 
         switch(buf[0]){
-            case 1: // Update Object Browser (.GlobalEnv and Libraries)
-#ifdef WIN32
-                if(r_is_busy){
-                    strcpy(rep, "R is busy.");
-                } else {
-                    vimcom_list_env();
-                    vimcom_list_libs();
-                }
-#else
-                flag_lsenv = 1;
-                flag_lslibs = 1;
-                vimcom_fire();
-#endif
-                break;
-            case 2: // Confirm port number
+            case 1: // Confirm port number
                 sprintf(rep, "1.0-0 vimcom.plus %s", getenv("VIMINSTANCEID"));
                 if(getenv("VIMINSTANCEID") == NULL)
                     REprintf("vimcom.plus: the environment variable VIMINSTANCEID is not set.\n");
                 break;
-            case 3: // Update Object Browser (.GlobalEnv)
+            case 2: // Set Object Browser server name
+                if(Xdisp || Neovim){
+                    bbuf = buf;
+                    bbuf++;
+                    objbr_auto = 1;
+                    strcpy(obsname, bbuf);
+                    sprintf(rep, "Object Browser server name set to %s\n", obsname);
+                } else {
+                    strcpy(rep, "The DISPLAY variable is not set.");
+                }
+                break;
 #ifdef WIN32
-                if(r_is_busy)
+            case 3: // Set R as busy
+                r_is_busy = 1;
+                strcpy(rep, "R set as busy.");
+                break;
+#endif
+            case 4: // Stop automatic update of Object Browser info
+                objbr_auto = 0;
+                break;
+            case 5: // Update Object Browser (.GlobalEnv and Libraries)
+#ifdef WIN32
+                if(r_is_busy){
                     strcpy(rep, "R is busy.");
-                else
-                    vimcom_list_env();
+                } else {
+                    if(buf[1] == 'B' || buf[1] == 'G')
+                        vimcom_list_env();
+                    if(buf[1] == 'B' || buf[1] == 'L')
+                        vimcom_list_libs();
+                }
 #else
-                flag_lsenv = 1;
+                if(buf[1] == 'B' || buf[1] == 'G')
+                    flag_lsenv = 1;
+                if(buf[1] == 'B' || buf[1] == 'L')
+                    flag_lslibs = 1;
                 vimcom_fire();
 #endif
                 break;
-            case 4: // Update Object Browser (Libraries)
-#ifdef WIN32
-                if(r_is_busy)
-                    strcpy(rep, "R is busy.");
-                else
-                    vimcom_list_libs();
-#else
-                flag_lslibs = 1;
-                vimcom_fire();
-#endif
-                break;
-            case 5: // Toggle list status
+            case 6: // Toggle list status
 #ifdef WIN32
                 if(r_is_busy){
                     strcpy(rep, "R is busy.");
@@ -1045,7 +1047,7 @@ static void *vimcom_server_thread(void *arg)
 #endif
                 strcpy(rep, "OK");
                 break;
-            case 6: // Close/open all lists
+            case 7: // Close/open all lists
 #ifdef WIN32
                 if(r_is_busy){
                     strcpy(rep, "R is busy.");
@@ -1091,26 +1093,6 @@ static void *vimcom_server_thread(void *arg)
                 vimcom_fire();
 #endif
                 break;
-            case 7: // Set Object Browser server name
-                if(Xdisp || Neovim){
-                    bbuf = buf;
-                    bbuf++;
-                    objbr_auto = 1;
-                    strcpy(obsname, bbuf);
-                    sprintf(rep, "Object Browser server name set to %s\n", obsname);
-                } else {
-                    strcpy(rep, "The DISPLAY variable is not set.");
-                }
-                break;
-            case 8: // Stop automatic update of Object Browser info
-                objbr_auto = 0;
-                break;
-#ifdef WIN32
-            case 9: // Set R as busy
-                r_is_busy = 1;
-                strcpy(rep, "R set as busy.");
-                break;
-#endif
             default: // eval expression
 #ifdef WIN32
                 if(r_is_busy)
