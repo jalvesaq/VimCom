@@ -639,6 +639,7 @@ SHELL'
 ac_subst_files=''
 ac_user_opts='
 enable_option_checking
+enable_clientserver
 with_x
 '
       ac_precious_vars='build_alias
@@ -1259,6 +1260,12 @@ if test -n "$ac_init_help"; then
      short | recursive ) echo "Configuration of vimcom 1.0-0:";;
    esac
   cat <<\_ACEOF
+
+Optional Features:
+  --disable-option-checking  ignore unrecognized --enable/--with options
+  --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
+  --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
+  --enable-clientserver   support Vim clientserver feature [yes]
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -1896,7 +1903,16 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-ac_ext=c
+# Check whether --enable-clientserver was given.
+if test "${enable_clientserver+set}" = set; then :
+  enableval=$enable_clientserver; want_clientserver="${enableval}"
+else
+  want_clientserver="yes"
+fi
+
+
+if test "x${want_clientserver}" = xyes; then
+    ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
@@ -3507,13 +3523,25 @@ fi
 
 fi
 
-
-XCFLAGS="$X_CFLAGS"
-
-XLIBS="-lX11 $X_EXTRA_LIBS $X_LIBS"
+    XCFLAGS="$X_CFLAGS"
+    XLIBS="-lX11 $X_EXTRA_LIBS $X_LIBS"
 
 
+    echo ""
+    echo "Information about X11:"
+    echo "    x_includes     : $x_includes"
+    echo "    x_libraries    : $x_libraries"
+    echo "    X_CFLAGS       : $X_CFLAGS"
+    echo "    X_PRE_LIBS     : $X_PRE_LIBS"
+    echo "    X_EXTRA_LIBS   : $X_EXTRA_LIBS"
+    echo "    X_LIBS         : $X_LIBS"
+    echo ""
+else
+    XCFLAGS="-DNEOVIM_ONLY $X_CFLAGS"
+    XLIBS="$X_LIBS"
 
+
+fi
 
 ac_config_files="$ac_config_files src/Makevars"
 
@@ -4672,14 +4700,4 @@ if test -n "$ac_unrecognized_opts" && test "$enable_option_checking" != no; then
 $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
 
-
-echo ""
-echo "Information about X11:"
-echo "    x_includes     : $x_includes"
-echo "    x_libraries    : $x_libraries"
-echo "    X_CFLAGS       : $X_CFLAGS"
-echo "    X_PRE_LIBS     : $X_PRE_LIBS"
-echo "    X_EXTRA_LIBS   : $X_EXTRA_LIBS"
-echo "    X_LIBS         : $X_LIBS"
-echo ""
 

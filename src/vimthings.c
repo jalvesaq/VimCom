@@ -3,6 +3,7 @@
  * available at http://www.vim.org/scripts/script.php?script_id=3482 */
 
 
+#ifndef NEOVIM_ONLY
 #include "vimthings.h"
 
 /************************************************************************
@@ -157,3 +158,4 @@ hex2nr(c)
     return c - '0';
 }
 
+#endif

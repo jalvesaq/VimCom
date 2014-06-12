@@ -2,6 +2,7 @@
  * by Yukihiro Nakadaira based on Vim source code. The vim-remote library is
  * available at http://www.vim.org/scripts/script.php?script_id=3482 */
 
+#ifndef NEOVIM_ONLY
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1289,5 +1290,6 @@ x_error_check(Display * UNUSED(dpy), XErrorEvent * UNUSED(error_event))
     return 0;
 }
 
+#endif
 #endif
 

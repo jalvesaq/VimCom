@@ -1,5 +1,4 @@
 
-
 #include <R.h>  /* to include Rconfig.h */
 #include <Rinternals.h>
 #include <R_ext/Parse.h>
@@ -26,13 +25,15 @@
 #include <pthread.h>
 #endif
 
+#ifndef NEOVIM_ONLY
 #include "vimremote.h"
+static int vimremote_initialized = 0;
+#endif
 
 static int Xdisp = 0;
 static int Neovim = 0;
 
 static int vimcom_initialized = 0;
-static int vimremote_initialized = 0;
 static int verbose = 0;
 static int opendf = 1;
 static int openls = 0;
@@ -89,6 +90,7 @@ static int sfd = -1;
 static pthread_t tid;
 #endif
 
+#ifndef NEOVIM_ONLY
 static void vimcom_vimclient(const char *expr, char *svrnm)
 {
     char *result = NULL;
@@ -115,6 +117,7 @@ static void vimcom_vimclient(const char *expr, char *svrnm)
     if(result)
         free(result);
 }
+#endif
 
 static void vimcom_nvimclient(const char *msg, char *srvnm)
 {
@@ -1137,6 +1140,12 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe)
     allnames = *anm;
     always_ls_env = *alw;
     labelerr = *lbe;
+
+#ifdef NEOVIM_ONLY
+    Xdisp = 1;
+    vimcom_client_ptr = vimcom_nvimclient;
+#else
+    vimcom_client_ptr = vimcom_vimclient;
 #ifdef WIN32
     Xdisp = 1;
 #else
@@ -1145,14 +1154,27 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe)
     else
         Xdisp = 0;
 #endif
-
-    vimcom_client_ptr = vimcom_vimclient;
+#endif
 
     if(getenv("VIMRPLUGIN_TMPDIR")){
         strncpy(tmpdir, getenv("VIMRPLUGIN_TMPDIR"), 500);
         char *svrnm = getenv("VIMEDITOR_SVRNM");
         if(svrnm){
-            if(strcmp(svrnm, "MacVim") == 0 && verbose > -1){
+            if(strstr(svrnm, "Neovim_")){
+                char *ptr = strstr(svrnm, "_");
+                ptr++;
+                strncpy(edsname, ptr, 127);
+                vimcom_client_ptr = vimcom_nvimclient;
+                Neovim = 1;
+                if(verbose > 1)
+                    Rprintf("Neovim editor server port: %d\n", atoi(edsname));
+            }
+#ifdef NEOVIM_ONLY
+            else {
+                REprintf("Warning: this version of vimcom.plus was built only for Neovim.\nThere is no support for either X11 or Windows 'clientserver' feature.\n");
+            }
+#else
+            else if(strcmp(svrnm, "MacVim") == 0 && verbose > -1){
                 REprintf("vimcom.plus: MacVim isn't fully supported by vimcom.plus.");
                 REprintf("             Please, in MacVim, enter Normal mode and type:\n");
                 REprintf("             :h r-plugin-nox\n");
@@ -1178,9 +1200,10 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe)
             } else {
                 strncpy(edsname, svrnm, 127);
             }
+#endif
         } else {
             if(verbose > -1)
-                REprintf("vimcom.plus: Vim's servername is unknown.\n");
+                REprintf("vimcom.plus: Vim's server is unknown.\n");
         }
         if(verbose > 1)
             Rprintf("vimcom.plus: VIMEDITOR_SVRNM=%s\n", svrnm);
@@ -1191,12 +1214,14 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe)
         return;
     }
 
+#ifndef NEOVIM_ONLY
     if(Xdisp){
         if(vimremote_init() == 0)
             vimremote_initialized = 1;
         else
             REprintf("vimcom.plus: vimremote_init() failed.\n");
     }
+#endif
 
     snprintf(liblist, 510, "%s/liblist_%s", tmpdir, getenv("VIMINSTANCEID"));
     snprintf(globenv, 510, "%s/globenv_%s", tmpdir, getenv("VIMINSTANCEID"));
@@ -1280,10 +1305,12 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe)
 
 void vimcom_Stop()
 {
+#ifndef NEOVIM_ONLY
     if(vimremote_initialized && vimremote_uninit() != 0){
         REprintf("Error: vimremote_uninit() failed.\n");
     }
     vimremote_initialized = 0;
+#endif
 
 #ifndef WIN32
     if(ih){
