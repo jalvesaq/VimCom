@@ -974,7 +974,7 @@ static void *vimcom_server_thread(void *arg)
 
         switch(buf[0]){
             case 1: // Confirm port number
-                sprintf(rep, "1.0-0 vimcom.plus %s", getenv("VIMINSTANCEID"));
+                sprintf(rep, "1.0-0_a1 vimcom.plus %s", getenv("VIMINSTANCEID"));
                 if(getenv("VIMINSTANCEID") == NULL)
                     REprintf("vimcom.plus: the environment variable VIMINSTANCEID is not set.\n");
                 break;
@@ -1266,12 +1266,12 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe)
             REprintf("Error: Could not write to '%s'. [vimcom.plus]\n", fn);
             return;
         }
-        fprintf(f, "vimcom.plus is running\n1.0-0\n%s\n", getenv("VIMINSTANCEID"));
+        fprintf(f, "vimcom.plus is running\n1.0-0_a1\n%s\n", getenv("VIMINSTANCEID"));
         fclose(f);
 
         vimcom_initialized = 1;
         if(verbose > 0)
-            REprintf("vimcom.plus 1.0-0 loaded\n");
+            REprintf("vimcom.plus 1.0-0_a1 loaded\n");
         if(verbose > 1)
             REprintf("    VIMTMPDIR = %s\n    VIMINSTANCEID = %s\n",
                     tmpdir, getenv("VIMINSTANCEID"));
