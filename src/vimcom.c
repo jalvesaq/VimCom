@@ -674,7 +674,6 @@ static void vimcom_eval_expr(const char *buf)
     SEXP cmdSexp, cmdexpr, ans;
     ParseStatus status;
     int er = 0;
-    int idx;
     char *ptr;
     char rprefix[16];
 
@@ -837,7 +836,7 @@ static void vimcom_server_thread(void *arg)
 static void *vimcom_server_thread(void *arg)
 #endif
 {
-    unsigned short bindportn = 9998;
+    unsigned short bindportn = 10000;
     ssize_t nsent;
     ssize_t nread;
     int bsize = 5012;
@@ -860,7 +859,7 @@ static void *vimcom_server_thread(void *arg)
         return;
     }
 
-    while(bindportn < 10100){
+    while(bindportn < 10049){
         bindportn++;
         sfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
         if (sfd == INVALID_SOCKET) {
@@ -911,7 +910,7 @@ static void *vimcom_server_thread(void *arg)
     hints.ai_next = NULL;
     rp = NULL;
     result = 1;
-    while(rp == NULL && bindportn < 10100){
+    while(rp == NULL && bindportn < 10049){
         bindportn++;
         sprintf(bindport, "%d", bindportn);
         result = getaddrinfo(NULL, bindport, &hints, &res);
@@ -941,6 +940,16 @@ static void *vimcom_server_thread(void *arg)
 
     if(verbose > 1)
         REprintf("vimcom.plus port: %d\n", bindportn);
+
+    if(Neovim){
+        snprintf(buf, 510, "ReceiveVimComStartMsg('vimcom.plus 1.0-0_a2 %s %d')",
+                getenv("VIMINSTANCEID"), bindportn);
+        vimcom_client_ptr(buf, edsname);
+#ifndef WIN32
+        flag_lslibs = 1;
+        vimcom_fire();
+#endif
+    }
 
     /* Read datagrams and reply to sender */
     for (;;) {
@@ -977,7 +986,7 @@ static void *vimcom_server_thread(void *arg)
 
         switch(buf[0]){
             case 1: // Confirm port number
-                sprintf(rep, "1.0-0_a1 vimcom.plus %s", getenv("VIMINSTANCEID"));
+                sprintf(rep, "1.0-0_a2 vimcom.plus %s", getenv("VIMINSTANCEID"));
                 if(getenv("VIMINSTANCEID") == NULL)
                     REprintf("vimcom.plus: the environment variable VIMINSTANCEID is not set.\n");
                 break;
@@ -1291,12 +1300,12 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe)
             REprintf("Error: Could not write to '%s'. [vimcom.plus]\n", fn);
             return;
         }
-        fprintf(f, "vimcom.plus is running\n1.0-0_a1\n%s\n", getenv("VIMINSTANCEID"));
+        fprintf(f, "vimcom.plus is running\n1.0-0_a2\n%s\n", getenv("VIMINSTANCEID"));
         fclose(f);
 
         vimcom_initialized = 1;
         if(verbose > 0)
-            REprintf("vimcom.plus 1.0-0_a1 loaded\n");
+            REprintf("vimcom.plus 1.0-0_a2 loaded\n");
         if(verbose > 1)
             REprintf("    VIMTMPDIR = %s\n    VIMINSTANCEID = %s\n",
                     tmpdir, getenv("VIMINSTANCEID"));
