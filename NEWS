@@ -1,7 +1,11 @@
-Version 1.0-0 (2014-04-02)
+Version 1.0-0 (2014-06-12)
 
  - Process message to completely update the Object Browser
    (libraries and .GlobalEnv).
+
+ - New option: vimcom.labelerr.
+
+ - Support Neovim.
 
 Version 0.9-93 (2014-02-01)
 

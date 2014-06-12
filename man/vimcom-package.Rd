@@ -28,7 +28,7 @@
   or to understand how vimcom works. If you run Vim in an terminal emulator
   without the \samp{--servername} argument, you have to set the value of
   vimcom.verbose to -1 to suppress the message about Vim-R-plugin missing
-  features.
+  features. Neovim does not require the \samp{--servername} argument.
 
   By default, when a \samp{data.frame} appears in the Object Browser for the
   first time, its elements are immediately displayed, but the elements of a
@@ -60,7 +60,7 @@
     if(interactive()){
       options(vimcom.verbose = 1,
               vimcom.texerrs = TRUE)
-      library(vimcom)
+      library(vimcom.plus)
     }
 }
 
