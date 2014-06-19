@@ -24,10 +24,20 @@ vim.primitive.args <- function(x)
     paste(f, collapse = "\x09")
 }
 
+vim.lib.list <- function(txt)
+{
+    f <- installed.packages()[ , 1]
+    paste(f[grep(txt, f)], collapse = "\x09")
+}
 
 # Adapted from: https://stat.ethz.ch/pipermail/ess-help/2011-March/006791.html
 vim.args <- function(funcname, txt, pkg = NULL, classfor)
 {
+
+    if (funcname == "require" || funcname == "library")
+    {
+        return(vim.lib.list(txt))
+    }
     frm <- NA
     funcmeth <- NA
     if(!missing(classfor) && vim.grepl("[[:punct:]]", funcname) == FALSE){
