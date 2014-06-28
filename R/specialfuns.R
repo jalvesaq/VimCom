@@ -26,8 +26,15 @@ vim.primitive.args <- function(x)
 
 
 # Adapted from: https://stat.ethz.ch/pipermail/ess-help/2011-March/006791.html
-vim.args <- function(funcname, txt, pkg = NULL, classfor)
+vim.args <- function(funcname, txt, pkg = NULL, classfor, firstLibArg = FALSE)
 {
+    # First argument of either library() or require():
+    if(firstLibArg){
+        p <- dir(.libPaths())
+        p <- p[grep(paste0("^", txt), p)]
+        return(paste0(p, collapse = "\x09"))
+    }
+
     frm <- NA
     funcmeth <- NA
     if(!missing(classfor) && vim.grepl("[[:punct:]]", funcname) == FALSE){

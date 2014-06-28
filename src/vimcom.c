@@ -30,6 +30,8 @@
 static int vimremote_initialized = 0;
 #endif
 
+#define VIMCOM_VERSION "1.0-0_a3"
+
 static int Xdisp = 0;
 static int Neovim = 0;
 
@@ -942,8 +944,8 @@ static void *vimcom_server_thread(void *arg)
         REprintf("vimcom.plus port: %d\n", bindportn);
 
     if(Neovim){
-        snprintf(buf, 510, "ReceiveVimComStartMsg('vimcom.plus 1.0-0_a2 %s %d')",
-                getenv("VIMINSTANCEID"), bindportn);
+        snprintf(buf, 510, "ReceiveVimComStartMsg('vimcom.plus %s %s %d')",
+                VIMCOM_VERSION, getenv("VIMINSTANCEID"), bindportn);
         vimcom_client_ptr(buf, edsname);
 #ifndef WIN32
         flag_lslibs = 1;
@@ -986,7 +988,7 @@ static void *vimcom_server_thread(void *arg)
 
         switch(buf[0]){
             case 1: // Confirm port number
-                sprintf(rep, "1.0-0_a2 vimcom.plus %s", getenv("VIMINSTANCEID"));
+                sprintf(rep, "%s vimcom.plus %s", VIMCOM_VERSION, getenv("VIMINSTANCEID"));
                 if(getenv("VIMINSTANCEID") == NULL)
                     REprintf("vimcom.plus: the environment variable VIMINSTANCEID is not set.\n");
                 break;
@@ -1300,12 +1302,12 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe)
             REprintf("Error: Could not write to '%s'. [vimcom.plus]\n", fn);
             return;
         }
-        fprintf(f, "vimcom.plus is running\n1.0-0_a2\n%s\n", getenv("VIMINSTANCEID"));
+        fprintf(f, "vimcom.plus is running\n%s\n%s\n", VIMCOM_VERSION, getenv("VIMINSTANCEID"));
         fclose(f);
 
         vimcom_initialized = 1;
         if(verbose > 0)
-            REprintf("vimcom.plus 1.0-0_a2 loaded\n");
+            REprintf("vimcom.plus %s loaded\n", VIMCOM_VERSION);
         if(verbose > 1)
             REprintf("    VIMTMPDIR = %s\n    VIMINSTANCEID = %s\n",
                     tmpdir, getenv("VIMINSTANCEID"));
