@@ -30,7 +30,7 @@
 static int vimremote_initialized = 0;
 #endif
 
-#define VIMCOM_VERSION "1.0-0_a3"
+#define VIMCOM_VERSION "1.0-0_a4"
 
 static int Xdisp = 0;
 static int Neovim = 0;
@@ -378,11 +378,11 @@ static void vimcom_browser_line(SEXP *x, const char *xname, const char *curenv, 
                 PROTECT(cmdexpr = R_ParseVector(cmdSexp, -1, &status, R_NilValue));
 
                 if (status != PARSE_OK) {
-                    fprintf(f, "vimcom.plus error: invalid value in slotNames(%s)\n", xname);
+                    fprintf(f, "vimcom error: invalid value in slotNames(%s)\n", xname);
                 } else {
                     PROTECT(ans = R_tryEval(VECTOR_ELT(cmdexpr, 0), R_GlobalEnv, &er));
                     if(er){
-                        fprintf(f, "vimcom.plus error: %s\n", xname);
+                        fprintf(f, "vimcom error: %s\n", xname);
                     } else {
                         len = length(ans);
                         if(len > 0){
@@ -394,7 +394,7 @@ static void vimcom_browser_line(SEXP *x, const char *xname, const char *curenv, 
                                 SET_STRING_ELT(cmdSexp2, 0, mkChar(buf));
                                 PROTECT(cmdexpr2 = R_ParseVector(cmdSexp2, -1, &status2, R_NilValue));
                                 if (status2 != PARSE_OK) {
-                                    fprintf(f, "vimcom.plus error: invalid code \"%s@%s\"\n", xname, ename);
+                                    fprintf(f, "vimcom error: invalid code \"%s@%s\"\n", xname, ename);
                                 } else {
                                     PROTECT(elmt = R_tryEval(VECTOR_ELT(cmdexpr2, 0), R_GlobalEnv, &er));
                                     if(i == len1)
@@ -472,7 +472,7 @@ static void vimcom_list_env()
 
     FILE *f = fopen(globenv, "w");
     if(f == NULL){
-        REprintf("Error: Could not write to '%s'. [vimcom.plus]\n", globenv);
+        REprintf("Error: Could not write to '%s'. [vimcom]\n", globenv);
         return;
     }
 
@@ -522,7 +522,7 @@ static int vimcom_checklibs()
 #ifdef WIN32
             if(tcltkerr == 0){
                 if(strstr(libn, "tcltk") != NULL){
-                    REprintf("Error: \"vimcom.plus\" and \"tcltk\" packages are incompatible!\n");
+                    REprintf("Error: \"vimcom\" and \"tcltk\" packages are incompatible!\n");
                     tcltkerr = 1;
                 }
             }
@@ -555,7 +555,7 @@ static int vimcom_checklibs()
     snprintf(fn, 510, "%s/libnames_%s", tmpdir, getenv("VIMINSTANCEID"));
     FILE *f = fopen(fn, "w");
     if(f == NULL){
-        REprintf("Error: Could not write to '%s'. [vimcom.plus]\n", fn);
+        REprintf("Error: Could not write to '%s'. [vimcom]\n", fn);
         return(newnlibs);
     }
     for(int i = 0; i < 64; i++){
@@ -595,7 +595,7 @@ static void vimcom_list_libs()
 
     FILE *f = fopen(liblist, "w");
     if(f == NULL){
-        REprintf("Error: Could not write to '%s'. [vimcom.plus]\n", liblist);
+        REprintf("Error: Could not write to '%s'. [vimcom]\n", liblist);
         return;
     }
     fprintf(f, "Libraries | .GlobalEnv\n\n");
@@ -616,7 +616,7 @@ static void vimcom_list_libs()
         if(vimcom_get_list_status(loadedlibs[i], "library") == 1){
 #ifdef WIN32
             if(tcltkerr){
-                REprintf("Error: Cannot open libraries due to conflict between \"vimcom.plus\" and \"tcltk\" packages.\n");
+                REprintf("Error: Cannot open libraries due to conflict between \"vimcom\" and \"tcltk\" packages.\n");
                 i++;
                 continue;
             }
@@ -655,19 +655,19 @@ static void vimcom_eval_expr(const char *buf)
 
     FILE *rep = fopen(fn, "w");
     if(rep == NULL){
-        REprintf("Error: Could not write to '%s'. [vimcom.plus]\n", fn);
+        REprintf("Error: Could not write to '%s'. [vimcom]\n", fn);
         return;
     }
 
 #ifdef WIN32
     if(tcltkerr){
-        fprintf(rep, "Error: \"vimcom.plus\" and \"tcltk\" packages are incompatible!\n");
+        fprintf(rep, "Error: \"vimcom\" and \"tcltk\" packages are incompatible!\n");
         return;
     } else {
         if(objbr_auto == 0)
             vimcom_checklibs();
         if(tcltkerr){
-            fprintf(rep, "Error: \"vimcom.plus\" and \"tcltk\" packages are incompatible!\n");
+            fprintf(rep, "Error: \"vimcom\" and \"tcltk\" packages are incompatible!\n");
             return;
         }
     }
@@ -813,7 +813,7 @@ static void vimcom_uih(void *data) {
         REprintf("vimcom_uih\n");
     char buf[16];
     if(read(ifd, buf, 1) < 1)
-        REprintf("vimcom.plus error: read < 1\n");
+        REprintf("vimcom error: read < 1\n");
     R_ToplevelExec(vimcom_exec, NULL);
     fired = 0;
 }
@@ -828,7 +828,7 @@ static void vimcom_fire()
     char buf[16];
     *buf = 0;
     if(write(ofd, buf, 1) <= 0)
-        REprintf("vimcom.plus error: write <= 0\n");
+        REprintf("vimcom error: write <= 0\n");
 }
 #endif
 
@@ -865,7 +865,7 @@ static void *vimcom_server_thread(void *arg)
         bindportn++;
         sfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
         if (sfd == INVALID_SOCKET) {
-            REprintf("Error: socket failed with error %d [vimcom.plus]\n", WSAGetLastError());
+            REprintf("Error: socket failed with error %d [vimcom]\n", WSAGetLastError());
             return;
         }
 
@@ -879,18 +879,18 @@ static void *vimcom_server_thread(void *arg)
         lastfail = WSAGetLastError();
         nfail++;
         if(verbose > 1)
-            REprintf("vimcom.plus: Could not bind to port %d [error  %d].\n", bindportn, lastfail);
+            REprintf("vimcom: Could not bind to port %d [error  %d].\n", bindportn, lastfail);
     }
     if(nfail > 0 && verbose > 0){
         if(nfail == 1)
-            REprintf("vimcom.plus: bind failed once with error %d.\n", lastfail);
+            REprintf("vimcom: bind failed once with error %d.\n", lastfail);
         else
-            REprintf("vimcom.plus: bind failed %d times and the last error was %d.\n", nfail, lastfail);
+            REprintf("vimcom: bind failed %d times and the last error was %d.\n", nfail, lastfail);
         if(nattp > nfail)
-            REprintf("vimcom.plus: finally, bind to port %d was successful.\n", bindportn);
+            REprintf("vimcom: finally, bind to port %d was successful.\n", bindportn);
     }
     if(nattp == nfail){
-        REprintf("Error: Could not bind. [vimcom.plus]\n");
+        REprintf("Error: Could not bind. [vimcom]\n");
         vimcom_failure = 1;
         return;
     }
@@ -917,7 +917,7 @@ static void *vimcom_server_thread(void *arg)
         sprintf(bindport, "%d", bindportn);
         result = getaddrinfo(NULL, bindport, &hints, &res);
         if(result != 0){
-            REprintf("Error at getaddrinfo: %s [vimcom.plus]\n", gai_strerror(result));
+            REprintf("Error at getaddrinfo: %s [vimcom]\n", gai_strerror(result));
             vimcom_failure = 1;
             return(NULL);
         }
@@ -934,17 +934,17 @@ static void *vimcom_server_thread(void *arg)
     }
 
     if (rp == NULL) {        /* No address succeeded */
-        REprintf("Error: Could not bind. [vimcom.plus]\n");
+        REprintf("Error: Could not bind. [vimcom]\n");
         vimcom_failure = 1;
         return(NULL);
     }
 #endif
 
     if(verbose > 1)
-        REprintf("vimcom.plus port: %d\n", bindportn);
+        REprintf("vimcom port: %d\n", bindportn);
 
     if(Neovim){
-        snprintf(buf, 510, "ReceiveVimComStartMsg('vimcom.plus %s %s %d')",
+        snprintf(buf, 510, "ReceiveVimComStartMsg('vimcom %s %s %d')",
                 VIMCOM_VERSION, getenv("VIMINSTANCEID"), bindportn);
         vimcom_client_ptr(buf, edsname);
 #ifndef WIN32
@@ -963,7 +963,7 @@ static void *vimcom_server_thread(void *arg)
         nread = recvfrom(sfd, buf, bsize, 0,
                 (SOCKADDR *) &peer_addr, &peer_addr_len);
         if (nread == SOCKET_ERROR) {
-            REprintf("vimcom.plus: recvfrom failed with error %d\n", WSAGetLastError());
+            REprintf("vimcom: recvfrom failed with error %d\n", WSAGetLastError());
             return;
         }
 #else
@@ -971,7 +971,7 @@ static void *vimcom_server_thread(void *arg)
                 (struct sockaddr *) &peer_addr, &peer_addr_len);
         if (nread == -1){
             if(verbose > 1)
-                REprintf("vimcom.plus: recvfrom failed\n");
+                REprintf("vimcom: recvfrom failed\n");
             continue;     /* Ignore failed request */
         }
 #endif
@@ -988,9 +988,9 @@ static void *vimcom_server_thread(void *arg)
 
         switch(buf[0]){
             case 1: // Confirm port number
-                sprintf(rep, "%s vimcom.plus %s", VIMCOM_VERSION, getenv("VIMINSTANCEID"));
+                sprintf(rep, "%s vimcom %s", VIMCOM_VERSION, getenv("VIMINSTANCEID"));
                 if(getenv("VIMINSTANCEID") == NULL)
-                    REprintf("vimcom.plus: the environment variable VIMINSTANCEID is not set.\n");
+                    REprintf("vimcom: the environment variable VIMINSTANCEID is not set.\n");
                 break;
             case 2: // Set Object Browser server name
                 if(Xdisp || Neovim){
@@ -1122,14 +1122,14 @@ static void *vimcom_server_thread(void *arg)
 
         nsent = strlen(rep);
         if (sendto(sfd, rep, nsent, 0, (struct sockaddr *) &peer_addr, peer_addr_len) != nsent)
-            REprintf("Error sending response. [vimcom.plus]\n");
+            REprintf("Error sending response. [vimcom]\n");
 
         if(verbose > 1)
             REprintf("VimCom Sent: %s\n", rep);
 
     }
 #ifdef WIN32
-    REprintf("vimcom.plus: Finished receiving. Closing socket.\n");
+    REprintf("vimcom: Finished receiving. Closing socket.\n");
     result = closesocket(sfd);
     if (result == SOCKET_ERROR) {
         REprintf("closesocket failed with error %d\n", WSAGetLastError());
@@ -1182,22 +1182,22 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe)
             }
 #ifdef NEOVIM_ONLY
             else {
-                REprintf("Warning: this version of vimcom.plus was built only for Neovim.\nThere is no support for either X11 or Windows 'clientserver' feature.\n");
+                REprintf("Warning: this version of vimcom was built only for Neovim.\nThere is no support for either X11 or Windows 'clientserver' feature.\n");
             }
 #else
             else if(strcmp(svrnm, "MacVim") == 0 && verbose > -1){
-                REprintf("vimcom.plus: MacVim isn't fully supported by vimcom.plus.");
+                REprintf("vimcom: MacVim isn't fully supported by vimcom.");
                 REprintf("             Please, in MacVim, enter Normal mode and type:\n");
                 REprintf("             :h r-plugin-nox\n");
             } else if(strcmp(svrnm, "NoClientServer") == 0 && verbose > -1){
-                REprintf("vimcom.plus: Vim was built without the 'clientserver' feature.\n");
+                REprintf("vimcom: Vim was built without the 'clientserver' feature.\n");
                 REprintf("             Please, in Vim, enter Normal mode and type:\n");
                 REprintf("             :h r-plugin-nox\n");
             } else if(strcmp(svrnm, "NoServerName") == 0 && verbose > -1){
                 if(Xdisp)
-                    REprintf("vimcom.plus: Did you pass the --servername argument to Vim?\n");
+                    REprintf("vimcom: Did you pass the --servername argument to Vim?\n");
                 else
-                    REprintf("vimcom.plus: There is no X Server running.\n");
+                    REprintf("vimcom: There is no X Server running.\n");
                 REprintf("             Please, in Vim, enter Normal mode and type:\n");
                 REprintf("             :h r-plugin-nox\n");
             } else if(strstr(svrnm, "Neovim_")){
@@ -1214,13 +1214,13 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe)
 #endif
         } else {
             if(verbose > -1)
-                REprintf("vimcom.plus: Vim's server is unknown.\n");
+                REprintf("vimcom: Vim's server is unknown.\n");
         }
         if(verbose > 1)
-            Rprintf("vimcom.plus: VIMEDITOR_SVRNM=%s\n", svrnm);
+            Rprintf("vimcom: VIMEDITOR_SVRNM=%s\n", svrnm);
     } else {
         if(verbose)
-            REprintf("vimcom.plus: It seems that R was not started by Vim. The communication with Vim-R-plugin will not work.\n");
+            REprintf("vimcom: It seems that R was not started by Vim. The communication with Vim-R-plugin will not work.\n");
         tmpdir[0] = 0;
         return;
     }
@@ -1230,7 +1230,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe)
         if(vimremote_init() == 0)
             vimremote_initialized = 1;
         else
-            REprintf("vimcom.plus: vimremote_init() failed.\n");
+            REprintf("vimcom: vimremote_init() failed.\n");
     }
 #endif
 
@@ -1299,15 +1299,15 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe)
         snprintf(fn, 510, "%s/vimcom_running", tmpdir);
         FILE *f = fopen(fn, "w");
         if(f == NULL){
-            REprintf("Error: Could not write to '%s'. [vimcom.plus]\n", fn);
+            REprintf("Error: Could not write to '%s'. [vimcom]\n", fn);
             return;
         }
-        fprintf(f, "vimcom.plus is running\n%s\n%s\n", VIMCOM_VERSION, getenv("VIMINSTANCEID"));
+        fprintf(f, "vimcom is running\n%s\n%s\n", VIMCOM_VERSION, getenv("VIMINSTANCEID"));
         fclose(f);
 
         vimcom_initialized = 1;
         if(verbose > 0)
-            REprintf("vimcom.plus %s loaded\n", VIMCOM_VERSION);
+            REprintf("vimcom %s loaded\n", VIMCOM_VERSION);
         if(verbose > 1)
             REprintf("    VIMTMPDIR = %s\n    VIMINSTANCEID = %s\n",
                     tmpdir, getenv("VIMINSTANCEID"));
@@ -1352,7 +1352,7 @@ void vimcom_Stop()
             loadedlibs[i] = NULL;
         }
         if(verbose)
-            REprintf("vimcom.plus stopped\n");
+            REprintf("vimcom stopped\n");
     }
     vimcom_initialized = 0;
 }

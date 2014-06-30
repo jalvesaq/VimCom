@@ -60,7 +60,7 @@
     if(interactive()){
       options(vimcom.verbose = 1,
               vimcom.texerrs = TRUE)
-      library(vimcom.plus)
+      library(vimcom)
     }
 }
 

@@ -8,7 +8,7 @@
 ###############################################################
 
 .onLoad <- function(libname, pkgname) {
-    library.dynam("vimcom.plus", pkgname, libname, local = FALSE)
+    library.dynam("vimcom", pkgname, libname, local = FALSE)
 
     if(is.null(getOption("vimcom.verbose")))
         options(vimcom.verbose = 0)
@@ -49,13 +49,13 @@
            as.integer(getOption("vimcom.allnames")),
            as.integer(getOption("vimcom.alwaysls")),
            as.integer(getOption("vimcom.labelerr")),
-           PACKAGE="vimcom.plus")
+           PACKAGE="vimcom")
     }
 }
 
 .onUnload <- function(libpath) {
-    .C("vimcom_Stop", PACKAGE="vimcom.plus")
+    .C("vimcom_Stop", PACKAGE="vimcom")
     Sys.sleep(1)
-    library.dynam.unload("vimcom.plus", libpath)
+    library.dynam.unload("vimcom", libpath)
 }
 
