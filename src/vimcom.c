@@ -23,6 +23,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <pthread.h>
+#include <signal.h>
 #endif
 
 #ifndef NEOVIM_ONLY
@@ -901,6 +902,14 @@ static void *vimcom_server_thread(void *arg)
     struct sockaddr_storage peer_addr;
     char bindport[16];
     socklen_t peer_addr_len = sizeof(struct sockaddr_storage);
+
+    // block SIGINT
+    {
+        sigset_t set;
+        sigemptyset(&set);
+        sigaddset(&set, SIGINT);
+        sigprocmask(SIG_BLOCK, &set, NULL);
+    }
 
     memset(&hints, 0, sizeof(struct addrinfo));
     hints.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
