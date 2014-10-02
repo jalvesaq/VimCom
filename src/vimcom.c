@@ -1121,7 +1121,6 @@ static void *vimcom_server_thread(void *arg)
                 bbuf++;
                 if(strstr(bbuf, getenv("VIMINSTANCEID")) == bbuf){
                     bbuf += strlen(getenv("VIMINSTANCEID"));
-                    REprintf("\n[%s]\n[%s]\n", buf, bbuf);
 #ifdef WIN32
                     if(r_is_busy)
                         strcpy(rep, "R is busy.");
