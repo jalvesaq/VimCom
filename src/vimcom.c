@@ -997,9 +997,17 @@ static void *vimcom_server_thread(void *arg)
 
         switch(buf[0]){
             case 1: // Confirm port number
-                sprintf(rep, "%s vimcom %s", VIMCOM_VERSION, getenv("VIMINSTANCEID"));
-                if(getenv("VIMINSTANCEID") == NULL)
+                if(getenv("VIMINSTANCEID") == NULL){
                     REprintf("vimcom: the environment variable VIMINSTANCEID is not set.\n");
+                } else {
+                    bbuf = buf;
+                    bbuf++;
+                    if(strstr(bbuf, getenv("VIMINSTANCEID")) == bbuf){
+                        sprintf(rep, "%s vimcom Correct_VIMINSTANCEID", VIMCOM_VERSION);
+                    } else {
+                        strcpy(rep, "What do you want?");
+                    }
+                }
                 break;
             case 2: // Set Object Browser server name
                 if(Xdisp || Neovim){
