@@ -924,7 +924,7 @@ static void *vimcom_server_thread(void *arg)
     while(rp == NULL && bindportn < 10049){
         bindportn++;
         sprintf(bindport, "%d", bindportn);
-        result = getaddrinfo(NULL, bindport, &hints, &res);
+        result = getaddrinfo("localhost", bindport, &hints, &res);
         if(result != 0){
             REprintf("Error at getaddrinfo: %s [vimcom]\n", gai_strerror(result));
             vimcom_failure = 1;
@@ -1116,16 +1116,27 @@ static void *vimcom_server_thread(void *arg)
                 vimcom_fire();
 #endif
                 break;
-            default: // eval expression
+            case 8: // eval expression
+                bbuf = buf;
+                bbuf++;
+                if(strstr(bbuf, getenv("VIMINSTANCEID")) == bbuf){
+                    bbuf += strlen(getenv("VIMINSTANCEID"));
+                    REprintf("\n[%s]\n[%s]\n", buf, bbuf);
 #ifdef WIN32
-                if(r_is_busy)
-                    strcpy(rep, "R is busy.");
-                else
-                    vimcom_eval_expr(buf);
+                    if(r_is_busy)
+                        strcpy(rep, "R is busy.");
+                    else
+                        vimcom_eval_expr(bbuf);
 #else
-                strncpy(flag_eval, buf, 510);
-                vimcom_fire();
+                    strncpy(flag_eval, bbuf, 510);
+                    vimcom_fire();
 #endif
+                } else {
+                    REprintf("\nvimcom: received invalid VIMINSTANCEID.\n");
+                }
+                break;
+            default: // do nothing
+                REprintf("\nError [vimcom]: Invalid message received: %s\n", buf);
                 break;
         }
 
