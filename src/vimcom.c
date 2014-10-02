@@ -1003,7 +1003,7 @@ static void *vimcom_server_thread(void *arg)
                     bbuf = buf;
                     bbuf++;
                     if(strstr(bbuf, getenv("VIMINSTANCEID")) == bbuf){
-                        sprintf(rep, "%s vimcom Correct_VIMINSTANCEID", VIMCOM_VERSION);
+                        sprintf(rep, "%s vimcom %s", VIMCOM_VERSION, getenv("VIMRPLUGINSECRET"));
                     } else {
                         strcpy(rep, "What do you want?");
                     }
