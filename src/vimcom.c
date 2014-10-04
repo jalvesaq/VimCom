@@ -677,21 +677,9 @@ static void vimcom_eval_expr(const char *buf)
     SEXP cmdSexp, cmdexpr, ans;
     ParseStatus status;
     int er = 0;
-    char *ptr;
-    char rprefix[16];
-
-    /* Useful prefix reply for Neovim */
-    ptr = (char*)buf;
-    rprefix[0] = 0;
-    if(buf[1] == 2){
-        rprefix[0] = buf[0];
-        rprefix[1] = 2;
-        rprefix[2] = 0;
-        ptr++; ptr++;
-    }
 
     PROTECT(cmdSexp = allocVector(STRSXP, 1));
-    SET_STRING_ELT(cmdSexp, 0, mkChar(ptr));
+    SET_STRING_ELT(cmdSexp, 0, mkChar(buf));
     PROTECT(cmdexpr = R_ParseVector(cmdSexp, -1, &status, R_NilValue));
 
     if (status != PARSE_OK) {
@@ -725,9 +713,6 @@ static void vimcom_eval_expr(const char *buf)
     }
     UNPROTECT(2);
     fclose(rep);
-
-    if(*rprefix && edsname[0] != 0 && *rprefix != 'I')
-        vimcom_client_ptr(rprefix, edsname);
 }
 
 Rboolean vimcom_task(SEXP expr, SEXP value, Rboolean succeeded,
