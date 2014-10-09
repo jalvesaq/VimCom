@@ -5,15 +5,19 @@
   Run the R function Sweave() or knit() and, then, the application pdflatex.
 }
 \usage{
-vim.interlace.rnoweb(rnowebfile, latexcmd = "pdflatex", bibtex = FALSE,
-           knit = FALSE, view = TRUE, quiet = TRUE,
+vim.interlace.rnoweb(rnowebfile, latexcmd, latexmk = TRUE,
+           synctex = TRUE, bibtex = FALSE, knit = TRUE,
+           buildpdf = TRUE, view = TRUE, quiet = TRUE,
            pdfquiet = FALSE, ...)
 }
 \arguments{
   \item{rnowebfile}{The path to the Rnoweb file.}
   \item{latexcmd}{The command to run on the generated .tex file.}
+  \item{latexmk}{Whether to run latexmk.}
+  \item{synctex}{Whether to compile the PDF with support to SyncTeX.}
   \item{bibtex}{Whether to run bibtex.}
   \item{knit}{Whether to use knitr instead of Sweave.}
+  \item{buildpdf}{Whether to compile the PDF.}
   \item{view}{Logical value indicating whether to show the generated PDF document.}
   \item{quiet}{Whether to pass \code{quiet = TRUE} to \link[tools]{texi2pdf} (Windows only).}
   \item{pdfquiet}{Whether to suppress output of application opening the PDF.}

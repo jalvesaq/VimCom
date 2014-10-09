@@ -28,8 +28,8 @@ vim.openpdf <- function(x, quiet = FALSE)
     }
 }
 
-vim.interlace.rnoweb <- function(rnowebfile, latexcmd = "pdflatex", bibtex = FALSE,
-                          knit = FALSE, view = TRUE, quiet = TRUE, pdfquiet = FALSE, ...)
+vim.interlace.rnoweb <- function(rnowebfile, latexcmd, latexmk = TRUE, synctex = TRUE, bibtex = FALSE,
+                          knit = TRUE, buildpdf = TRUE, view = TRUE, quiet = TRUE, pdfquiet = FALSE, ...)
 {
     Sres <- NA
 
@@ -42,15 +42,20 @@ vim.interlace.rnoweb <- function(rnowebfile, latexcmd = "pdflatex", bibtex = FAL
     }
 
     # Compile the .tex file
-    if(is.na(Sres)){
+    if(is.na(Sres) || !buildpdf){
         if(knit){
             if(!require(knitr))
                 stop("Please, install the 'knitr' package.")
+            if(synctex)
+                opts_knit$set(concordance = TRUE)
             Sres <- knit(rnowebfile, envir = globalenv())
         } else {
             Sres <- Sweave(rnowebfile, ...)
         }
     }
+
+    if(!buildpdf)
+        return(invisible(NULL))
 
     # Compile the .pdf
     if(exists('Sres')){
@@ -62,6 +67,19 @@ vim.interlace.rnoweb <- function(rnowebfile, latexcmd = "pdflatex", bibtex = FAL
             idx = !identical(.Platform$pkgType, "source")
             tools::texi2dvi(file = Sres, pdf = TRUE, index = idx, quiet = quiet)
         } else {
+            if(missing(latexcmd)){
+                if(latexmk){
+                    if(synctex)
+                        latexcmd = 'latexmk -pdflatex="pdflatex -file-line-error -synctex=1" -pdf'
+                    else
+                        latexcmd = 'latexmk -pdflatex="pdflatex -file-line-error" -pdf'
+                } else {
+                    if(synctex)
+                        latexcmd = "pdflatex -file-line-error -synctex=1"
+                    else
+                        latexcmd = "pdflatex -file-line-error"
+                }
+            }
             system(paste(latexcmd, Sres))
             if(bibtex){
                 system(paste("bibtex", sub("\\.tex$", ".aux", Sres)))
