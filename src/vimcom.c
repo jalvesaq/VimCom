@@ -1237,12 +1237,6 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe)
         return;
     }
 
-    /* Neovim requires an extra SIGWINCH to update the window dimensions after the Tmux split */
-    if(Neovim){
-        int notok = system("killall -s SIGWINCH nvim");
-        if(notok)
-            REprintf("Error sending SIGWINCH signal to nvim: %d\n", notok);
-    }
 #ifndef NEOVIM_ONLY
     if(Xdisp){
         if(vimremote_init() == 0)
