@@ -49,6 +49,7 @@ static int openclosel = 0;
 static int nobjs = 0;
 static char obsname[128];
 static char edsname[128];
+static char vimsecr[128];
 static char liblist[512];
 static char globenv[512];
 static char strL[16];
@@ -176,7 +177,9 @@ static void vimcom_nvimclient(const char *msg, char *srvnm)
 
     freeaddrinfo(result);	   /* No longer needed */
 
-    strcpy(finalmsg, "EXPR ");
+    /* Prefix VIMRPLUGIN_SECRET to msg to increase security.
+     * The vimclient does not need this because it is protect by the X server. */
+    strcpy(finalmsg, vimsecr);
     strncat(finalmsg, msg, 255);
     len = strlen(finalmsg);
     if (write(s, finalmsg, len) != len) {
@@ -988,7 +991,7 @@ static void *vimcom_server_thread(void *arg)
                     bbuf = buf;
                     bbuf++;
                     if(strstr(bbuf, getenv("VIMINSTANCEID")) == bbuf){
-                        sprintf(rep, "%s vimcom %s", VIMCOM_VERSION, getenv("VIMRPLUGINSECRET"));
+                        sprintf(rep, "%s vimcom %s", VIMCOM_VERSION, vimsecr);
                     } else {
                         strcpy(rep, "What do you want?");
                     }
@@ -1181,6 +1184,10 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe)
 
     if(getenv("VIMRPLUGIN_TMPDIR")){
         strncpy(tmpdir, getenv("VIMRPLUGIN_TMPDIR"), 500);
+        if(getenv("VIMRPLUGIN_SECRET"))
+            strncpy(vimsecr, getenv("VIMRPLUGIN_SECRET"), 127);
+        else
+            REprintf("vimcom: Environment variable VIMRPLUGIN_SECRET is missing.\n");
         char *svrnm = getenv("VIMEDITOR_SVRNM");
         if(svrnm){
             if(strstr(svrnm, "Neovim_")){
