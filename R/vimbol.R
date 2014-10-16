@@ -31,7 +31,9 @@ vim.grepl <- function(pattern, x) {
 
 vim.omni.line <- function(x, envir, printenv, curlevel) {
     if(curlevel == 0){
-        xx <- get(x, envir)
+        xx <- try(get(x, envir), silent = TRUE)
+        if(inherits(xx, "try-error"))
+            return(invisible(NULL))
     } else {
         x.clean <- gsub("$", "", x, fixed = TRUE)
         x.clean <- gsub("_", "", x.clean, fixed = TRUE)
