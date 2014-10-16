@@ -31,7 +31,7 @@
 static int vimremote_initialized = 0;
 #endif
 
-#define VIMCOM_VERSION "1.0-0"
+#define VIMCOM_VERSION "1.0-1"
 
 static int Xdisp = 0;
 static int Neovim = 0;
