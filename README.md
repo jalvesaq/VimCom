@@ -1,4 +1,4 @@
-# VimCom.plus
+# VimCom
 
 This is the development version of the R package "VimCom", which runs a server
 in R to receive messages from the [Vim-R-plugin]. This package has support for
@@ -27,7 +27,7 @@ emulator:
 ```sh
 git clone https://github.com/jalvesaq/VimCom.git
 R CMD build VimCom
-R CMD INSTALL vimcom_1.0-0.tar.gz
+R CMD INSTALL vimcom_1.0-1.tar.gz
 ```
 
 The communication with Neovim requires neither X11 nor Windows. Hence, if you
