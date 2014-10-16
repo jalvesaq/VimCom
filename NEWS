@@ -1,4 +1,10 @@
-Version 1.0-0 (2014-07-02)
+Version 1.0-1 (2014-10-16)
+
+ - Minor changes to support SyncTeX.
+
+ - Minor bug fixes.
+
+Version 1.0-0 (2014-10-08)
 
  - Change the package name back to "vimcom".
 
