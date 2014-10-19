@@ -7,11 +7,12 @@
   PDF if a LaTeX installation is not present.
 }
 \usage{
-vim.interlace.rrst(Rrstfile, view = TRUE, pdfquiet = FALSE,
-                   compiler = "rst2pdf", ...)
+vim.interlace.rrst(Rrstfile, rrstdir, view = TRUE,
+                   pdfquiet = FALSE, compiler = "rst2pdf", ...)
 }
 \arguments{
-  \item{Rrstfile}{The path to the Rrst file.}
+  \item{Rrstfile}{The Rrst file to be processed.}
+  \item{rrstdir}{The directory of the Rrst file.}
   \item{view}{Logical value indicating whether to show the generated PDF document.}
   \item{pdfquiet}{Whether to suppress output of application opening the PDF.}
   \item{compiler}{The compiler program to use for the rst to PDF conversion.}

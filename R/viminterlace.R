@@ -28,9 +28,13 @@ vim.openpdf <- function(x, quiet = FALSE)
     }
 }
 
-vim.interlace.rnoweb <- function(rnowebfile, latexcmd, latexmk = TRUE, synctex = TRUE, bibtex = FALSE,
+vim.interlace.rnoweb <- function(rnowebfile, rnwdir, latexcmd, latexmk = TRUE, synctex = TRUE, bibtex = FALSE,
                           knit = TRUE, buildpdf = TRUE, view = TRUE, quiet = TRUE, pdfquiet = FALSE, ...)
 {
+    oldwd <- getwd()
+    on.exit(setwd(oldwd))
+    setwd(rnwdir)
+
     Sres <- NA
 
     # Check whether the .tex was already compiled
@@ -98,11 +102,16 @@ vim.interlace.rnoweb <- function(rnowebfile, latexcmd, latexmk = TRUE, synctex =
     return(invisible(NULL))
 }
 
-vim.interlace.rrst <- function(Rrstfile, view = TRUE, pdfquiet = FALSE,
+vim.interlace.rrst <- function(Rrstfile, rrstdir, view = TRUE, pdfquiet = FALSE,
                                compiler = "rst2pdf", ...)
 {
     if(!require(knitr))
         stop("Please, install the 'knitr' package.")
+
+    oldwd <- getwd()
+    on.exit(setwd(oldwd))
+    setwd(rrstdir)
+
     knit2pdf(Rrstfile, compiler = compiler, ...)
     if (view) {
         Sys.sleep(0.2)
@@ -114,11 +123,16 @@ vim.interlace.rrst <- function(Rrstfile, view = TRUE, pdfquiet = FALSE,
     }
 }
 
-vim.interlace.rmd <- function(Rmdfile, view = TRUE, pdfquiet = FALSE,
+vim.interlace.rmd <- function(Rmdfile, rmddir, view = TRUE, pdfquiet = FALSE,
                               pandoc_args = "",  pdfout = "latex", ...)
 {
     if(!require(knitr))
         stop("Please, install the 'knitr' package.")
+
+    oldwd <- getwd()
+    on.exit(setwd(oldwd))
+    setwd(rmddir)
+
     knit(Rmdfile, ...)
     tex.file <- sub("[Rr]md", "tex", Rmdfile)
     pandoc.cmd <- paste("pandoc -s", pandoc_args ,"-f markdown -t", pdfout,
