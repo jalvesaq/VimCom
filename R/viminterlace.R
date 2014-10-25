@@ -13,23 +13,18 @@ vim.showTexErrors <- function(x)
     }
 }
 
-vim.openpdf <- function(x, quiet = FALSE)
+vim.openpdf <- function(x)
 {
-    pdfviewer <- getOption("pdfviewer")
     path <- sub("\\.tex$", ".pdf", x)
-    if(!identical(pdfviewer, "false")){
-        if(.Platform$OS.type == "windows" && identical(pdfviewer, file.path(R.home("bin"), "open.exe")))
-            shell.exec(path)
-        else 
-            if(quiet)
-                system2(pdfviewer, shQuote(path), wait = FALSE, stdout = FALSE, stderr = FALSE)
-            else
-                system2(pdfviewer, shQuote(path), wait = FALSE)
+    if(.Platform$OS.type == "windows" && identical(getOption("pdfviewer"), file.path(R.home("bin"), "open.exe"))){
+        shell.exec(path)
+    } else {
+        .C("vimcom_open_pdf", paste0("ROpenPDF('", path, "')"), PACKAGE="vimcom")
     }
 }
 
 vim.interlace.rnoweb <- function(rnowebfile, rnwdir, latexcmd, latexmk = TRUE, synctex = TRUE, bibtex = FALSE,
-                          knit = TRUE, buildpdf = TRUE, view = TRUE, quiet = TRUE, pdfquiet = FALSE, ...)
+                          knit = TRUE, buildpdf = TRUE, view = TRUE, quiet = TRUE, ...)
 {
     oldwd <- getwd()
     on.exit(setwd(oldwd))
@@ -92,17 +87,14 @@ vim.interlace.rnoweb <- function(rnowebfile, rnwdir, latexcmd, latexmk = TRUE, s
             }
         }
         if(view)
-            if(pdfquiet)
-                vim.openpdf(Sres, TRUE)
-            else
-                vim.openpdf(Sres)
+            vim.openpdf(Sres)
         if(getOption("vimcom.texerrs"))
             vim.showTexErrors(sub("\\.tex$", ".log", Sres))
     }
     return(invisible(NULL))
 }
 
-vim.interlace.rrst <- function(Rrstfile, rrstdir, view = TRUE, pdfquiet = FALSE,
+vim.interlace.rrst <- function(Rrstfile, rrstdir, view = TRUE,
                                compiler = "rst2pdf", ...)
 {
     if(!require(knitr))
@@ -116,14 +108,11 @@ vim.interlace.rrst <- function(Rrstfile, rrstdir, view = TRUE, pdfquiet = FALSE,
     if (view) {
         Sys.sleep(0.2)
         pdffile = sub('\\.Rrst$', ".pdf", Rrstfile, ignore.case = TRUE)
-        if(pdfquiet)
-            vim.openpdf(pdffile, TRUE)
-        else
-            vim.openpdf(pdffile)
+        vim.openpdf(pdffile)
     }
 }
 
-vim.interlace.rmd <- function(Rmdfile, rmddir, view = TRUE, pdfquiet = FALSE,
+vim.interlace.rmd <- function(Rmdfile, rmddir, view = TRUE,
                               pandoc_args = "",  pdfout = "latex", ...)
 {
     if(!require(knitr))
@@ -138,11 +127,10 @@ vim.interlace.rmd <- function(Rmdfile, rmddir, view = TRUE, pdfquiet = FALSE,
     pandoc.cmd <- paste("pandoc -s", pandoc_args ,"-f markdown -t", pdfout,
                         sub("[Rr]md", "md", Rmdfile), ">", tex.file)
     system(pandoc.cmd)
-    system(paste("pdflatex", tex.file, {if (pdfquiet) "> /dev/null" else ""}))
+    system(paste("pdflatex", tex.file))
     if (view) {
         Sys.sleep(.2)
         pdffile = sub('.[Rr]md$', ".pdf", Rmdfile, ignore.case=TRUE)
-        if(pdfquiet) vim.openpdf(pdffile, TRUE)
-        else vim.openpdf(pdffile)
+        vim.openpdf(pdffile)
     }
 }

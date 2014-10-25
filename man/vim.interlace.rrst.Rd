@@ -8,13 +8,12 @@
 }
 \usage{
 vim.interlace.rrst(Rrstfile, rrstdir, view = TRUE,
-                   pdfquiet = FALSE, compiler = "rst2pdf", ...)
+                   compiler = "rst2pdf", ...)
 }
 \arguments{
   \item{Rrstfile}{The Rrst file to be processed.}
   \item{rrstdir}{The directory of the Rrst file.}
   \item{view}{Logical value indicating whether to show the generated PDF document.}
-  \item{pdfquiet}{Whether to suppress output of application opening the PDF.}
   \item{compiler}{The compiler program to use for the rst to PDF conversion.}
   \item{\dots}{Further arguments to be passed to compiler (usually \code{rst2pdf} or \code{pdflatex}).}
 }

@@ -31,7 +31,7 @@
 static int vimremote_initialized = 0;
 #endif
 
-#define VIMCOM_VERSION "1.0-2"
+#define VIMCOM_VERSION "1.0-3"
 
 static int Xdisp = 0;
 static int Neovim = 0;
@@ -134,7 +134,7 @@ static void vimcom_nvimclient(const char *msg, char *srvnm)
     int srvport = atoi(srvnm);
 
     if(verbose > 2)
-        Rprintf("vimcom_nvimclient(%s): '%s' (%d)\n", msg, srvnm, atoi(srvnm));
+        Rprintf("vimcom_nvimclient(%s): '%s' (%d)\n", msg, srvnm, srvport);
     if(srvnm[0] == 0){
         if(verbose > 3)
             REprintf("vimcom_nvimclient() called although Vim servername is undefined\n");
@@ -187,6 +187,11 @@ static void vimcom_nvimclient(const char *msg, char *srvnm)
         objbr_auto = 0;
         return;
     }
+}
+
+void vimcom_open_pdf(char **cmd)
+{
+    vimcom_client_ptr(*cmd, edsname);
 }
 
 static void vimcom_toggle_list_status(const char *x)
