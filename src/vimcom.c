@@ -189,7 +189,7 @@ static void vimcom_nvimclient(const char *msg, char *srvnm)
     }
 }
 
-void vimcom_open_pdf(char **cmd)
+void vimcom_msg_to_vim(char **cmd)
 {
     vimcom_client_ptr(*cmd, edsname);
 }
