@@ -101,6 +101,7 @@ ShowTexErrors <- function(x)
 {
     l <- readLines(x)
     idx <- rep(FALSE, length(l))
+    idx[grepl("\\(\\./.*tex$", l, useBytes = TRUE)] <- TRUE
     idx[grepl("^(Over|Under)full \\\\(h|v)box ", l, useBytes = TRUE)] <- TRUE
     idx[grepl("^Class \\w+ (Error|Warning):", l, useBytes = TRUE)] <- TRUE
     idx[grepl("^LaTeX (Error|Warning):", l, useBytes = TRUE)] <- TRUE
@@ -108,6 +109,7 @@ ShowTexErrors <- function(x)
     idx[grepl("^No pages of output", l, useBytes = TRUE)] <- TRUE
     if(sum(idx) > 0){
         l <- l[idx]
+        l <- sub(".*\\((\\./.*tex)$", "\\1", l)
         l <- GetRnwLines(x, l)
         msg <- paste0("\nLaTeX errors and warnings:\n\n", paste(l, collapse = "\n"), "\n")
         cat(msg)
