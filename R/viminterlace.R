@@ -1,4 +1,103 @@
-vim.showTexErrors <- function(x)
+SyncTeX_readconc <- function(basenm)
+{
+    texidx <- 1
+    rnwidx <- 1
+    ntexln <- length(readLines(paste0(basenm, ".tex")))
+    lstexln <- 1:ntexln
+    lsrnwf <- lsrnwl <- rep(NA, ntexln)
+    conc <- readLines(paste0(basenm, "-concordance.tex"))
+    idx <- 1
+    maxidx <- length(conc) + 1
+    while(idx < maxidx && texidx < ntexln && length(grep("Sconcordance", conc[idx])) > 0){
+        curline <- sub("\\\\Sconcordance\\{concordance:", "", conc[idx])
+        texf <- sub('([^:]*):.*', '\\1', curline)
+        rnwf <- sub('[^:]*:([^:]*):.*', '\\1', curline)
+        idx <- idx + 1
+        concnum <- ""
+        while(idx < maxidx && length(grep("Sconcordance", conc[idx])) == 0){
+            concnum <- paste0(concnum, conc[idx])
+            idx <- idx + 1
+        }
+        concnum <- gsub('%', '', concnum)
+        concnum <- sub('\\}', '', concnum)
+        concl <- strsplit(concnum, " ")
+        concl <- as.numeric(concl[[1]])
+        ii <- 1
+        maxii <- length(concl) - 1
+        rnwl <- concl[1]
+        lsrnwl[texidx] <- rnwl
+        lsrnwf[texidx] <- rnwf
+        texidx <- texidx + 1
+        while(ii < maxii && texidx < ntexln){
+            ii <- ii + 1
+            lnrange <- 1:concl[ii]
+            ii <- ii + 1
+            for(iii in lnrange){
+                if(texidx >= ntexln)
+                    break
+                rnwl <- rnwl + concl[ii]
+                lsrnwl[texidx] <- rnwl
+                lsrnwf[texidx] <- rnwf
+                texidx <- texidx + 1
+            }
+        }
+    }
+    return(data.frame(texlnum = lstexln, rnwfile = lsrnwf, rnwline = lsrnwl, stringsAsFactors = FALSE))
+}
+
+GetRnwLines <- function(x, l)
+{
+    if(file.exists(sub(".log$", "-concordance.tex", x))){
+        conc <- SyncTeX_readconc(sub(".log$", "", x))
+        for(ii in 1:length(l)){
+            if(length(grep("line [0-9]", l[ii])) > 0){
+                texln <- as.numeric(sub(".*line ([0-9]*)", "\\1", l[ii]))
+                idx <- 1
+                while(idx < nrow(conc) && texln > conc$texlnum[idx]){
+                    idx <- idx + 1
+                    if(conc$texlnum[idx] >= texln){
+                        l[ii] <- sub("(.*) line ([0-9]*)",
+                                     paste0("\\1 line \\2 [",
+                                            conc$rnwfile[idx], ": ",
+                                            conc$rnwline[idx], "]"), l[ii])
+                        break
+                    }
+                }
+            } else if(length(grep("lines [0-9]*--[0-9]*", l[ii])) > 0){
+                texln1 <- as.numeric(sub(".*lines ([0-9]*)--.*", "\\1", l[ii]))
+                texln2 <- as.numeric(sub(".*lines [0-9]*--([0-9]*).*", "\\1", l[ii]))
+                rnwIdx1 <- NA
+                rnwIdx2 <- NA
+                idx <- 1
+                while(idx < nrow(conc) && texln1 > conc$texlnum[idx]){
+                    idx <- idx + 1
+                    if(conc$texlnum[idx] >= texln1){
+                        rnwIdx1 <- idx
+                        break
+                    }
+                }
+                idx <- 1
+                while(idx < nrow(conc) && texln2 > conc$texlnum[idx]){
+                    idx <- idx + 1
+                    if(conc$texlnum[idx] >= texln2){
+                        rnwIdx2 <- idx
+                        break
+                    }
+                }
+                if(!is.na(rnwIdx1) && !is.na(rnwIdx2)){
+                        l[ii] <- sub("(.*) lines ([0-9]*)--([0-9]*)",
+                                     paste0("\\1 lines \\2--\\3 [",
+                                            conc$rnwfile[rnwIdx1], ": ",
+                                            conc$rnwline[rnwIdx1], "--",
+                                            conc$rnwline[rnwIdx2], "]"), l[ii])
+                }
+            }
+        }
+    }
+    l
+}
+
+ShowTexErrors <- function(x)
 {
     l <- readLines(x)
     idx <- rep(FALSE, length(l))
@@ -8,12 +107,14 @@ vim.showTexErrors <- function(x)
     idx[grepl("^Package \\w+ (Error|Warning):", l, useBytes = TRUE)] <- TRUE
     idx[grepl("^No pages of output", l, useBytes = TRUE)] <- TRUE
     if(sum(idx) > 0){
-        msg <- paste0("\nLaTeX errors and warnings:\n\n", paste(l[idx], collapse = "\n"), "\n")
+        l <- l[idx]
+        l <- GetRnwLines(x, l)
+        msg <- paste0("\nLaTeX errors and warnings:\n\n", paste(l, collapse = "\n"), "\n")
         cat(msg)
     }
 }
 
-vim.openpdf <- function(x)
+OpenPDF <- function(x)
 {
     path <- sub("\\.tex$", ".pdf", x)
     if(.Platform$OS.type == "windows" && identical(getOption("pdfviewer"), file.path(R.home("bin"), "open.exe"))){
@@ -87,9 +188,9 @@ vim.interlace.rnoweb <- function(rnowebfile, rnwdir, latexcmd, latexmk = TRUE, s
             }
         }
         if(view)
-            vim.openpdf(Sres)
+            OpenPDF(Sres)
         if(getOption("vimcom.texerrs"))
-            vim.showTexErrors(sub("\\.tex$", ".log", Sres))
+            ShowTexErrors(sub("\\.tex$", ".log", Sres))
     }
     return(invisible(NULL))
 }
@@ -108,7 +209,7 @@ vim.interlace.rrst <- function(Rrstfile, rrstdir, view = TRUE,
     if (view) {
         Sys.sleep(0.2)
         pdffile = sub('\\.Rrst$', ".pdf", Rrstfile, ignore.case = TRUE)
-        vim.openpdf(pdffile)
+        OpenPDF(pdffile)
     }
 }
 
@@ -131,6 +232,6 @@ vim.interlace.rmd <- function(Rmdfile, rmddir, view = TRUE,
     if (view) {
         Sys.sleep(.2)
         pdffile = sub('.[Rr]md$', ".pdf", Rmdfile, ignore.case=TRUE)
-        vim.openpdf(pdffile)
+        OpenPDF(pdffile)
     }
 }
