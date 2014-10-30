@@ -99,19 +99,52 @@ GetRnwLines <- function(x, l)
 
 ShowTexErrors <- function(x)
 {
-    l <- readLines(x)
+    l <- readLines(x, encoding = "latin1")
+    llen <- length(l)
+    lf <- character(llen)
+    lev <- 1
+    levfile <- "Unknown"
+    fname <- NA
+    idx <- 1
+    while(idx < llen){
+        if(grepl("^(Over|Under)full \\\\(h|v)box ", l[idx])){
+            while(l[idx] != "" && idx < llen){
+                lf[idx] <- levfile[lev]
+                idx <- idx + 1
+            }
+        } else {
+            pb <- length(grep(28, charToRaw(l[idx]))) - length(grep(29, charToRaw(l[idx])))
+            if(pb > 0){
+                lev <- lev + pb
+                fname <- sub(".*\\(", "", l[idx])
+                levfile[lev] <- fname
+            } else if(pb < 0){
+                lev <- lev + pb
+            }
+        }
+        lf[idx] <- levfile[lev]
+        idx <- idx + 1
+    }
+
     idx <- rep(FALSE, length(l))
-    idx[grepl("\\(\\./.*tex$", l, useBytes = TRUE)] <- TRUE
     idx[grepl("^(Over|Under)full \\\\(h|v)box ", l, useBytes = TRUE)] <- TRUE
-    idx[grepl("^Class \\w+ (Error|Warning):", l, useBytes = TRUE)] <- TRUE
+    idx[grepl("^(Package|Class) \\w+ (Error|Warning):", l, useBytes = TRUE)] <- TRUE
     idx[grepl("^LaTeX (Error|Warning):", l, useBytes = TRUE)] <- TRUE
-    idx[grepl("^Package \\w+ (Error|Warning):", l, useBytes = TRUE)] <- TRUE
     idx[grepl("^No pages of output", l, useBytes = TRUE)] <- TRUE
+    if(sum(grepl("pdfTeX (error|warning)", l, useBytes = TRUE)) > 0)
+        has.pdfTeX.errors <- TRUE
+    else
+        has.pdfTeX.errors <- FALSE
+
     if(sum(idx) > 0){
         l <- l[idx]
-        l <- sub(".*\\((\\./.*tex)$", "\\1", l)
-        l <- GetRnwLines(x, l)
-        msg <- paste0("\nLaTeX errors and warnings:\n\n", paste(l, collapse = "\n"), "\n")
+        lf <- lf[idx]
+        ismaster <- grep(paste0("./", sub("\\.log$", ".tex", x)), lf)
+        if(length(ismaster) > 0)
+            l[ismaster] <- GetRnwLines(x, l[ismaster])
+        msg <- paste0('\nSelected lines of "', x, '":\n\n', paste(lf, l, sep = ": ", collapse = "\n"), "\n")
+        if(has.pdfTeX.errors)
+            msg <- paste0(msg, 'There are pdfTeX errors or warnings. See "', x, '" for details.\n')
         cat(msg)
     }
 }
