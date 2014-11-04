@@ -17,8 +17,7 @@ and Mac OS X), the X11 header libraries must be installed. Please access the
 The easiest way to install vimcom is to use the [devtools] package.
 
 ```s
-library(devtools)
-install_github('jalvesaq/VimCom')
+devtools::install_github("VimCom", "jalvesaq")
 ```
 
 To manually download and install VimCom, do the following in a terminal
@@ -26,8 +25,7 @@ emulator:
 
 ```sh
 git clone https://github.com/jalvesaq/VimCom.git
-R CMD build VimCom
-R CMD INSTALL vimcom_1.0-1.tar.gz
+R CMD INSTALL VimCom
 ```
 
 The communication with Neovim requires neither X11 nor Windows. Hence, if you
