@@ -6,14 +6,12 @@
   PDF. 
 }
 \usage{
-vim.interlace.rmd(Rmdfile, rmddir, view = TRUE,
-                  pandoc_args = "",  pdfout = "latex", ...)
+vim.interlace.rmd(Rmdfile, outform = NULL, rmddir, view = TRUE, ...)
 }
 \arguments{
   \item{Rmdfile}{The Rmd file to be processed.}
+  \item{outform}{R Markdown output format to convert to.}
   \item{rmddir}{The directory of the Rnoweb file.}
-  \item{view}{Logical value indicating whether to show the generated PDF document.}
-  \item{pandoc_args}{Arguments to pandoc.}
-  \item{pdfout}{Type of output.}
-  \item{\dots}{Further arguments to be passed to \code{knit()}.}
+  \item{view}{Logical value indicating whether to show the generated output.}
+  \item{\dots}{Further arguments to be passed to \code{render()}.}
 }

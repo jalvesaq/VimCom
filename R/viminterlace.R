@@ -157,6 +157,7 @@ OpenPDF <- function(x)
     } else {
         .C("vimcom_msg_to_vim", paste0("ROpenPDF('", getwd(), "/", path, "')"), PACKAGE="vimcom")
     }
+    return(invisible(NULL))
 }
 
 vim.interlace.rnoweb <- function(rnowebfile, rnwdir, latexcmd, latexmk = TRUE, synctex = TRUE, bibtex = FALSE,
@@ -182,7 +183,7 @@ vim.interlace.rnoweb <- function(rnowebfile, rnwdir, latexcmd, latexmk = TRUE, s
             if(!require(knitr))
                 stop("Please, install the 'knitr' package.")
             if(synctex)
-                opts_knit$set(concordance = TRUE)
+                knitr::opts_knit$set(concordance = TRUE)
             Sres <- knit(rnowebfile, envir = globalenv())
         } else {
             Sres <- Sweave(rnowebfile, ...)
@@ -240,7 +241,7 @@ vim.interlace.rrst <- function(Rrstfile, rrstdir, view = TRUE,
     on.exit(setwd(oldwd))
     setwd(rrstdir)
 
-    knit2pdf(Rrstfile, compiler = compiler, ...)
+    knitr::knit2pdf(Rrstfile, compiler = compiler, ...)
     if (view) {
         Sys.sleep(0.2)
         pdffile = sub('\\.Rrst$', ".pdf", Rrstfile, ignore.case = TRUE)
@@ -248,25 +249,31 @@ vim.interlace.rrst <- function(Rrstfile, rrstdir, view = TRUE,
     }
 }
 
-vim.interlace.rmd <- function(Rmdfile, rmddir, view = TRUE,
-                              pandoc_args = "",  pdfout = "latex", ...)
+vim.interlace.rmd <- function(Rmdfile, outform = NULL, rmddir, view = TRUE, ...)
 {
-    if(!require(knitr))
-        stop("Please, install the 'knitr' package.")
+    if(!require(rmarkdown))
+        stop("Please, install the 'rmarkdown' package.")
 
     oldwd <- getwd()
     on.exit(setwd(oldwd))
     setwd(rmddir)
 
-    knit(Rmdfile, ...)
-    tex.file <- sub("[Rr]md", "tex", Rmdfile)
-    pandoc.cmd <- paste("pandoc -s", pandoc_args ,"-f markdown -t", pdfout,
-                        sub("[Rr]md", "md", Rmdfile), ">", tex.file)
-    system(pandoc.cmd)
-    system(paste("pdflatex", tex.file))
-    if (view) {
-        Sys.sleep(.2)
-        pdffile = sub('.[Rr]md$', ".pdf", Rmdfile, ignore.case=TRUE)
-        OpenPDF(pdffile)
+    if(outform == "odt"){
+        res <- rmarkdown::render(Rmdfile, "html_document", ...)
+        system(paste('soffice --invisible --convert-to odt', res))
+    } else {
+        res <- rmarkdown::render(Rmdfile, outform, ...)
+    }
+
+    if(view){
+        if(outform == "html_document")
+            browseURL(res)
+        else
+            if(outform == "pdf_document" || outform == "beamer_presentation")
+                OpenPDF(sub(".*/", "", res))
+            else
+                if(outform == "odt")
+                    system(paste0("lowriter '", sub("\\.html$", ".odt'", res)))
     }
 }
+
