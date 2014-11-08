@@ -57,12 +57,12 @@ vim.help <- function(topic, w, classfor, package)
     if ("devtools" %in% loadedNamespaces()) {
         if (missing(package)) {
             if (!is.null(devtools:::find_topic(topic))) {
-                dev_help(topic)
+                devtools::dev_help(topic)
                 return("VIMHELP")
             }
         } else {
             if (package %in% devtools::dev_packages()) {
-                ret = try(dev_help(topic), silent = TRUE)
+                ret = try(devtools::dev_help(topic), silent = TRUE)
                 if (inherits(ret, "try-error"))
                     return(as.character(ret))
                 return("VIMHELP")
