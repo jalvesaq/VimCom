@@ -31,7 +31,7 @@
 static int vimremote_initialized = 0;
 #endif
 
-#define VIMCOM_VERSION "1.0-6"
+#define VIMCOM_VERSION "1.0-7"
 
 static int Xdisp = 0;
 static int Neovim = 0;
@@ -180,6 +180,7 @@ static void vimcom_nvimclient(const char *msg, char *srvnm)
     /* Prefix VIMRPLUGIN_SECRET to msg to increase security.
      * The vimclient does not need this because it is protect by the X server. */
     strcpy(finalmsg, vimsecr);
+    strncat(finalmsg, "call ", 255);
     strncat(finalmsg, msg, 255);
     len = strlen(finalmsg);
     if (write(s, finalmsg, len) != len) {
