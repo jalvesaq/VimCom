@@ -47,8 +47,8 @@ static int vimcom_failure = 0;
 static int nlibs = 0;
 static int openclosel = 0;
 static int nobjs = 0;
-static char obsname[128];
-static char edsname[128];
+static char obsrvr[128];
+static char edsrvr[128];
 static char vimsecr[128];
 static char liblist[512];
 static char globenv[512];
@@ -123,7 +123,7 @@ static void vimcom_vimclient(const char *expr, char *svrnm)
 }
 #endif
 
-static void vimcom_nvimclient(const char *msg, char *srvnm)
+static void vimcom_nvimclient(const char *msg, char *port)
 {
     struct addrinfo hints;
     struct addrinfo *result, *rp;
@@ -131,13 +131,13 @@ static void vimcom_nvimclient(const char *msg, char *srvnm)
     char finalmsg[256];
     int s, a;
     size_t len;
-    int srvport = atoi(srvnm);
+    int srvport = atoi(port);
 
     if(verbose > 2)
-        Rprintf("vimcom_nvimclient(%s): '%s' (%d)\n", msg, srvnm, srvport);
-    if(srvnm[0] == 0){
+        Rprintf("vimcom_nvimclient(%s): '%s' (%d)\n", msg, port, srvport);
+    if(port[0] == 0){
         if(verbose > 3)
-            REprintf("vimcom_nvimclient() called although Vim servername is undefined\n");
+            REprintf("vimcom_nvimclient() called although Neovim server port is undefined\n");
         return;
     }
 
@@ -192,7 +192,7 @@ static void vimcom_nvimclient(const char *msg, char *srvnm)
 
 void vimcom_msg_to_vim(char **cmd)
 {
-    vimcom_client_ptr(*cmd, edsname);
+    vimcom_client_ptr(*cmd, edsrvr);
 }
 
 static void vimcom_toggle_list_status(const char *x)
@@ -575,9 +575,9 @@ static int vimcom_checklibs()
     }
     fclose(f);
     if(verbose > 3)
-        Rprintf("vimcom_checklibs end: %s : %c\n", edsname, edsname[0]);
-    if(edsname[0] != 0)
-        vimcom_client_ptr("RFillLibList()", edsname);
+        Rprintf("vimcom_checklibs end: %s : %c\n", edsrvr, edsrvr[0]);
+    if(edsrvr[0] != 0)
+        vimcom_client_ptr("RFillLibList()", edsrvr);
 
     return(newnlibs);
 }
@@ -734,20 +734,20 @@ Rboolean vimcom_task(SEXP expr, SEXP value, Rboolean succeeded,
         vimcom_list_env();
         switch(has_new_lib + has_new_obj){
             case 1:
-                if(obsname[0] != 0)
-                    vimcom_client_ptr("UpdateOB('GlobalEnv')", obsname);
+                if(obsrvr[0] != 0)
+                    vimcom_client_ptr("UpdateOB('GlobalEnv')", obsrvr);
                 if(verbose > 3)
                     Rprintf("G: vimcom_task\n");
                 break;
             case 2:
-                if(obsname[0] != 0)
-                    vimcom_client_ptr("UpdateOB('libraries')", obsname);
+                if(obsrvr[0] != 0)
+                    vimcom_client_ptr("UpdateOB('libraries')", obsrvr);
                 if(verbose > 3)
                     Rprintf("L: vimcom_task\n");
                 break;
             case 3:
-                if(obsname[0] != 0)
-                    vimcom_client_ptr("UpdateOB('both')", obsname);
+                if(obsrvr[0] != 0)
+                    vimcom_client_ptr("UpdateOB('both')", obsrvr);
                 if(verbose > 3)
                     Rprintf("B: vimcom_task\n");
                 break;
@@ -777,20 +777,20 @@ static void vimcom_exec(){
         REprintf("vimcom_exec %d + %d\n", has_new_lib, has_new_obj);
     switch(has_new_lib + has_new_obj){
         case 1:
-            if(obsname[0] != 0)
-                vimcom_client_ptr("UpdateOB('GlobalEnv')", obsname);
+            if(obsrvr[0] != 0)
+                vimcom_client_ptr("UpdateOB('GlobalEnv')", obsrvr);
             if(verbose > 3)
                 Rprintf("G: vimcom_exec\n");
             break;
         case 2:
-            if(obsname[0] != 0)
-                vimcom_client_ptr("UpdateOB('libraries')", obsname);
+            if(obsrvr[0] != 0)
+                vimcom_client_ptr("UpdateOB('libraries')", obsrvr);
             if(verbose > 3)
                 Rprintf("L: vimcom_exec\n");
             break;
         case 3:
-            if(obsname[0] != 0)
-                vimcom_client_ptr("UpdateOB('both')", obsname);
+            if(obsrvr[0] != 0)
+                vimcom_client_ptr("UpdateOB('both')", obsrvr);
             if(verbose > 3)
                 Rprintf("B: vimcom_exec\n");
             break;
@@ -949,7 +949,7 @@ static void *vimcom_server_thread(void *arg)
     if(Neovim){
         snprintf(buf, 510, "ReceiveVimComStartMsg('vimcom %s %s %d')",
                 VIMCOM_VERSION, getenv("VIMINSTANCEID"), bindportn);
-        vimcom_client_ptr(buf, edsname);
+        vimcom_client_ptr(buf, edsrvr);
 #ifndef WIN32
         flag_lslibs = 1;
         vimcom_fire();
@@ -1008,8 +1008,8 @@ static void *vimcom_server_thread(void *arg)
                     bbuf = buf;
                     bbuf++;
                     objbr_auto = 1;
-                    strcpy(obsname, bbuf);
-                    sprintf(rep, "Object Browser server name set to %s\n", obsname);
+                    strcpy(obsrvr, bbuf);
+                    sprintf(rep, "Object Browser server name set to %s\n", obsrvr);
                 } else {
                     strcpy(rep, "The DISPLAY variable is not set.");
                 }
@@ -1112,8 +1112,8 @@ static void *vimcom_server_thread(void *arg)
 #endif
                 }
 #ifdef WIN32
-                if(status > 1 && obsname[0] != 0)
-                    vimcom_client_ptr("UpdateOB('both')", obsname);
+                if(status > 1 && obsrvr[0] != 0)
+                    vimcom_client_ptr("UpdateOB('both')", obsrvr);
 #else
                 vimcom_fire();
 #endif
@@ -1194,47 +1194,47 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe)
             strncpy(vimsecr, getenv("VIMRPLUGIN_SECRET"), 127);
         else
             REprintf("vimcom: Environment variable VIMRPLUGIN_SECRET is missing.\n");
-        char *svrnm = getenv("VIMEDITOR_SVRNM");
-        if(svrnm){
-            if(strstr(svrnm, "Neovim_")){
-                char *ptr = strstr(svrnm, "_");
+        char *srvr = getenv("VIMEDITOR_SVRNM");
+        if(srvr){
+            if(strstr(srvr, "Neovim_")){
+                char *ptr = strstr(srvr, "_");
                 ptr++;
-                strncpy(edsname, ptr, 127);
+                strncpy(edsrvr, ptr, 127);
                 vimcom_client_ptr = vimcom_nvimclient;
                 Neovim = 1;
                 if(verbose > 1)
-                    Rprintf("Neovim editor server port: %d\n", atoi(edsname));
+                    Rprintf("Neovim editor server port: %d\n", atoi(edsrvr));
             }
 #ifdef NEOVIM_ONLY
             else {
                 REprintf("Warning: this version of vimcom was built only for Neovim.\nThere is no support for either X11 or Windows 'clientserver' feature.\n");
             }
 #else
-            else if(strcmp(svrnm, "MacVim") == 0 && verbose > -1){
+            else if(strcmp(srvr, "MacVim") == 0 && verbose > -1){
                 REprintf("vimcom: MacVim isn't fully supported by vimcom.");
                 REprintf("             Please, in MacVim, enter Normal mode and type:\n");
                 REprintf("             :h r-plugin-nox\n");
-            } else if(strcmp(svrnm, "NoClientServer") == 0 && verbose > -1){
+            } else if(strcmp(srvr, "NoClientServer") == 0 && verbose > -1){
                 REprintf("vimcom: Vim was built without the 'clientserver' feature.\n");
                 REprintf("             Please, in Vim, enter Normal mode and type:\n");
                 REprintf("             :h r-plugin-nox\n");
-            } else if(strcmp(svrnm, "NoServerName") == 0 && verbose > -1){
+            } else if(strcmp(srvr, "NoServerName") == 0 && verbose > -1){
                 if(Xdisp)
                     REprintf("vimcom: Did you pass the --servername argument to Vim?\n");
                 else
                     REprintf("vimcom: There is no X Server running.\n");
                 REprintf("             Please, in Vim, enter Normal mode and type:\n");
                 REprintf("             :h r-plugin-nox\n");
-            } else if(strstr(svrnm, "Neovim_")){
-                char *ptr = strstr(svrnm, "_");
+            } else if(strstr(srvr, "Neovim_")){
+                char *ptr = strstr(srvr, "_");
                 ptr++;
-                strncpy(edsname, ptr, 127);
+                strncpy(edsrvr, ptr, 127);
                 vimcom_client_ptr = vimcom_nvimclient;
                 Neovim = 1;
                 if(verbose > 1)
-                    Rprintf("Neovim editor server port: %d\n", atoi(edsname));
+                    Rprintf("Neovim editor server port: %d\n", atoi(edsrvr));
             } else {
-                strncpy(edsname, svrnm, 127);
+                strncpy(edsrvr, srvr, 127);
             }
 #endif
         } else {
@@ -1242,7 +1242,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe)
                 REprintf("vimcom: Vim's server is unknown.\n");
         }
         if(verbose > 1)
-            Rprintf("vimcom: VIMEDITOR_SVRNM=%s\n", svrnm);
+            Rprintf("vimcom: VIMEDITOR_SVRNM=%s\n", srvr);
     } else {
         if(verbose)
             REprintf("vimcom: It seems that R was not started by Vim. The communication with Vim-R-plugin will not work.\n");
