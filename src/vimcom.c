@@ -144,7 +144,7 @@ static void vimcom_nvimclient(const char *msg, char *port)
     /* Obtain address(es) matching host/port */
 
     memset(&hints, 0, sizeof(struct addrinfo));
-    hints.ai_family = AF_UNSPEC;
+    hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_DGRAM;
     hints.ai_flags = 0;
     hints.ai_protocol = 0;
@@ -906,7 +906,7 @@ static void *vimcom_server_thread(void *arg)
     }
 
     memset(&hints, 0, sizeof(struct addrinfo));
-    hints.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
+    hints.ai_family = AF_INET;    /* Allow IPv4 or IPv6 */
     hints.ai_socktype = SOCK_DGRAM; /* Datagram socket */
     hints.ai_flags = AI_PASSIVE;    /* For wildcard IP address */
     hints.ai_protocol = 0;          /* Any protocol */
