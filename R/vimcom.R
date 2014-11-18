@@ -49,12 +49,16 @@
            as.integer(getOption("vimcom.allnames")),
            as.integer(getOption("vimcom.alwaysls")),
            as.integer(getOption("vimcom.labelerr")),
+           path.package("vimcom"),
            PACKAGE="vimcom")
     }
+    if(termenv == "NeovimTerm")
+        Sys.setenv(TERM="dumb")
 }
 
 .onUnload <- function(libpath) {
     .C("vimcom_Stop", PACKAGE="vimcom")
+    unlink(paste0(Sys.getenv("VIMRPLUGIN_TMPDIR"), "/vimcom_running_", Sys.getenv("VIMINSTANCEID")))
     Sys.sleep(1)
     library.dynam.unload("vimcom", libpath)
 }

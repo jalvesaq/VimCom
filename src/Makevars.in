@@ -1,2 +1,11 @@
 PKG_CPPFLAGS=@XCFLAGS@
 PKG_LIBS=@XLIBS@
+
+all: $(SHLIB) apps/nvimclient apps/nvimserver
+
+aaps/nvimclient: apps/nvimclient.c
+	$(CC) apps/nvimclient.c -o apps/nvimclient
+
+apps/nvimserver: apps/nvimserver.c
+	$(CC) apps/nvimserver.c -o apps/nvimserver
+

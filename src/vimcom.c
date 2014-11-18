@@ -31,7 +31,7 @@
 static int vimremote_initialized = 0;
 #endif
 
-#define VIMCOM_VERSION "1.1-0-dev1"
+#define VIMCOM_VERSION "1.1-0-dev2"
 
 static int Xdisp = 0;
 static int Neovim = 0;
@@ -55,6 +55,7 @@ static char globenv[512];
 static char strL[16];
 static char strT[16];
 static char tmpdir[512];
+static char vimcom_home[1024];
 static int objbr_auto = 0;
 static int has_new_lib = 0;
 static int has_new_obj = 0;
@@ -947,13 +948,21 @@ static void *vimcom_server_thread(void *arg)
         REprintf("vimcom port: %d\n", bindportn);
 
     if(Neovim){
-        snprintf(buf, 510, "ReceiveVimComStartMsg('vimcom %s %s %d')",
-                VIMCOM_VERSION, getenv("VIMINSTANCEID"), bindportn);
-        vimcom_client_ptr(buf, edsrvr);
 #ifndef WIN32
         flag_lslibs = 1;
         vimcom_fire();
 #endif
+    }
+
+    // Save a file to indicate that vimcom is running
+    char fn[512];
+    snprintf(fn, 510, "%s/vimcom_running_%s", tmpdir, getenv("VIMINSTANCEID"));
+    FILE *f = fopen(fn, "w");
+    if(f == NULL){
+        REprintf("Error: Could not write to '%s'. [vimcom]\n", fn);
+    } else {
+        fprintf(f, "%s\n%s\n%d\n", VIMCOM_VERSION, vimcom_home, bindportn);
+        fclose(f);
     }
 
     /* Read datagrams and reply to sender */
@@ -990,20 +999,17 @@ static void *vimcom_server_thread(void *arg)
         }
 
         switch(buf[0]){
-            case 1: // Confirm port number
-                if(getenv("VIMINSTANCEID") == NULL){
-                    REprintf("vimcom: the environment variable VIMINSTANCEID is not set.\n");
-                } else {
+            case 1: // Set Editor server name or port number
+                if(Xdisp || Neovim){
                     bbuf = buf;
                     bbuf++;
-                    if(strstr(bbuf, getenv("VIMINSTANCEID")) == bbuf){
-                        sprintf(rep, "%s vimcom %s", VIMCOM_VERSION, vimsecr);
-                    } else {
-                        strcpy(rep, "What do you want?");
-                    }
+                    strcpy(edsrvr, bbuf);
+                    sprintf(rep, "Editor server name set to %s\n", edsrvr);
+                } else {
+                    strcpy(rep, "The DISPLAY variable is not set.");
                 }
                 break;
-            case 2: // Set Object Browser server name
+            case 2: // Set Object Browser server name or port number
                 if(Xdisp || Neovim){
                     bbuf = buf;
                     bbuf++;
@@ -1164,7 +1170,7 @@ static void *vimcom_server_thread(void *arg)
 }
 
 
-void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe)
+void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe, char **pth)
 {
     verbose = *vrb;
     opendf = *odf;
@@ -1189,6 +1195,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe)
 #endif
 
     if(getenv("VIMRPLUGIN_TMPDIR")){
+        strncpy(vimcom_home, *pth, 1023);
         strncpy(tmpdir, getenv("VIMRPLUGIN_TMPDIR"), 500);
         if(getenv("VIMRPLUGIN_SECRET"))
             strncpy(vimsecr, getenv("VIMRPLUGIN_SECRET"), 127);
@@ -1196,21 +1203,17 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe)
             REprintf("vimcom: Environment variable VIMRPLUGIN_SECRET is missing.\n");
         char *srvr = getenv("VIMEDITOR_SVRNM");
         if(srvr){
-            if(strstr(srvr, "Neovim_")){
-                char *ptr = strstr(srvr, "_");
-                ptr++;
-                strncpy(edsrvr, ptr, 127);
+#ifdef NEOVIM_ONLY
+            if(strstr(srvr, "Neovim_") == NULL){
+                REprintf("Warning: this version of vimcom was built only for Neovim.\nThere is no support for either X11 or Windows 'clientserver' feature.\n");
+            } else {
                 vimcom_client_ptr = vimcom_nvimclient;
                 Neovim = 1;
                 if(verbose > 1)
-                    Rprintf("Neovim editor server port: %d\n", atoi(edsrvr));
-            }
-#ifdef NEOVIM_ONLY
-            else {
-                REprintf("Warning: this version of vimcom was built only for Neovim.\nThere is no support for either X11 or Windows 'clientserver' feature.\n");
+                    Rprintf("R called by Neovim\n");
             }
 #else
-            else if(strcmp(srvr, "MacVim") == 0 && verbose > -1){
+            if(strcmp(srvr, "MacVim") == 0 && verbose > -1){
                 REprintf("vimcom: MacVim isn't fully supported by vimcom.");
                 REprintf("             Please, in MacVim, enter Normal mode and type:\n");
                 REprintf("             :h r-plugin-nox\n");
@@ -1226,13 +1229,10 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe)
                 REprintf("             Please, in Vim, enter Normal mode and type:\n");
                 REprintf("             :h r-plugin-nox\n");
             } else if(strstr(srvr, "Neovim_")){
-                char *ptr = strstr(srvr, "_");
-                ptr++;
-                strncpy(edsrvr, ptr, 127);
                 vimcom_client_ptr = vimcom_nvimclient;
                 Neovim = 1;
                 if(verbose > 1)
-                    Rprintf("Neovim editor server port: %d\n", atoi(edsrvr));
+                    Rprintf("R called by Neovim\n");
             } else {
                 strncpy(edsrvr, srvr, 127);
             }
@@ -1318,17 +1318,6 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe)
         }
 
         Rf_addTaskCallback(vimcom_task, NULL, free, "VimComHandler", NULL);
-
-        // Save a file to indicate that vimcom is running
-        char fn[512];
-        snprintf(fn, 510, "%s/vimcom_running", tmpdir);
-        FILE *f = fopen(fn, "w");
-        if(f == NULL){
-            REprintf("Error: Could not write to '%s'. [vimcom]\n", fn);
-            return;
-        }
-        fprintf(f, "vimcom is running\n%s\n%s\n", VIMCOM_VERSION, getenv("VIMINSTANCEID"));
-        fclose(f);
 
         vimcom_initialized = 1;
         if(verbose > 0)
