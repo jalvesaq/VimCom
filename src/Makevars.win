@@ -1,2 +1,10 @@
 PKG_CFLAGS=-D`${R_HOME}/bin/R --slave -e 'cat(Sys.info()[[1]])'` -DLWS_NO_FORK  -DWIN32
 PKG_LIBS=-lWs2_32
+
+all: $(SHLIB) apps/nvimclient.exe apps/nvimserver.exe
+
+aaps/nvimclient.exe: apps/nvimclient.c
+	$(CC) -DWIN32 apps/nvimclient.c -o apps/nvimclient.exe
+
+apps/nvimserver.exe: apps/nvimserver.c
+	$(CC) -DWIN32 apps/nvimserver.c -o apps/nvimserver.exe
