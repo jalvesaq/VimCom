@@ -156,7 +156,6 @@ static void NeovimServer()
         }
 #endif
 
-        int status;
         char *bbuf = buf;
 
         if(strstr(bbuf, VimSecret)){
@@ -193,7 +192,11 @@ static void NeovimServer()
 int main(int argc, char **argv){
     strncpy(VimSecret, getenv("VIMRPLUGIN_SECRET"), 127);
     VimSecretLen = strlen(VimSecret);
+#ifdef WIN32
+    Sleep(1000);
+#else
     sleep(1);
+#endif
     NeovimServer();
     return 0;
 }

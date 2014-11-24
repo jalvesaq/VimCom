@@ -67,8 +67,6 @@ static void SendToVimCom(const char *msg)
 
 int main(int argc, char **argv){
     char line[1024];
-    char *msg;
-    char *rpl;
 
     VimComPort = atoi(argv[1]);
 
