@@ -7,6 +7,15 @@ vim.pgr <- function(files, header, title, delete.file)
               paste(Sys.getenv("VIMRPLUGIN_TMPDIR"), "/Rdoc", sep = ""))
 }
 
+vim.hmsg <- function(files, header, title, delete.file)
+{
+    keyword <- sub(".* '", "", title)
+    keyword <- sub(".* \u2018", "", keyword)
+    keyword <- sub("'", "", keyword)
+    keyword <- sub("\u2019", "", keyword)
+    .C("vimcom_msg_to_vim", paste0("ShowRDoc('", keyword, "', '', 0)"), PACKAGE="vimcom")
+}
+
 vim.pager <- function(files, header, title, delete.file)
 {
     if(Sys.getenv("VIM_PANE") == "")
