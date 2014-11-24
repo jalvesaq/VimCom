@@ -1,3 +1,7 @@
+Version 1.2-0 (2014-11-24)
+
+ - Host the Vim-R-plugin TCP code.
+
 Version 1.1-0 (2014-11-13)
 
  - Support SyncTeX.

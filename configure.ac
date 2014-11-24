@@ -1,4 +1,4 @@
-AC_INIT(vimcom, 1.1-0)
+AC_INIT(vimcom, 1.2-0)
 
 AC_ARG_ENABLE([clientserver],
               [AS_HELP_STRING([--enable-clientserver],[support Vim clientserver feature @<:@yes@:>@])],

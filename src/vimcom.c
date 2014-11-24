@@ -31,7 +31,7 @@
 static int vimremote_initialized = 0;
 #endif
 
-#define VIMCOM_VERSION "1.1-0-dev3"
+#define VIMCOM_VERSION "1.1-0-dev4"
 
 static int Xdisp = 0;
 static int Neovim = 0;
@@ -1371,3 +1371,194 @@ void vimcom_Stop()
     vimcom_initialized = 0;
 }
 
+/* Below are functions called by Vim */
+
+static char Reply[256];
+
+const char *SendToVimCom(char *instr)
+{
+    struct addrinfo hints;
+    struct addrinfo *result, *rp;
+    int s, a;
+    size_t len;
+
+    char *msg;
+    char portnum[16];
+    int i = 0;
+    while(instr[i] >= '0' && instr[i] <= '9'){
+        portnum[i] = instr[i];
+        i++;
+    }
+    portnum[i] = 0;
+    msg = instr + i + 1;
+
+    /* Obtain address(es) matching host/port */
+
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_DGRAM;
+    hints.ai_flags = 0;
+    hints.ai_protocol = 0;
+
+    a = getaddrinfo("localhost", portnum, &hints, &result);
+    if (a != 0) {
+        snprintf(Reply, 254, "Error [vimcom.c]: getaddrinfo: %s", gai_strerror(a));
+        return(Reply);
+    }
+
+    for (rp = result; rp != NULL; rp = rp->ai_next) {
+        s = socket(rp->ai_family, rp->ai_socktype,
+                rp->ai_protocol);
+        if (s == -1)
+            continue;
+
+        if (connect(s, rp->ai_addr, rp->ai_addrlen) != -1)
+            break;		   /* Success */
+
+        close(s);
+    }
+
+    if (rp == NULL) {		   /* No address succeeded */
+        sprintf(Reply, "Error [vimcom.c]: Could not connect");
+        return(Reply);
+    }
+
+    freeaddrinfo(result);	   /* No longer needed */
+
+    /* Prefix VIMRPLUGIN_SECRET to msg to increase security.
+     * The vimclient does not need this because it is protect by the X server. */
+    len = strlen(msg);
+    if (write(s, msg, len) == len) {
+        sprintf(Reply, "OK");
+    } else {
+        sprintf(Reply, "Error [vimcom.c]: partial/failed write");
+    }
+    return(Reply);
+}
+
+#ifdef WIN32
+
+HWND RConsole = NULL;
+int Rterm = 0;
+
+const char *FindRConsole(char *Rttl){
+    char Rtitle[256];
+    strcpy(Rtitle, Rttl);
+    strcpy(Reply, "NotFound");
+    RConsole = FindWindow(NULL, Rttl);
+    if(!RConsole){
+        snprintf(Rtitle, 254, "%s (64-bit)", Rttl);
+        RConsole = FindWindow(NULL, Rtitle);
+        if(!RConsole){
+            snprintf(Rtitle, 254, "%s (32-bit)", Rttl);
+            RConsole = FindWindow(NULL, Rtitle);
+        }
+    }
+    if(RConsole)
+        snprintf(Reply, 254, "let g:rplugin_R_window_ttl = '%s'", Rtitle);
+    return(Reply);
+}
+
+static void RaiseRConsole(){
+    FindRConsole("R Console");
+    if(RConsole){
+        SetForegroundWindow(RConsole);
+        Sleep(0.1);
+    }
+}
+
+static void RightClick(){
+    HWND myHandle = GetForegroundWindow();
+    RaiseRConsole();
+    Sleep(0.05);
+    LPARAM lParam = (100 << 16) | 100;
+    SendMessage(RConsole, WM_RBUTTONDOWN, 0, lParam);
+    SendMessage(RConsole, WM_RBUTTONUP, 0, lParam);
+    Sleep(0.05);
+    SetForegroundWindow(myHandle);
+}
+
+static void CntrlV(){
+    keybd_event(0x11, 0, 0, 0);
+    if(!PostMessage(RConsole, 0x100, 0x56, 0x002F0001))
+        RConsole = NULL;
+    if(RConsole){
+        Sleep(0.05);
+        PostMessage(RConsole, 0x101, 0x56, 0xC02F0001);
+    }
+    keybd_event(0x11, 0, 2, 0);
+}
+
+const char *SendToRConsole(char *aString){
+    SendToVimCom("\003Set R as busy [SendToRConsole()]");
+    OpenClipboard(0);
+    EmptyClipboard();
+    SetClipboardData(CF_TEXT, aString);
+    CloseClipboard();
+    if(!RConsole)
+        FindRConsole("R Console");
+    if(RConsole){
+        if(Rterm)
+            RightClick();
+        else
+            CntrlV();
+    }
+    return NULL;
+}
+
+const char *RClearConsole(char *what){
+    strcpy(Reply, "OK");
+    if(strcmp(what, "Rterm"))
+        return(Reply);
+    if(!RConsole)
+        FindRConsole("R Console");
+    if(RConsole){
+        keybd_event(0x11, 0, 0, 0);
+        if(!PostMessage(RConsole, 0x100, 0x4C, 0x002F0001)){
+            strcpy(Reply, "R Console window not found [1].");
+            RConsole = NULL;
+        }
+        if(RConsole){
+            Sleep(0.05);
+            if(!PostMessage(RConsole, 0x101, 0x4C, 0xC02F0001))
+                strcpy(Reply, "R Console window not found [2].");
+        }
+        keybd_event(0x11, 0, 2, 0);
+    }
+    return(Reply);
+}
+
+const char *SendQuitMsg(char *aString){
+    strcpy(Reply, "OK");
+    SendToVimCom("\003Set R as busy [SendQuitMsg()]");
+    OpenClipboard(0);
+    EmptyClipboard();
+    SetClipboardData(CF_TEXT, aString);
+    CloseClipboard();
+    RaiseRConsole();
+    if(RConsole && !Rterm){
+        Sleep(0.2);
+        keybd_event(VK_CONTROL, 0, 0, 0);
+        keybd_event(VkKeyScan('V'), 0, KEYEVENTF_EXTENDEDKEY | 0, 0);
+        Sleep(0.05);
+        keybd_event(VkKeyScan('V'), 0, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, 0);
+        keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0);
+        Sleep(0.05);
+        RConsole = NULL;
+    }
+    if(RConsole && Rterm){
+        RightClick();
+        RConsole = NULL;
+    }
+    return(Reply);
+}
+
+const char *OpenPDF(char *fn){
+    if(ShellExecute(NULL, "open", fn, NULL, NULL, SW_SHOW))
+        strcpy(Reply, "OK");
+    else
+        strcpy(Reply, "Failed to open PDF.");
+    return(Reply);
+}
+
+#endif

@@ -1,0 +1,15 @@
+
+notyet:
+	@echo ""
+	@echo "###############################################################"
+	@echo "##  Compilation of binaries for Neovim not implemented yet.  ##"
+	@echo "###############################################################"
+	@echo ""
+
+all: nvimclient.exe nvimserver.exe
+
+nvimclient.exe: nvimclient.c
+	gcc -std=gnu99 -O3 -lws2_32 -lwsock32 -Wall nvimclient.c -o nvimclient.exe
+
+nvimserver.exe: nvimserver.c
+	gcc -std=gnu99 -O3 -lws2_32 -lwsock32 -Wall nvimserver.c -o nvimserver.exe
