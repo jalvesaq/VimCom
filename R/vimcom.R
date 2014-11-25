@@ -50,6 +50,7 @@
            as.integer(getOption("vimcom.alwaysls")),
            as.integer(getOption("vimcom.labelerr")),
            path.package("vimcom"),
+           as.character(utils::packageVersion("vimcom")),
            PACKAGE="vimcom")
     }
     if(termenv == "NeovimTerm")

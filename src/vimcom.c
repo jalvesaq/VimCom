@@ -31,7 +31,7 @@
 static int vimremote_initialized = 0;
 #endif
 
-#define VIMCOM_VERSION "1.1-0-dev4"
+static char vimcom_version[32];
 
 static int Xdisp = 0;
 static int Neovim = 0;
@@ -961,7 +961,7 @@ static void *vimcom_server_thread(void *arg)
     if(f == NULL){
         REprintf("Error: Could not write to '%s'. [vimcom]\n", fn);
     } else {
-        fprintf(f, "%s\n%s\n%d\n", VIMCOM_VERSION, vimcom_home, bindportn);
+        fprintf(f, "%s\n%s\n%d\n", vimcom_version, vimcom_home, bindportn);
         fclose(f);
     }
 
@@ -1170,7 +1170,7 @@ static void *vimcom_server_thread(void *arg)
 }
 
 
-void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe, char **pth)
+void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe, char **pth, char **vcv)
 {
     verbose = *vrb;
     opendf = *odf;
@@ -1193,6 +1193,8 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe, ch
         Xdisp = 0;
 #endif
 #endif
+
+    strncpy(vimcom_version, *vcv, 31);
 
     if(getenv("VIMRPLUGIN_TMPDIR")){
         strncpy(vimcom_home, *pth, 1023);
@@ -1321,7 +1323,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe, ch
 
         vimcom_initialized = 1;
         if(verbose > 0)
-            REprintf("vimcom %s loaded\n", VIMCOM_VERSION);
+            REprintf("vimcom %s loaded\n", vimcom_version);
         if(verbose > 1)
             REprintf("    VIMTMPDIR = %s\n    VIMINSTANCEID = %s\n",
                     tmpdir, getenv("VIMINSTANCEID"));
@@ -1537,7 +1539,7 @@ const char *SendQuitMsg(char *aString){
     CloseClipboard();
     RaiseRConsole();
     if(RConsole && !Rterm){
-        Sleep(0.2);
+        Sleep(0.1);
         keybd_event(VK_CONTROL, 0, 0, 0);
         keybd_event(VkKeyScan('V'), 0, KEYEVENTF_EXTENDEDKEY | 0, 0);
         Sleep(0.05);
