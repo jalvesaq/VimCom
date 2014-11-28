@@ -12,13 +12,12 @@
 #include <netdb.h>
 #endif
 
-static int VimComPort;
+static char VimComPort[32];
 
 static void SendToVimCom(const char *msg)
 {
     struct addrinfo hints;
     struct addrinfo *result, *rp;
-    char portstr[16];
     int s, a;
     size_t len;
 
@@ -30,8 +29,7 @@ static void SendToVimCom(const char *msg)
     hints.ai_flags = 0;
     hints.ai_protocol = 0;
 
-    sprintf(portstr, "%d", VimComPort);
-    a = getaddrinfo("localhost", portstr, &hints, &result);
+    a = getaddrinfo("127.0.0.1", VimComPort, &hints, &result);
     if (a != 0) {
         fprintf(stderr, "Error [nvimclient.c]: getaddrinfo: %s\n", gai_strerror(a));
         return;
@@ -68,10 +66,14 @@ static void SendToVimCom(const char *msg)
 int main(int argc, char **argv){
     char line[1024];
 
-    VimComPort = atoi(argv[1]);
+    strncpy(VimComPort, argv[1], 31);
 
-    while(fgets(line, 1023, stdin))
+    while(fgets(line, 1023, stdin)){
+        for(int i = 0; i < strlen(line); i++)
+            if(line[i] == '\n')
+                line[i] = 0;
         SendToVimCom(line);
+    }
     return 0;
 }
 

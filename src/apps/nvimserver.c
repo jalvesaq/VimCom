@@ -103,7 +103,7 @@ static void NeovimServer()
     while(rp == NULL && bindportn < 10049){
         bindportn++;
         sprintf(bindport, "%d", bindportn);
-        result = getaddrinfo("localhost", bindport, &hints, &res);
+        result = getaddrinfo("127.0.0.1", bindport, &hints, &res);
         if(result != 0){
             fprintf(stderr, "Neovim server: Error at getaddrinfo (%s)\n", gai_strerror(result));
             fflush(stderr);

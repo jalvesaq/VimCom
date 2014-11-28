@@ -95,6 +95,15 @@ static int sfd = -1;
 static pthread_t tid;
 #endif
 
+static void vimcom_del_newline(char *buf)
+{
+    for(int i = 0; i < strlen(buf); i++)
+        if(buf[i] == '\n'){
+            buf[i] = 0;
+            break;
+        }
+}
+
 #ifndef NEOVIM_ONLY
 static void vimcom_vimclient(const char *expr, char *svrnm)
 {
@@ -151,7 +160,7 @@ static void vimcom_nvimclient(const char *msg, char *port)
     hints.ai_protocol = 0;
 
     sprintf(portstr, "%d", srvport);
-    a = getaddrinfo("localhost", portstr, &hints, &result);
+    a = getaddrinfo("127.0.0.1", portstr, &hints, &result);
     if (a != 0) {
         REprintf("Error: getaddrinfo: %s\n", gai_strerror(a));
         objbr_auto = 0;
@@ -919,7 +928,7 @@ static void *vimcom_server_thread(void *arg)
     while(rp == NULL && bindportn < 10049){
         bindportn++;
         sprintf(bindport, "%d", bindportn);
-        result = getaddrinfo("localhost", bindport, &hints, &res);
+        result = getaddrinfo("127.0.0.1", bindport, &hints, &res);
         if(result != 0){
             REprintf("Error at getaddrinfo: %s [vimcom]\n", gai_strerror(result));
             vimcom_failure = 1;
@@ -1004,6 +1013,7 @@ static void *vimcom_server_thread(void *arg)
                     bbuf = buf;
                     bbuf++;
                     strcpy(edsrvr, bbuf);
+                    vimcom_del_newline(edsrvr);
                     sprintf(rep, "Editor server name set to %s\n", edsrvr);
                 } else {
                     strcpy(rep, "The DISPLAY variable is not set.");
@@ -1015,6 +1025,7 @@ static void *vimcom_server_thread(void *arg)
                     bbuf++;
                     objbr_auto = 1;
                     strcpy(obsrvr, bbuf);
+                    vimcom_del_newline(obsrvr);
                     sprintf(rep, "Object Browser server name set to %s\n", obsrvr);
                 } else {
                     strcpy(rep, "The DISPLAY variable is not set.");
@@ -1237,6 +1248,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe, ch
                     Rprintf("R called by Neovim\n");
             } else {
                 strncpy(edsrvr, srvr, 127);
+                vimcom_del_newline(edsrvr);
             }
 #endif
         } else {
@@ -1323,6 +1335,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe, ch
 
         vimcom_initialized = 1;
         if(verbose > 0)
+            // TODO: use packageStartupMessage()
             REprintf("vimcom %s loaded\n", vimcom_version);
         if(verbose > 1)
             REprintf("    VIMTMPDIR = %s\n    VIMINSTANCEID = %s\n",
@@ -1402,7 +1415,7 @@ const char *SendToVimCom(char *instr)
     hints.ai_flags = 0;
     hints.ai_protocol = 0;
 
-    a = getaddrinfo("localhost", portnum, &hints, &result);
+    a = getaddrinfo("127.0.0.1", portnum, &hints, &result);
     if (a != 0) {
         snprintf(Reply, 254, "Error [vimcom.c]: getaddrinfo: %s", gai_strerror(a));
         return(Reply);
