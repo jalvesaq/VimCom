@@ -53,8 +53,10 @@
            as.character(utils::packageVersion("vimcom")),
            PACKAGE="vimcom")
     }
-    if(termenv == "NeovimTerm")
+    if(termenv == "NeovimTerm"){
         Sys.setenv(TERM="dumb")
+        options(continue = "#<#\n", prompt = "#>#\n")
+    }
 }
 
 .onUnload <- function(libpath) {
