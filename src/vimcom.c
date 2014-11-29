@@ -273,7 +273,7 @@ static int vimcom_count_objects()
     for(int i = 0; i < Rf_length(envVarsSEXP); i++){
         varName = CHAR(STRING_ELT(envVarsSEXP, i));
         PROTECT(varSEXP = Rf_findVar(Rf_install(varName), R_GlobalEnv));
-        if (varSEXP != R_UnboundValue) // should never be unbound 
+        if (varSEXP != R_UnboundValue) // should never be unbound
         {
             nobjs++;
             if(Rf_isNewList(varSEXP))
@@ -502,7 +502,7 @@ static void vimcom_list_env()
     for(int i = 0; i < Rf_length(envVarsSEXP); i++){
         varName = CHAR(STRING_ELT(envVarsSEXP, i));
         PROTECT(varSEXP = Rf_findVar(Rf_install(varName), R_GlobalEnv));
-        if (varSEXP != R_UnboundValue) // should never be unbound 
+        if (varSEXP != R_UnboundValue) // should never be unbound
         {
             vimcom_browser_line(&varSEXP, varName, "", "   ", f);
         } else {
@@ -522,7 +522,7 @@ static int vimcom_checklibs()
     SEXP a, l, x;
 
     PROTECT(a = eval(lang1(install("search")), R_GlobalEnv));
-    
+
     int newnlibs = Rf_length(a);
     if(verbose > 3)
         Rprintf("vimcom_checklibs begin: %d : %d\n", nlibs, newnlibs);
@@ -907,6 +907,7 @@ static void *vimcom_server_thread(void *arg)
     char bindport[16];
     socklen_t peer_addr_len = sizeof(struct sockaddr_storage);
 
+#ifndef __APPLE__
     // block SIGINT
     {
         sigset_t set;
@@ -914,6 +915,7 @@ static void *vimcom_server_thread(void *arg)
         sigaddset(&set, SIGINT);
         sigprocmask(SIG_BLOCK, &set, NULL);
     }
+#endif
 
     memset(&hints, 0, sizeof(struct addrinfo));
     hints.ai_family = AF_INET;    /* Allow IPv4 or IPv6 */
