@@ -7,13 +7,10 @@
 
 #ifdef WIN32
 #include <winsock2.h>
-#include <Ws2tcpip.h>
-#include <process.h>
 #else
 #include <stdint.h>
 #include <sys/socket.h>
 #include <netdb.h>
-#include <pthread.h>
 #include <signal.h>
 #endif
 
@@ -183,13 +180,16 @@ static void NeovimServer()
         return;
     }
     WSACleanup();
-    return;
-#else
-    return;
 #endif
+    return;
 }
 
 int main(int argc, char **argv){
+    if(!getenv("VIMRPLUGIN_SECRET")){
+        fprintf(stderr, "VIMRPLUGIN_SECRET not found\n");
+        fflush(stderr);
+        exit(1);
+    }
     strncpy(VimSecret, getenv("VIMRPLUGIN_SECRET"), 127);
     VimSecretLen = strlen(VimSecret);
 #ifdef WIN32
@@ -200,5 +200,3 @@ int main(int argc, char **argv){
     NeovimServer();
     return 0;
 }
-
-

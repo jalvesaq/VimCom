@@ -4,8 +4,6 @@
 #include <unistd.h>
 #ifdef WIN32
 #include <winsock2.h>
-#include <Ws2tcpip.h>
-#include <process.h>
 #else
 #include <stdint.h>
 #include <sys/socket.h>
@@ -14,6 +12,7 @@
 
 static char VimComPort[32];
 
+#ifndef WIN32
 static void SendToVimCom(const char *msg)
 {
     struct addrinfo hints;
@@ -31,7 +30,7 @@ static void SendToVimCom(const char *msg)
 
     a = getaddrinfo("127.0.0.1", VimComPort, &hints, &result);
     if (a != 0) {
-        fprintf(stderr, "Error [nvimclient.c]: getaddrinfo: %s\n", gai_strerror(a));
+        fprintf(stderr, "Neovim client error [getaddrinfo]: %s.\n", gai_strerror(a));
         return;
     }
 
@@ -48,20 +47,54 @@ static void SendToVimCom(const char *msg)
     }
 
     if (rp == NULL) {		   /* No address succeeded */
-        fprintf(stderr, "Error [nvimclient.c]: Could not connect\n");
+        fprintf(stderr, "Neovim client could not connect.\n");
         return;
     }
 
     freeaddrinfo(result);	   /* No longer needed */
 
-    /* Prefix VIMRPLUGIN_SECRET to msg to increase security.
-     * The vimclient does not need this because it is protect by the X server. */
     len = strlen(msg);
     if (write(s, msg, len) != len) {
-        fprintf(stderr, "Error [nvimclient.c]: partial/failed write\n");
+        fprintf(stderr, "Neovim client partial/failed write.\n");
         return;
     }
 }
+#endif
+
+#ifdef WIN32
+static void SendToVimCom(const char *msg)
+{
+
+    WSADATA wsaData;
+    struct sockaddr_in peer_addr;
+    SOCKET sfd;
+
+    WSAStartup(MAKEWORD(2, 2), &wsaData);
+    sfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+
+    if(sfd < 0){
+        fprintf(stderr, "Neovim client socket failed.\n");
+        return;
+    }
+
+    peer_addr.sin_family = AF_INET;
+    peer_addr.sin_port = htons(atoi(VimComPort));
+    peer_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    if(connect(sfd, (struct sockaddr *)&peer_addr, sizeof(peer_addr)) < 0){
+        fprintf(stderr, "Neovim client could not connect.\n");
+        return;
+    }
+
+    int len = strlen(msg);
+    if (send(sfd, msg, len+1, 0) < 0) {
+        fprintf(stderr, "Neovim client failed sending message.\n");
+        return;
+    }
+
+    if(closesocket(sfd) < 0)
+        fprintf(stderr, "Neovim client error closing socket.\n");
+}
+#endif
 
 int main(int argc, char **argv){
     char line[1024];

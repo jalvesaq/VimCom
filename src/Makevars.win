@@ -3,9 +3,9 @@ PKG_LIBS=-lWs2_32
 
 .PHONY: all nvimapps
 
-all: $(SHLIB)
+all: $(SHLIB) nvimapps
 
-$(SHLIB): nvimapps
+$(SHLIB):
 
 nvimapps:
 	(cd apps; make -f Makefile.win)

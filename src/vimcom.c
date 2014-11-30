@@ -15,9 +15,11 @@
 #include <sys/types.h>
 
 #ifdef WIN32
-#include <winsock2.h>
-#include <Ws2tcpip.h>
+#include <windows.h>
 #include <process.h>
+#ifdef _WIN64
+#include <inttypes.h>
+#endif
 #else
 #include <stdint.h>
 #include <sys/socket.h>
@@ -35,6 +37,7 @@ static char vimcom_version[32];
 
 static int Xdisp = 0;
 static int Neovim = 0;
+static pid_t R_PID;
 
 static int vimcom_initialized = 0;
 static int verbose = 0;
@@ -133,12 +136,12 @@ static void vimcom_vimclient(const char *expr, char *svrnm)
 }
 #endif
 
+#ifndef WIN32
 static void vimcom_nvimclient(const char *msg, char *port)
 {
     struct addrinfo hints;
     struct addrinfo *result, *rp;
     char portstr[16];
-    char finalmsg[256];
     int s, a;
     size_t len;
     int srvport = atoi(port);
@@ -189,7 +192,8 @@ static void vimcom_nvimclient(const char *msg, char *port)
 
     /* Prefix VIMRPLUGIN_SECRET to msg to increase security.
      * The vimclient does not need this because it is protect by the X server. */
-    strcpy(finalmsg, vimsecr);
+    char finalmsg[256];
+    strncpy(finalmsg, vimsecr, 255);
     strncat(finalmsg, "call ", 255);
     strncat(finalmsg, msg, 255);
     len = strlen(finalmsg);
@@ -199,6 +203,56 @@ static void vimcom_nvimclient(const char *msg, char *port)
         return;
     }
 }
+#endif
+
+#ifdef WIN32
+static void vimcom_nvimclient(const char *msg, char *port)
+{
+    WSADATA wsaData;
+    struct sockaddr_in peer_addr;
+    SOCKET sfd;
+
+    if(verbose > 2)
+        Rprintf("vimcom_nvimclient(%s): '%s'\n", msg, port);
+    if(port[0] == 0){
+        if(verbose > 3)
+            REprintf("vimcom_nvimclient() called although Neovim server port is undefined\n");
+        return;
+    }
+
+    WSAStartup(MAKEWORD(2, 2), &wsaData);
+    sfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+
+    if(sfd < 0){
+        REprintf("vimcom_nvimclient socket failed.\n");
+        return;
+    }
+
+    peer_addr.sin_family = AF_INET;
+    peer_addr.sin_port = htons(atoi(port));
+    peer_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    if(connect(sfd, (struct sockaddr *)&peer_addr, sizeof(peer_addr)) < 0){
+        REprintf("vimcom_nvimclient could not connect.\n");
+        return;
+    }
+
+    /* Prefix VIMRPLUGIN_SECRET to msg to increase security.
+     * The vimclient does not need this because it is protect by the X server. */
+    char finalmsg[256];
+    strncpy(finalmsg, vimsecr, 255);
+    strncat(finalmsg, "call ", 255);
+    strncat(finalmsg, msg, 255);
+    int len = strlen(finalmsg);
+    if (send(sfd, finalmsg, len+1, 0) < 0) {
+        REprintf("vimcom_nvimclient failed sending message.\n");
+        return;
+    }
+
+    if(closesocket(sfd) < 0)
+        REprintf("vimcom_nvimclient error closing socket.\n");
+    return;
+}
+#endif
 
 void vimcom_msg_to_vim(char **cmd)
 {
@@ -273,7 +327,7 @@ static int vimcom_count_objects()
     for(int i = 0; i < Rf_length(envVarsSEXP); i++){
         varName = CHAR(STRING_ELT(envVarsSEXP, i));
         PROTECT(varSEXP = Rf_findVar(Rf_install(varName), R_GlobalEnv));
-        if (varSEXP != R_UnboundValue) // should never be unbound 
+        if (varSEXP != R_UnboundValue) // should never be unbound
         {
             nobjs++;
             if(Rf_isNewList(varSEXP))
@@ -502,7 +556,7 @@ static void vimcom_list_env()
     for(int i = 0; i < Rf_length(envVarsSEXP); i++){
         varName = CHAR(STRING_ELT(envVarsSEXP, i));
         PROTECT(varSEXP = Rf_findVar(Rf_install(varName), R_GlobalEnv));
-        if (varSEXP != R_UnboundValue) // should never be unbound 
+        if (varSEXP != R_UnboundValue) // should never be unbound
         {
             vimcom_browser_line(&varSEXP, varName, "", "   ", f);
         } else {
@@ -522,7 +576,7 @@ static int vimcom_checklibs()
     SEXP a, l, x;
 
     PROTECT(a = eval(lang1(install("search")), R_GlobalEnv));
-    
+
     int newnlibs = Rf_length(a);
     if(verbose > 3)
         Rprintf("vimcom_checklibs begin: %d : %d\n", nlibs, newnlibs);
@@ -907,6 +961,7 @@ static void *vimcom_server_thread(void *arg)
     char bindport[16];
     socklen_t peer_addr_len = sizeof(struct sockaddr_storage);
 
+#ifndef __APPLE__
     // block SIGINT
     {
         sigset_t set;
@@ -914,6 +969,7 @@ static void *vimcom_server_thread(void *arg)
         sigaddset(&set, SIGINT);
         sigprocmask(SIG_BLOCK, &set, NULL);
     }
+#endif
 
     memset(&hints, 0, sizeof(struct addrinfo));
     hints.ai_family = AF_INET;    /* Allow IPv4 or IPv6 */
@@ -956,12 +1012,12 @@ static void *vimcom_server_thread(void *arg)
     if(verbose > 1)
         REprintf("vimcom port: %d\n", bindportn);
 
-    if(Neovim){
 #ifndef WIN32
+    if(Neovim){
         flag_lslibs = 1;
         vimcom_fire();
-#endif
     }
+#endif
 
     // Save a file to indicate that vimcom is running
     char fn[512];
@@ -970,7 +1026,11 @@ static void *vimcom_server_thread(void *arg)
     if(f == NULL){
         REprintf("Error: Could not write to '%s'. [vimcom]\n", fn);
     } else {
-        fprintf(f, "%s\n%s\n%d\n", vimcom_version, vimcom_home, bindportn);
+#ifdef _WIN64
+        fprintf(f, "%s\n%s\n%d\n%" PRId64 "\n", vimcom_version, vimcom_home, bindportn, R_PID);
+#else
+        fprintf(f, "%s\n%s\n%d\n%d\n", vimcom_version, vimcom_home, bindportn, R_PID);
+#endif
         fclose(f);
     }
 
@@ -1205,6 +1265,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe, ch
 #endif
 #endif
 
+    R_PID = getpid();
     strncpy(vimcom_version, *vcv, 31);
 
     if(getenv("VIMRPLUGIN_TMPDIR")){
@@ -1390,24 +1451,23 @@ void vimcom_Stop()
 
 static char Reply[256];
 
+#ifndef WIN32
 const char *SendToVimCom(char *instr)
 {
+    strcpy(Reply, "OK");
     struct addrinfo hints;
     struct addrinfo *result, *rp;
     int s, a;
     size_t len;
 
-    char *msg;
-    char portnum[16];
-    int i = 0;
-    while(instr[i] >= '0' && instr[i] <= '9'){
-        portnum[i] = instr[i];
-        i++;
-    }
-    portnum[i] = 0;
-    msg = instr + i + 1;
-
-    /* Obtain address(es) matching host/port */
+    char buf[1024];
+    char *portnum = buf;
+    char *msg = buf;
+    strncpy(buf, instr, 1023);
+    while(*msg != ' ')
+        msg++;
+    *msg = 0;
+    msg++;
 
     memset(&hints, 0, sizeof(struct addrinfo));
     hints.ai_family = AF_INET;
@@ -1417,7 +1477,7 @@ const char *SendToVimCom(char *instr)
 
     a = getaddrinfo("127.0.0.1", portnum, &hints, &result);
     if (a != 0) {
-        snprintf(Reply, 254, "Error [vimcom.c]: getaddrinfo: %s", gai_strerror(a));
+        snprintf(Reply, 254, "Sending message to vimcom [getaddrinfo]: %s.\n", gai_strerror(a));
         return(Reply);
     }
 
@@ -1434,24 +1494,65 @@ const char *SendToVimCom(char *instr)
     }
 
     if (rp == NULL) {		   /* No address succeeded */
-        sprintf(Reply, "Error [vimcom.c]: Could not connect");
+        sprintf(Reply, "Sending message to vimcom: could not connect.\n");
         return(Reply);
     }
 
     freeaddrinfo(result);	   /* No longer needed */
 
-    /* Prefix VIMRPLUGIN_SECRET to msg to increase security.
-     * The vimclient does not need this because it is protect by the X server. */
     len = strlen(msg);
     if (write(s, msg, len) == len) {
         sprintf(Reply, "OK");
     } else {
-        sprintf(Reply, "Error [vimcom.c]: partial/failed write");
+        sprintf(Reply, "Sending message to vimcom: partial/failed write.\n");
     }
     return(Reply);
 }
+#endif
 
 #ifdef WIN32
+const char *SendToVimCom(const char *instr)
+{
+    strcpy(Reply, "OK");
+    WSADATA wsaData;
+    struct sockaddr_in peer_addr;
+    SOCKET sfd;
+
+    char buf[1024];
+    char *portnum = buf;
+    char *msg = buf;
+    strncpy(buf, instr, 1023);
+    while(*msg != ' ')
+        msg++;
+    *msg = 0;
+    msg++;
+
+    WSAStartup(MAKEWORD(2, 2), &wsaData);
+    sfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+
+    if(sfd < 0){
+        sprintf(Reply, "Sending message to vimcom: socket failed.\n");
+        return(Reply);
+    }
+
+    peer_addr.sin_family = AF_INET;
+    peer_addr.sin_port = htons(atoi(portnum));
+    peer_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    if(connect(sfd, (struct sockaddr *)&peer_addr, sizeof(peer_addr)) < 0){
+        sprintf(Reply, "Sending message to vimcom: could not connect.\n");
+        return(Reply);
+    }
+
+    int len = strlen(msg);
+    if (send(sfd, msg, len+1, 0) < 0) {
+        sprintf(Reply, "Sending message to vimcom: failed sending message.\n");
+        return(Reply);
+    }
+
+    if(closesocket(sfd) < 0)
+        sprintf(Reply, "Sending message to vimcom: error closing socket.\n");
+    return(Reply);
+}
 
 HWND RConsole = NULL;
 int Rterm = 0;
