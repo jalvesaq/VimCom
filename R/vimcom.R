@@ -55,7 +55,9 @@
     }
     if(termenv == "NeovimTerm"){
         Sys.setenv(TERM="dumb")
-        options(continue = "#<#\n", prompt = "#>#\n")
+        options(continue = "#<#\n",
+                prompt = "#>#\n",
+                editor = vimcom:::vimcom_edit)
     }
 }
 
@@ -66,3 +68,32 @@
     library.dynam.unload("vimcom", libpath)
 }
 
+
+vimcom_edit <- function(name, file, title)
+{
+    if(file != "")
+        stop("Feature not implemented. Use nvim to edit files.")
+    if(is.null(name))
+        stop("Feature not implemented. Use nvim to create R objects from scratch.")
+
+    finalA <- paste0(Sys.getenv("VIMRPLUGIN_TMPDIR"), "/vimcom_edit_", Sys.getenv("VIMINSTANCEID"), "_A")
+    finalB <- paste0(Sys.getenv("VIMRPLUGIN_TMPDIR"), "/vimcom_edit_", Sys.getenv("VIMINSTANCEID"), "_B")
+    unlink(finalB)
+    writeLines(text = "Waiting...", con = finalA)
+
+    initial = paste0(Sys.getenv("VIMRPLUGIN_TMPDIR"), "/vimcom_edit_", round(runif(1, min = 100, max = 999)))
+    sink(initial)
+    dput(name)
+    sink()
+
+    .C("vimcom_msg_to_vim",
+       paste0("ShowRObject('", initial, "')"),
+       PACKAGE="vimcom")
+
+    while(file.exists(finalA))
+        Sys.sleep(1)
+    x <- eval(parse(finalB))
+    unlink(initial)
+    unlink(finalB)
+    return(invisible(x))
+}
