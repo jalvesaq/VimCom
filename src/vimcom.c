@@ -538,7 +538,7 @@ static void vimcom_list_env()
 
     if(always_ls_env == 0 && vimcom_count_objects() == 0)
         return;
-    if(verbose > 1 && objbr_auto)
+    if(verbose > 1 && objbr_auto && !always_ls_env)
         Rprintf("Current number of Objects: %d\n", nobjs);
 
     if(tmpdir[0] == 0)
@@ -648,8 +648,6 @@ static int vimcom_checklibs()
     PROTECT(a = eval(lang1(install("search")), R_GlobalEnv));
 
     int newnlibs = Rf_length(a);
-    if(verbose > 3)
-        Rprintf("vimcom_checklibs begin: %d : %d\n", nlibs, newnlibs);
     if(nlibs == newnlibs)
         return(nlibs);
 
@@ -706,8 +704,6 @@ static int vimcom_checklibs()
         fprintf(f, "%s\n", builtlibs[i]);
     }
     fclose(f);
-    if(verbose > 3)
-        Rprintf("vimcom_checklibs end: %s : %c\n", edsrvr, edsrvr[0]);
     if(edsrvr[0] != 0)
         vimcom_client_ptr("RFillLibList()", edsrvr);
 
@@ -790,8 +786,6 @@ static void vimcom_list_libs()
 Rboolean vimcom_task(SEXP expr, SEXP value, Rboolean succeeded,
         Rboolean visible, void *userData)
 {
-    if(verbose > 2)
-        Rprintf("vimcom_task() :: %d\n", objbr_auto);
     vimcom_list_libs();
     if(objbr_auto){
         vimcom_list_env();
@@ -799,20 +793,14 @@ Rboolean vimcom_task(SEXP expr, SEXP value, Rboolean succeeded,
             case 1:
                 if(obsrvr[0] != 0)
                     vimcom_client_ptr("UpdateOB('GlobalEnv')", obsrvr);
-                if(verbose > 3)
-                    Rprintf("G: vimcom_task\n");
                 break;
             case 2:
                 if(obsrvr[0] != 0)
                     vimcom_client_ptr("UpdateOB('libraries')", obsrvr);
-                if(verbose > 3)
-                    Rprintf("L: vimcom_task\n");
                 break;
             case 3:
                 if(obsrvr[0] != 0)
                     vimcom_client_ptr("UpdateOB('both')", obsrvr);
-                if(verbose > 3)
-                    Rprintf("B: vimcom_task\n");
                 break;
         }
         has_new_lib = 0;
@@ -826,8 +814,6 @@ Rboolean vimcom_task(SEXP expr, SEXP value, Rboolean succeeded,
 
 #ifndef WIN32
 static void vimcom_exec(){
-    if(verbose > 3)
-        REprintf("vimcom_exec %d %d\n", flag_lsenv, flag_lslibs);
     if(*flag_eval){
         vimcom_eval_expr(flag_eval);
         *flag_eval = 0;
@@ -836,26 +822,18 @@ static void vimcom_exec(){
         vimcom_list_env();
     if(flag_lslibs)
         vimcom_list_libs();
-    if(verbose > 3)
-        REprintf("vimcom_exec %d + %d\n", has_new_lib, has_new_obj);
     switch(has_new_lib + has_new_obj){
         case 1:
             if(obsrvr[0] != 0)
                 vimcom_client_ptr("UpdateOB('GlobalEnv')", obsrvr);
-            if(verbose > 3)
-                Rprintf("G: vimcom_exec\n");
             break;
         case 2:
             if(obsrvr[0] != 0)
                 vimcom_client_ptr("UpdateOB('libraries')", obsrvr);
-            if(verbose > 3)
-                Rprintf("L: vimcom_exec\n");
             break;
         case 3:
             if(obsrvr[0] != 0)
                 vimcom_client_ptr("UpdateOB('both')", obsrvr);
-            if(verbose > 3)
-                Rprintf("B: vimcom_exec\n");
             break;
     }
     has_new_lib = 0;
@@ -867,8 +845,6 @@ static void vimcom_exec(){
 /* Code adapted from CarbonEL.
  * Thanks to Simon Urbanek for the suggestion on r-devel mailing list. */
 static void vimcom_uih(void *data) {
-    if(verbose > 3)
-        REprintf("vimcom_uih\n");
     char buf[16];
     if(read(ifd, buf, 1) < 1)
         REprintf("vimcom error: read < 1\n");
@@ -878,8 +854,6 @@ static void vimcom_uih(void *data) {
 
 static void vimcom_fire()
 {
-    if(verbose > 3)
-        REprintf("vimcom_fire\n");
     if(fired)
         return;
     fired = 1;
@@ -1222,7 +1196,7 @@ static void *vimcom_server_thread(void *arg)
             REprintf("Error sending response. [vimcom]\n");
 
         if(verbose > 1)
-            REprintf("VimCom Sent: %s\n", rep);
+            REprintf("vimcom sent: %s\n", rep);
 
     }
 #ifdef WIN32
