@@ -3,32 +3,21 @@ vim.pgr <- function(files, header, title, delete.file)
 {
     if(Sys.getenv("VIMRPLUGIN_TMPDIR") == "")
         stop("VIMRPLUGIN_TMPDIR not set.")
-    file.copy(files[1],
-              paste(Sys.getenv("VIMRPLUGIN_TMPDIR"), "/Rdoc", sep = ""))
+    dest <- paste0(Sys.getenv("VIMRPLUGIN_TMPDIR"), "/Rdoc")
+    file.copy(files[1], dest, overwrite = TRUE)
 }
 
 vim.hmsg <- function(files, header, title, delete.file)
 {
+    if(Sys.getenv("VIMRPLUGIN_TMPDIR") == "")
+        stop("VIMRPLUGIN_TMPDIR not set.")
+    dest <- paste0(Sys.getenv("VIMRPLUGIN_TMPDIR"), "/Rdoc")
+    file.copy(files[1], dest, overwrite = TRUE)
     keyword <- sub(".* '", "", title)
     keyword <- sub(".* \u2018", "", keyword)
     keyword <- sub("'", "", keyword)
     keyword <- sub("\u2019", "", keyword)
-    .C("vimcom_msg_to_vim", paste0("ShowRDoc('", keyword, "', '', 0)"), PACKAGE="vimcom")
-}
-
-vim.pager <- function(files, header, title, delete.file)
-{
-    if(Sys.getenv("VIM_PANE") == "")
-        stop("VIM_PANE not set.")
-
-    keyword <- sub(".* '", "", title)
-    keyword <- sub(".* \u2018", "", keyword)
-    keyword <- sub("'", "", keyword)
-    keyword <- sub("\u2019", "", keyword)
-
-    system(paste0("tmux set-buffer '\u001c\u000e:Rhelp ", keyword, "\u000d'",
-                  " && tmux select-pane -t ", Sys.getenv("VIM_PANE"),
-                  " && tmux paste-buffer -t ", Sys.getenv("VIM_PANE")))
+    .C("vimcom_msg_to_vim", paste0("ShowRDoc('", keyword, "', 1)"), PACKAGE="vimcom")
 }
 
 vim.help <- function(topic, w, classfor, package)

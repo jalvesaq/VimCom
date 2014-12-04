@@ -569,9 +569,79 @@ static void vimcom_list_env()
     has_new_obj = 1;
 }
 
+static void vimcom_eval_expr(const char *buf)
+{
+    char fn[512];
+    snprintf(fn, 510, "%s/eval_reply", tmpdir);
+
+    if(verbose > 3)
+        Rprintf("vimcom_eval_expr: '%s'\n", buf);
+
+    FILE *rep = fopen(fn, "w");
+    if(rep == NULL){
+        REprintf("Error: Could not write to '%s'. [vimcom]\n", fn);
+        return;
+    }
+
+#ifdef WIN32
+    if(tcltkerr){
+        fprintf(rep, "Error: \"vimcom\" and \"tcltk\" packages are incompatible!\n");
+        return;
+    } else {
+        if(objbr_auto == 0)
+            vimcom_checklibs();
+        if(tcltkerr){
+            fprintf(rep, "Error: \"vimcom\" and \"tcltk\" packages are incompatible!\n");
+            return;
+        }
+    }
+#endif
+
+    SEXP cmdSexp, cmdexpr, ans;
+    ParseStatus status;
+    int er = 0;
+
+    PROTECT(cmdSexp = allocVector(STRSXP, 1));
+    SET_STRING_ELT(cmdSexp, 0, mkChar(buf));
+    PROTECT(cmdexpr = R_ParseVector(cmdSexp, -1, &status, R_NilValue));
+
+    if (status != PARSE_OK) {
+        fprintf(rep, "INVALID\n");
+    } else {
+        /* Only the first command will be executed if the expression includes
+         * a semicolon. */
+        PROTECT(ans = R_tryEval(VECTOR_ELT(cmdexpr, 0), R_GlobalEnv, &er));
+        if(er){
+            fprintf(rep, "ERROR\n");
+        } else {
+            switch(TYPEOF(ans)) {
+                case REALSXP:
+                    fprintf(rep, "%f\n", REAL(ans)[0]);
+                    break;
+                case LGLSXP:
+                case INTSXP:
+                    fprintf(rep, "%d\n", INTEGER(ans)[0]);
+                    break;
+                case STRSXP:
+                    if(length(ans) > 0)
+                        fprintf(rep, "%s\n", CHAR(STRING_ELT(ans, 0)));
+                    else
+                        fprintf(rep, "EMPTY\n");
+                    break;
+                default:
+                    fprintf(rep, "RTYPE\n");
+            }
+        }
+        UNPROTECT(1);
+    }
+    UNPROTECT(2);
+    fclose(rep);
+}
+
 static int vimcom_checklibs()
 {
     const char *libname;
+    char buf[256];
     char *libn;
     SEXP a, l, x;
 
@@ -616,10 +686,8 @@ static int vimcom_checklibs()
                 break;
             if(builtlibs[j][0] == 0){
                 strcpy(builtlibs[j], libn);
-                PROTECT(x = allocVector(STRSXP, 1));
-                SET_STRING_ELT(x, 0, mkChar(libn));
-                eval(lang2(install("vim.buildomnils"), x), R_GlobalEnv);
-                UNPROTECT(1);
+                sprintf(buf, "vimcom:::vim.buildomnils('%s')", libn);
+                vimcom_eval_expr(buf);
                 break;
             }
         }
@@ -717,75 +785,6 @@ static void vimcom_list_libs()
     opendf = save_opendf;
     openls = save_openls;
     has_new_lib = 2;
-}
-
-static void vimcom_eval_expr(const char *buf)
-{
-    char fn[512];
-    snprintf(fn, 510, "%s/eval_reply", tmpdir);
-
-    if(verbose > 3)
-        Rprintf("vimcom_eval_expr: '%s'\n", buf);
-
-    FILE *rep = fopen(fn, "w");
-    if(rep == NULL){
-        REprintf("Error: Could not write to '%s'. [vimcom]\n", fn);
-        return;
-    }
-
-#ifdef WIN32
-    if(tcltkerr){
-        fprintf(rep, "Error: \"vimcom\" and \"tcltk\" packages are incompatible!\n");
-        return;
-    } else {
-        if(objbr_auto == 0)
-            vimcom_checklibs();
-        if(tcltkerr){
-            fprintf(rep, "Error: \"vimcom\" and \"tcltk\" packages are incompatible!\n");
-            return;
-        }
-    }
-#endif
-
-    SEXP cmdSexp, cmdexpr, ans;
-    ParseStatus status;
-    int er = 0;
-
-    PROTECT(cmdSexp = allocVector(STRSXP, 1));
-    SET_STRING_ELT(cmdSexp, 0, mkChar(buf));
-    PROTECT(cmdexpr = R_ParseVector(cmdSexp, -1, &status, R_NilValue));
-
-    if (status != PARSE_OK) {
-        fprintf(rep, "INVALID\n");
-    } else {
-        /* Only the first command will be executed if the expression includes
-         * a semicolon. */
-        PROTECT(ans = R_tryEval(VECTOR_ELT(cmdexpr, 0), R_GlobalEnv, &er));
-        if(er){
-            fprintf(rep, "ERROR\n");
-        } else {
-            switch(TYPEOF(ans)) {
-                case REALSXP:
-                    fprintf(rep, "%f\n", REAL(ans)[0]);
-                    break;
-                case LGLSXP:
-                case INTSXP:
-                    fprintf(rep, "%d\n", INTEGER(ans)[0]);
-                    break;
-                case STRSXP:
-                    if(length(ans) > 0)
-                        fprintf(rep, "%s\n", CHAR(STRING_ELT(ans, 0)));
-                    else
-                        fprintf(rep, "EMPTY\n");
-                    break;
-                default:
-                    fprintf(rep, "RTYPE\n");
-            }
-        }
-        UNPROTECT(1);
-    }
-    UNPROTECT(2);
-    fclose(rep);
 }
 
 Rboolean vimcom_task(SEXP expr, SEXP value, Rboolean succeeded,

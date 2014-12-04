@@ -1,6 +1,8 @@
-Version 1.1-7 (2014-11-29)
+Version 1.1-9 (2014-12-03)
 
  - Host the Vim-R-plugin TCP code.
+
+ - Don't export functions that are called through vimcom TCP server.
 
 Version 1.1-0 (2014-11-13)
 

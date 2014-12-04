@@ -19,6 +19,7 @@
     vimcom.alwaysls \tab Update the Object Browser more.        \tab TRUE    \cr
     vimcom.labelerr \tab Warn if label is not \samp{character}. \tab TRUE    \cr
     vimcom.texerrs  \tab Output TeX errors and warnings.        \tab TRUE    \cr
+    vimcom.vimpager \tab Show R documentation in Vim.           \tab TRUE    \cr
   }
 
   The \samp{vimcom.verbose} option controls the amount of debugging
@@ -51,6 +52,10 @@
   warnings produced by the compilation of the .tex document into .pdf file
   will be output to R Console at the end of the compilation. So, you do not
   have to scroll the R Console seeking for these messages.
+
+  If the value of \samp{vimcom.vimpager} is true, the pager becomes a function
+  that will open R documentation in Vim if it is running inside Tmux. It also
+  works if R is running as a Neovim job.
 
   You may want to put the some of the options above in your Rprofile rather
   than setting them and loading the vimcom package manually. Below is an

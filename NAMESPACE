@@ -1,4 +1,3 @@
-export(vim.list.args, vim.srcdir, vim.plot, vim.help, vim.interlace.rnoweb,
-vim.interlace.rrst, vim.print, vim.bol, vim.names, etags2ctags,
-vim.interlace.rmd, vim.buildomnils, vim.pager)
+export(vim.list.args, vim.srcdir, vim.plot, vim.interlace.rnoweb,
+vim.interlace.rrst, vim.print, vim.names, etags2ctags, vim.interlace.rmd)
 importFrom(tools, Rd2txt_options, texi2dvi)
