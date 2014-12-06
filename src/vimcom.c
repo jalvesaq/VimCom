@@ -1569,14 +1569,14 @@ static void RightClick(){
 }
 
 static void CntrlV(){
-    keybd_event(0x11, 0, 0, 0);
+    keybd_event(VK_CONTROL, 0, 0, 0);
     if(!PostMessage(RConsole, 0x100, 0x56, 0x002F0001))
         RConsole = NULL;
     if(RConsole){
         Sleep(0.05);
         PostMessage(RConsole, 0x101, 0x56, 0xC02F0001);
     }
-    keybd_event(0x11, 0, 2, 0);
+    keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0);
 }
 
 const char *SendToRConsole(char *aString){
@@ -1603,7 +1603,7 @@ const char *RClearConsole(char *what){
     if(!RConsole)
         FindRConsole("R Console");
     if(RConsole){
-        keybd_event(0x11, 0, 0, 0);
+        keybd_event(VK_CONTROL, 0, 0, 0);
         if(!PostMessage(RConsole, 0x100, 0x4C, 0x002F0001)){
             strcpy(Reply, "R Console window not found [1].");
             RConsole = NULL;
@@ -1613,7 +1613,7 @@ const char *RClearConsole(char *what){
             if(!PostMessage(RConsole, 0x101, 0x4C, 0xC02F0001))
                 strcpy(Reply, "R Console window not found [2].");
         }
-        keybd_event(0x11, 0, 2, 0);
+        keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0);
     }
     return(Reply);
 }
