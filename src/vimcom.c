@@ -84,6 +84,7 @@ typedef struct liststatus_ {
 } ListStatus;
 
 static void (*vimcom_client_ptr)(const char *, char *);
+static int vimcom_checklibs();
 
 static ListStatus *firstList = NULL;
 
@@ -643,7 +644,7 @@ static int vimcom_checklibs()
     const char *libname;
     char buf[256];
     char *libn;
-    SEXP a, l, x;
+    SEXP a, l;
 
     PROTECT(a = eval(lang1(install("search")), R_GlobalEnv));
 
