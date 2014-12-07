@@ -1569,14 +1569,14 @@ static void RightClick(){
 }
 
 static void CntrlV(){
-    keybd_event(VK_CONTROL, 0, 0, 0);
-    if(!PostMessage(RConsole, 0x100, 0x56, 0x002F0001))
+    keybd_event(VK_CONTROL, MapVirtualKey(VK_CONTROL, 0), 0, 0);
+    if(!PostMessage(RConsole, WM_KEYDOWN, VkKeyScan('v'), 0))
         RConsole = NULL;
     if(RConsole){
         Sleep(0.05);
-        PostMessage(RConsole, 0x101, 0x56, 0xC02F0001);
+        PostMessage(RConsole, WM_KEYUP, VkKeyScan('v'), 0);
     }
-    keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0);
+    keybd_event(VK_CONTROL, MapVirtualKey(VK_CONTROL, 0), KEYEVENTF_KEYUP, 0);
 }
 
 const char *SendToRConsole(char *aString){
