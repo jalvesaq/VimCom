@@ -1568,43 +1568,28 @@ static void RightClick(){
     SetForegroundWindow(myHandle);
 }
 
-static void ShouldBe_CntrlV(){
-    // To make this function work, it is necessary to find the correct values
-    // of PostMessage() and keybd_event() arguments:
-    // VkKeyScan('v') or VkKeyScan('V') or Ord('V') ?
-    // KEYEVENTF_KEYUP or KEYEVENTF_EXTENDEDKEY ?
-    // lParam = 0 or something else?
-    keybd_event(VK_CONTROL, MapVirtualKey(VK_CONTROL, 0), 0, 0);
-    if(!PostMessage(RConsole, WM_KEYDOWN, VkKeyScan('v'), 0))
+static void CntrlV(){
+    /* Code that used to work in Python:
+    keybd_event(0x11, 0, 0, 0);
+    if(!PostMessage(RConsole, 0x100, 0x56, 0x002F0001))
         RConsole = NULL;
     if(RConsole){
         Sleep(0.05);
-        PostMessage(RConsole, WM_KEYUP, VkKeyScan('v'), 0);
+        PostMessage(RConsole, 0x101, 0x56, 0xC02F0001);
     }
-    keybd_event(VK_CONTROL, MapVirtualKey(VK_CONTROL, 0), KEYEVENTF_KEYUP, 0);
-}
+    keybd_event(0x11, 0, 2, 0);
+    */
 
-static void CntrlV(){
-    // Code copied from SendQuitMsg().
-    // The result is annoying because it has to raise R window.
-    // It would be better to make PostMessage() work, as it worked with
-    // windows.py code.
-    RaiseRConsole();
-    if(RConsole && !Rterm){
-        Sleep(0.1);
-        keybd_event(VK_CONTROL, 0, 0, 0);
-        keybd_event(VkKeyScan('V'), 0, KEYEVENTF_EXTENDEDKEY | 0, 0);
-        Sleep(0.05);
-        keybd_event(VkKeyScan('V'), 0, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, 0);
-        keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0);
-        Sleep(0.05);
-    }
-    if(RConsole && Rterm){
-        RightClick();
-    }
-    HWND GVimWindow = FindWindow(NULL, "GVIM");
-    if(GVimWindow)
-        SetForegroundWindow(GVimWindow);
+    // Send CTRL down
+    PostMessage(RConsole, WM_SYSKEYDOWN, MapVirtualKey(VK_CONTROL, 0), 0);
+
+    // Send V down and up
+    PostMessage(RConsole, 0x100, 0x56, 0x002F0001);
+    Sleep(50);
+    PostMessage(RConsole, 0x101, 0x56, 0xC02F0001 );
+
+    // Send CTRL up
+    PostMessage(RConsole, WM_SYSKEYUP, MapVirtualKey(VK_CONTROL, 0), 0 );
 }
 
 const char *SendToRConsole(char *aString){
