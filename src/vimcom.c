@@ -1568,7 +1568,12 @@ static void RightClick(){
     SetForegroundWindow(myHandle);
 }
 
-static void CntrlV(){
+static void ShouldBe_CntrlV(){
+    // To make this function work, it is necessary to find the correct values
+    // of PostMessage() and keybd_event() arguments:
+    // VkKeyScan('v') or VkKeyScan('V') or Ord('V') ?
+    // KEYEVENTF_KEYUP or KEYEVENTF_EXTENDEDKEY ?
+    // lParam = 0 or something else?
     keybd_event(VK_CONTROL, MapVirtualKey(VK_CONTROL, 0), 0, 0);
     if(!PostMessage(RConsole, WM_KEYDOWN, VkKeyScan('v'), 0))
         RConsole = NULL;
@@ -1577,6 +1582,29 @@ static void CntrlV(){
         PostMessage(RConsole, WM_KEYUP, VkKeyScan('v'), 0);
     }
     keybd_event(VK_CONTROL, MapVirtualKey(VK_CONTROL, 0), KEYEVENTF_KEYUP, 0);
+}
+
+static void CntrlV(){
+    // Code copied from SendQuitMsg().
+    // The result is annoying because it has to raise R window.
+    // It would be better to make PostMessage() work, as it worked with
+    // windows.py code.
+    RaiseRConsole();
+    if(RConsole && !Rterm){
+        Sleep(0.1);
+        keybd_event(VK_CONTROL, 0, 0, 0);
+        keybd_event(VkKeyScan('V'), 0, KEYEVENTF_EXTENDEDKEY | 0, 0);
+        Sleep(0.05);
+        keybd_event(VkKeyScan('V'), 0, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, 0);
+        keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0);
+        Sleep(0.05);
+    }
+    if(RConsole && Rterm){
+        RightClick();
+    }
+    HWND GVimWindow = FindWindow(NULL, "GVIM");
+    if(GVimWindow)
+        SetForegroundWindow(GVimWindow);
 }
 
 const char *SendToRConsole(char *aString){
