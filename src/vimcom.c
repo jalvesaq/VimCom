@@ -1005,6 +1005,15 @@ static void *vimcom_server_thread(void *arg)
 #else
         fprintf(f, "%s\n%s\n%d\n%d\n", vimcom_version, vimcom_home, bindportn, R_PID);
 #endif
+#ifdef WIN32
+        HWND myHandle = GetForegroundWindow();
+        snprintf(fn, 510, "%s/rconsole_hwnd_%s", tmpdir, getenv("VIMRPLUGIN_SECRET"));
+        FILE *h = fopen(fn, "w");
+        if(h){
+            fwrite(&myHandle, sizeof(HWND), 1, h);
+            fclose(h);
+        }
+#endif
         fclose(f);
     }
 
@@ -1532,20 +1541,20 @@ HWND RConsole = NULL;
 int Rterm = 0;
 
 const char *FindRConsole(char *Rttl){
-    char Rtitle[256];
-    strcpy(Rtitle, Rttl);
-    strcpy(Reply, "NotFound");
-    RConsole = FindWindow(NULL, Rttl);
-    if(!RConsole){
-        snprintf(Rtitle, 254, "%s (64-bit)", Rttl);
-        RConsole = FindWindow(NULL, Rtitle);
-        if(!RConsole){
-            snprintf(Rtitle, 254, "%s (32-bit)", Rttl);
-            RConsole = FindWindow(NULL, Rtitle);
+    char fn[512];
+    snprintf(fn, 510, "%s/rconsole_hwnd_%s", getenv("VIMRPLUGIN_TMPDIR"), getenv("VIMRPLUGIN_SECRET"));
+    FILE *h = fopen(fn, "r");
+    if(h){
+        fread(&RConsole, sizeof(HWND), 1, h);
+        fclose(h);
+        char buf[256]
+        if(GetWindowText(RConsole, buf, 255)){
+            snprintf(Reply, 255, "let g:rplugin_R_window_ttl = '%s'", buf);
+            return(Reply);
         }
     }
-    if(RConsole)
-        snprintf(Reply, 254, "let g:rplugin_R_window_ttl = '%s'", Rtitle);
+    RConsole = NULL;
+    strcpy(Reply, "NotFound");
     return(Reply);
 }
 
@@ -1569,7 +1578,13 @@ static void RightClick(){
 }
 
 static void CntrlV(){
-    /* Code that used to work in Python:
+    /* FIXME: This function isn't working!
+       See: https://github.com/jcfaria/Vim-R-plugin/issues/144
+       Below are some failed attempts of writing it. */
+
+
+    /* Code that used to work in Python. Code was sent to R Console without
+     * raising its window.
     keybd_event(0x11, 0, 0, 0);
     if(!PostMessage(RConsole, 0x100, 0x56, 0x002F0001))
         RConsole = NULL;
@@ -1580,6 +1595,9 @@ static void CntrlV(){
     keybd_event(0x11, 0, 2, 0);
     */
 
+
+    /* This is an attempt of using only PostMessage, but I don't know how to
+     * write the last argument (lParam).
     // Send CTRL down
     PostMessage(RConsole, WM_SYSKEYDOWN, MapVirtualKey(VK_CONTROL, 0), 0);
 
@@ -1590,6 +1608,27 @@ static void CntrlV(){
 
     // Send CTRL up
     PostMessage(RConsole, WM_SYSKEYUP, MapVirtualKey(VK_CONTROL, 0), 0 );
+    */
+
+    // Copied from SendQuitMsg()
+    strcpy(Reply, "OK");
+    HWND myHandle = GetForegroundWindow();
+    RaiseRConsole();
+    if(RConsole && !Rterm){
+        Sleep(0.1);
+        keybd_event(VK_CONTROL, 0, 0, 0);
+        keybd_event(VkKeyScan('V'), 0, KEYEVENTF_EXTENDEDKEY | 0, 0);
+        Sleep(0.05);
+        keybd_event(VkKeyScan('V'), 0, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, 0);
+        keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0);
+        Sleep(0.05);
+    }
+    if(RConsole && Rterm){
+        RightClick();
+    }
+    Sleep(0.05);
+    SetForegroundWindow(myHandle);
+    return(Reply);
 }
 
 const char *SendToRConsole(char *aString){

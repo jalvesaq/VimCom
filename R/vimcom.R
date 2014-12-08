@@ -75,6 +75,8 @@
 .onUnload <- function(libpath) {
     .C("vimcom_Stop", PACKAGE="vimcom")
     unlink(paste0(Sys.getenv("VIMRPLUGIN_TMPDIR"), "/vimcom_running_", Sys.getenv("VIMINSTANCEID")))
+    if(.Platform$OS.type == "windows")
+        unlink(paste0(Sys.getenv("VIMRPLUGIN_TMPDIR"), "/rconsole_hwnd_", Sys.getenv("VIMRPLUGIN_SECRET")))
     Sys.sleep(1)
     library.dynam.unload("vimcom", libpath)
 }
