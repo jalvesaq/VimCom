@@ -1,5 +1,5 @@
 CC?=gcc
-ifdef _WIN64
+ifeq "$(WIN)" "64"
     CFLAGS+=-m64 -std=gnu99 -O3 -Wall -DWIN32
     LDFLAGS+=-m64 -shared -s -static-libgcc
 else
@@ -18,4 +18,6 @@ nvimserver.exe: nvimserver.c
 libvimcom.dll: vimcom.c
 	$(CC) $(CFLAGS) -c vimcom.c -o vimcom.o
 	$(CC) $(LDFLAGS) -o libvimcom.dll vimcom.o -lWs2_32
+
+clean:
 
