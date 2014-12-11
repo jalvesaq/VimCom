@@ -13,3 +13,5 @@ libvimcom.so: vimcom.c
 	$(CC) -std=gnu99 -fpic -O2 -c vimcom.c -o vimcom.o
 	$(CC) -std=gnu99 -shared -o libvimcom.so vimcom.o
 
+clean:
+
