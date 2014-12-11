@@ -8,6 +8,8 @@
 ###############################################################
 
 .onLoad <- function(libname, pkgname) {
+    if(Sys.getenv("VIMRPLUGIN_TMPDIR") == "" || Sys.getenv("VIMRPLUGIN_TMPDIR") == "None")
+        return(invisible(NULL))
     library.dynam("vimcom", pkgname, libname, local = FALSE)
 
     if(is.null(getOption("vimcom.verbose")))
@@ -43,6 +45,8 @@
 }
 
 .onAttach <- function(libname, pkgname) {
+    if(Sys.getenv("VIMRPLUGIN_TMPDIR") == "" || Sys.getenv("VIMRPLUGIN_TMPDIR") == "None")
+        return(invisible(NULL))
     if(version$os == "mingw32")
         termenv <- "MinGW"
     else
@@ -73,6 +77,8 @@
 }
 
 .onUnload <- function(libpath) {
+    if(Sys.getenv("VIMRPLUGIN_TMPDIR") == "" || Sys.getenv("VIMRPLUGIN_TMPDIR") == "None")
+        return(invisible(NULL))
     .C("vimcom_Stop", PACKAGE="vimcom")
     unlink(paste0(Sys.getenv("VIMRPLUGIN_TMPDIR"), "/vimcom_running_", Sys.getenv("VIMINSTANCEID")))
     if(.Platform$OS.type == "windows")
