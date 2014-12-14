@@ -202,26 +202,22 @@ static void CntrlV(){
     */
 
     // Copied from SendQuitMsg()
-    strcpy(Reply, "OK");
     HWND myHandle = GetForegroundWindow();
     RaiseRConsole();
-    if(RConsole && !Rterm){
-        Sleep(0.1);
-        keybd_event(VK_CONTROL, 0, 0, 0);
-        keybd_event(VkKeyScan('V'), 0, KEYEVENTF_EXTENDEDKEY | 0, 0);
-        Sleep(0.05);
-        keybd_event(VkKeyScan('V'), 0, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, 0);
-        keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0);
-        Sleep(0.05);
-    }
-    if(RConsole && Rterm){
-        RightClick();
-    }
+
+    Sleep(0.1);
+    keybd_event(VK_CONTROL, 0, 0, 0);
+    keybd_event(VkKeyScan('V'), 0, KEYEVENTF_EXTENDEDKEY | 0, 0);
     Sleep(0.05);
+    keybd_event(VkKeyScan('V'), 0, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, 0);
+    keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0);
+    Sleep(0.05);
+
     SetForegroundWindow(myHandle);
 }
 
 const char *SendToRConsole(char *aString){
+    strcpy(Reply, "OK");
     SendToVimCom("\003Set R as busy [SendToRConsole()]");
     OpenClipboard(0);
     EmptyClipboard();
@@ -235,7 +231,7 @@ const char *SendToRConsole(char *aString){
         else
             CntrlV();
     }
-    return NULL;
+    return(Reply);
 }
 
 const char *RClearConsole(char *what){
@@ -268,18 +264,18 @@ const char *SendQuitMsg(char *aString){
     SetClipboardData(CF_TEXT, aString);
     CloseClipboard();
     RaiseRConsole();
-    if(RConsole && !Rterm){
-        Sleep(0.1);
-        keybd_event(VK_CONTROL, 0, 0, 0);
-        keybd_event(VkKeyScan('V'), 0, KEYEVENTF_EXTENDEDKEY | 0, 0);
-        Sleep(0.05);
-        keybd_event(VkKeyScan('V'), 0, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, 0);
-        keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0);
-        Sleep(0.05);
-        RConsole = NULL;
-    }
-    if(RConsole && Rterm){
-        RightClick();
+    if(RConsole){
+        if(Rterm){
+            RightClick();
+        } else {
+            Sleep(0.1);
+            keybd_event(VK_CONTROL, 0, 0, 0);
+            keybd_event(VkKeyScan('V'), 0, KEYEVENTF_EXTENDEDKEY | 0, 0);
+            Sleep(0.05);
+            keybd_event(VkKeyScan('V'), 0, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, 0);
+            keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0);
+            Sleep(0.05);
+        }
         RConsole = NULL;
     }
     return(Reply);
