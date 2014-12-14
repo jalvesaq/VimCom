@@ -54,12 +54,12 @@
   have to scroll the R Console seeking for these messages.
 
   If the value of \samp{vimcom.vimpager} is true, the pager becomes a function
-  that will open R documentation in Vim if it is running inside Tmux. It also
-  works if R is running as a Neovim job.
+  that will open R documentation in Vim (If it does not work for you, see the
+  Vim-R-plugin section \samp{r-plugin-nox}).
 
-  You may want to put the some of the options above in your Rprofile rather
-  than setting them and loading the vimcom package manually. Below is an
-  example of ~/.Rprofile
+  You should put some of the options above in your Rprofile rather than
+  setting them and loading the vimcom package manually. Below is an
+  example of \samp{~/.Rprofile}
 
   \preformatted{
     if(interactive()){
@@ -72,6 +72,6 @@
 }
 \seealso{\link[base]{Startup}}
 \author{
-Jakson Alves de Aquino <jalvesaq@gmail.com>
+Jakson Alves de Aquino \email{jalvesaq@gmail.com}
 }
 \keyword{ package }
