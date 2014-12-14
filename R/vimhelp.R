@@ -10,6 +10,7 @@ vim.hmsg <- function(files, header, title, delete.file)
     keyword <- sub("'", "", keyword)
     keyword <- sub("\u2019", "", keyword)
     .C("vimcom_msg_to_vim", paste0("ShowRDoc('", keyword, "')"), PACKAGE="vimcom")
+    return(invisible(NULL))
 }
 
 vim.help <- function(topic, w, classfor, package)
@@ -45,14 +46,14 @@ vim.help <- function(topic, w, classfor, package)
         if (missing(package)) {
             if (!is.null(devtools:::find_topic(topic))) {
                 devtools::dev_help(topic)
-                return("VIMHELP")
+                return(invisible(NULL))
             }
         } else {
             if (package %in% devtools::dev_packages()) {
                 ret = try(devtools::dev_help(topic), silent = TRUE)
                 if (inherits(ret, "try-error"))
-                    return(as.character(ret))
-                return("VIMHELP")
+                    .C("vimcom_msg_to_vim", paste0("RWarningMsg('", as.character(ret), "')"), PACKAGE="vimcom")
+                return(invisible(NULL))
             }
         }
     }
@@ -64,24 +65,27 @@ vim.help <- function(topic, w, classfor, package)
 
     if(length(h) == 0){
         msg <- paste('No documentation for "', topic, '" in loaded packages and libraries.', sep = "")
-        return(msg)
+        .C("vimcom_msg_to_vim", paste0("RWarningMsg('", msg, "')"), PACKAGE="vimcom")
+        return(invisible(NULL))
     }
     if(length(h) > 1){
         if(missing(package)){
             h <- sub("/help/.*", "", h)
             h <- sub(".*/", "", h)
-            msg <- "MULTILIB"
-            for(l in h)
-                msg <- paste(msg, l)
-            return(msg)
+            msg <- paste("MULTILIB", paste(h, collapse = " "), topic)
+            .C("vimcom_msg_to_vim", paste0("ShowRDoc('", msg, "')"), PACKAGE="vimcom")
+            return(invisible(NULL))
         } else {
             h <- h[grep(paste("/", package, "/", sep = ""), h)]
-            if(length(h) == 0)
-                return(paste("Package '", package, "' has no documentation for '", topic, "'", sep = ""))
+            if(length(h) == 0){
+                msg <- paste("Package '", package, "' has no documentation for '", topic, "'", sep = "")
+                .C("vimcom_msg_to_vim", paste0("RWarningMsg('", msg, "')"), PACKAGE="vimcom")
+                return(invisible(NULL))
+            }
         }
     }
     print(h)
 
-    return("VIMHELP")
+    return(invisible(NULL))
 }
 
