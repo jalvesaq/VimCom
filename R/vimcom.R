@@ -33,15 +33,13 @@
     if(is.null(getOption("vimcom.labelerr")))
         options(vimcom.labelwarn = TRUE)
 
+    if(Sys.getenv("VIMEDITOR_SVRNM") %in% c("", "MacVim", "NoClientServer", "NoServerName"))
+        options(vimcom.vimpager = FALSE)
     if(is.null(getOption("vimcom.vimpager"))){
-        if(Sys.getenv("VIMEDITOR_SVRNM") %in% c("", "MacVim", "NoClientServer", "NoServerName")){
-            # Vim can't receive messages from R
-            options(vimcom.vimpager = FALSE)
-        } else {
-            options(vimcom.vimpager = TRUE)
-            options(pager = vim.hmsg)
-        }
+        options(vimcom.vimpager = TRUE)
     }
+    if(getOption("vimcom.vimpager"))
+        options(pager = vim.hmsg)
 }
 
 .onAttach <- function(libname, pkgname) {
@@ -67,12 +65,12 @@
            PACKAGE="vimcom")
     }
     if(termenv == "NeovimTerm"){
-        options(continue = "#<#\n", # workaround for Neovim job limitation
-                prompt = "#>#\n",   # https://github.com/neovim/neovim/issues/1574
-                pager = vim.hmsg,
-                editor = vim_edit)
         # "pager" and "editor" can't be optional because Neovim buffer isn't a
         # real terminal.
+        options(pager = vim.hmsg,
+                # continue = "#<#\n", # workaround for Neovim job limitation
+                # prompt = "#>#\n", # https://github.com/neovim/neovim/issues/1574
+                editor = vim_edit)
     }
 }
 

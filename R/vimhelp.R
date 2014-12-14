@@ -1,12 +1,4 @@
 
-vim.pgr <- function(files, header, title, delete.file)
-{
-    if(Sys.getenv("VIMRPLUGIN_TMPDIR") == "")
-        stop("VIMRPLUGIN_TMPDIR not set.")
-    dest <- paste0(Sys.getenv("VIMRPLUGIN_TMPDIR"), "/Rdoc")
-    file.copy(files[1], dest, overwrite = TRUE)
-}
-
 vim.hmsg <- function(files, header, title, delete.file)
 {
     if(Sys.getenv("VIMRPLUGIN_TMPDIR") == "")
@@ -17,14 +9,11 @@ vim.hmsg <- function(files, header, title, delete.file)
     keyword <- sub(".* \u2018", "", keyword)
     keyword <- sub("'", "", keyword)
     keyword <- sub("\u2019", "", keyword)
-    .C("vimcom_msg_to_vim", paste0("ShowRDoc('", keyword, "', 1)"), PACKAGE="vimcom")
+    .C("vimcom_msg_to_vim", paste0("ShowRDoc('", keyword, "')"), PACKAGE="vimcom")
 }
 
 vim.help <- function(topic, w, classfor, package)
 {
-    if(version$major < "2" || (version$major == "2" && version$minor < "12.0"))
-        return("The use of Vim as pager for R requires R >= 2.12.0. Please, put in your vimrc: let vimrplugin_vimpager = \"no\"")
-
     if(!missing(classfor) & length(grep(topic, names(.knownS3Generics))) > 0){
         curwarn <- getOption("warn")
         options(warn = -1)
@@ -49,7 +38,7 @@ vim.help <- function(topic, w, classfor, package)
 
     oldpager <- getOption("pager")
     on.exit(options(pager = oldpager), add = TRUE)
-    options(pager = vim.pgr)
+    options(pager = vim.hmsg)
 
     # try devtools first (if loaded)
     if ("devtools" %in% loadedNamespaces()) {
