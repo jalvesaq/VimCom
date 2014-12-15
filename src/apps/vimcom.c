@@ -131,30 +131,43 @@ const char *SendToVimCom(const char *instr)
 HWND RConsole = NULL;
 int Rterm = 0;
 
-const char *FindRConsole(char *Rttl){
-    char fn[512];
-    snprintf(fn, 510, "%s/rconsole_hwnd_%s", getenv("VIMRPLUGIN_TMPDIR"), getenv("VIMRPLUGIN_SECRET"));
-    FILE *h = fopen(fn, "r");
-    if(h){
-        fread(&RConsole, sizeof(HWND), 1, h);
-        fclose(h);
-        char buf[256];
-        if(GetWindowText(RConsole, buf, 255)){
-            snprintf(Reply, 255, "let g:rplugin_R_window_ttl = '%s'", buf);
-            return(Reply);
+static int FindRConsole(){
+    if(!RConsole){
+        // Read value of R Console Handle saved by src/vimcom.c
+        char fn[512];
+        snprintf(fn, 510, "%s/rconsole_hwnd_%s", getenv("VIMRPLUGIN_TMPDIR"),
+                getenv("VIMRPLUGIN_SECRET"));
+        FILE *h = fopen(fn, "r");
+        if(h){
+            fread(&RConsole, sizeof(HWND), 1, h);
+            fclose(h);
+        } else {
+            RConsole = NULL;
+            snprintf(Reply, 510, "Could not open file: \"%s/rconsole_hwnd_%s\"",
+                    getenv("VIMRPLUGIN_TMPDIR"),
+                    getenv("VIMRPLUGIN_SECRET"));
+            return 0;
         }
     }
-    RConsole = NULL;
-    strcpy(Reply, "NotFound");
-    return(Reply);
+    if(RConsole){
+        char buf[256];
+        if(GetWindowText(RConsole, buf, 255)){
+            snprintf(Reply, 255, "Yes: \"%s\"", buf);
+            return 1;
+        } else {
+            RConsole = NULL;
+            strcpy(Reply, "File with handle exists, but R window not found.");
+            return 0;
+        }
+    }
+
+    strcpy(Reply, "File filled with zeros?");
+    return 0;
 }
 
 static void RaiseRConsole(){
-    FindRConsole("R Console");
-    if(RConsole){
-        SetForegroundWindow(RConsole);
-        Sleep(0.1);
-    }
+    SetForegroundWindow(RConsole);
+    Sleep(0.1);
 }
 
 static void RightClick(){
@@ -217,67 +230,74 @@ static void CntrlV(){
 }
 
 const char *SendToRConsole(char *aString){
-    strcpy(Reply, "OK");
+    if(!FindRConsole())
+        return(Reply);
+
     SendToVimCom("\003Set R as busy [SendToRConsole()]");
     OpenClipboard(0);
     EmptyClipboard();
     SetClipboardData(CF_TEXT, aString);
     CloseClipboard();
-    if(!RConsole)
-        FindRConsole("R Console");
-    if(RConsole){
-        if(Rterm)
-            RightClick();
-        else
-            CntrlV();
-    }
+
+    if(Rterm)
+        RightClick();
+    else
+        CntrlV();
+
+    strcpy(Reply, "OK");
+    return(Reply);
+}
+
+const char *IsRRunning(char *nothing){
+    FindRConsole();
     return(Reply);
 }
 
 const char *RClearConsole(char *what){
-    strcpy(Reply, "OK");
-    if(strcmp(what, "Rterm"))
+    if(!FindRConsole())
         return(Reply);
-    if(!RConsole)
-        FindRConsole("R Console");
-    if(RConsole){
-        keybd_event(VK_CONTROL, 0, 0, 0);
-        if(!PostMessage(RConsole, 0x100, 0x4C, 0x002F0001)){
-            strcpy(Reply, "R Console window not found [1].");
-            RConsole = NULL;
-        }
-        if(RConsole){
-            Sleep(0.05);
-            if(!PostMessage(RConsole, 0x101, 0x4C, 0xC02F0001))
-                strcpy(Reply, "R Console window not found [2].");
-        }
-        keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0);
+
+    keybd_event(VK_CONTROL, 0, 0, 0);
+    if(!PostMessage(RConsole, 0x100, 0x4C, 0x002F0001)){
+        strcpy(Reply, "R Console window not found [1].");
+        RConsole = NULL;
     }
+    if(RConsole){
+        Sleep(0.05);
+        if(!PostMessage(RConsole, 0x101, 0x4C, 0xC02F0001))
+            strcpy(Reply, "R Console window not found [2].");
+    }
+    keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0);
+
+    strcpy(Reply, "OK");
     return(Reply);
 }
 
 const char *SendQuitMsg(char *aString){
-    strcpy(Reply, "OK");
+    if(!FindRConsole())
+        return(Reply);
+
     SendToVimCom("\003Set R as busy [SendQuitMsg()]");
     OpenClipboard(0);
     EmptyClipboard();
     SetClipboardData(CF_TEXT, aString);
     CloseClipboard();
     RaiseRConsole();
-    if(RConsole){
-        if(Rterm){
-            RightClick();
-        } else {
-            Sleep(0.1);
-            keybd_event(VK_CONTROL, 0, 0, 0);
-            keybd_event(VkKeyScan('V'), 0, KEYEVENTF_EXTENDEDKEY | 0, 0);
-            Sleep(0.05);
-            keybd_event(VkKeyScan('V'), 0, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, 0);
-            keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0);
-            Sleep(0.05);
-        }
-        RConsole = NULL;
+
+    if(Rterm){
+        RightClick();
+    } else {
+        Sleep(0.1);
+        keybd_event(VK_CONTROL, 0, 0, 0);
+        keybd_event(VkKeyScan('V'), 0, KEYEVENTF_EXTENDEDKEY | 0, 0);
+        Sleep(0.05);
+        keybd_event(VkKeyScan('V'), 0, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, 0);
+        keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0);
+        Sleep(0.05);
     }
+    RConsole = NULL;
+
+    strcpy(Reply, "OK");
     return(Reply);
 }
 
