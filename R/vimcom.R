@@ -75,14 +75,18 @@
 }
 
 .onUnload <- function(libpath) {
-    if(Sys.getenv("VIMRPLUGIN_TMPDIR") == "" || Sys.getenv("VIMRPLUGIN_TMPDIR") == "None")
-        return(invisible(NULL))
-    .C("vimcom_Stop", PACKAGE="vimcom")
-    unlink(paste0(Sys.getenv("VIMRPLUGIN_TMPDIR"), "/vimcom_running_", Sys.getenv("VIMINSTANCEID")))
-    if(.Platform$OS.type == "windows")
-        unlink(paste0(Sys.getenv("VIMRPLUGIN_TMPDIR"), "/rconsole_hwnd_", Sys.getenv("VIMRPLUGIN_SECRET")))
-    Sys.sleep(1)
-    library.dynam.unload("vimcom", libpath)
+    if(is.loaded("vimcom_Stop", PACKAGE = "vimcom")){
+        .C("vimcom_Stop", PACKAGE="vimcom")
+        if(Sys.getenv("VIMRPLUGIN_TMPDIR") != ""){
+            unlink(paste0(Sys.getenv("VIMRPLUGIN_TMPDIR"), "/vimcom_running_",
+                          Sys.getenv("VIMINSTANCEID")))
+            if(.Platform$OS.type == "windows")
+                unlink(paste0(Sys.getenv("VIMRPLUGIN_TMPDIR"), "/rconsole_hwnd_",
+                              Sys.getenv("VIMRPLUGIN_SECRET")))
+        }
+        Sys.sleep(0.2)
+        library.dynam.unload("vimcom", libpath)
+    }
 }
 
 
