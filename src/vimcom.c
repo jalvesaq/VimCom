@@ -65,7 +65,7 @@ static int has_new_obj = 0;
 static int always_ls_env = 0;
 
 #ifdef WIN32
-static int r_is_busy = 0;
+static int r_is_busy = 1;
 static int tcltkerr = 0;
 static int toggling_list = 0;
 #else
@@ -706,7 +706,7 @@ static int vimcom_checklibs()
     }
     fclose(f);
     if(edsrvr[0] != 0)
-        vimcom_client_ptr("RFillLibList()", edsrvr);
+        vimcom_client_ptr("FillRLibList()", edsrvr);
 
     return(newnlibs);
 }

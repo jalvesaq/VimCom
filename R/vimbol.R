@@ -122,7 +122,7 @@ vim.bol <- function(omnilist, packlist, allnames = FALSE) {
     on.exit(options(vim.OutDec))
     options(OutDec = ".")
 
-    if(vim.grepl("/r-plugin/objlist", omnilist) == FALSE){
+    if(vim.grepl("GlobalEnvList_", omnilist)){
         sink(omnilist, append = FALSE)
         obj.list <- objects(".GlobalEnv", all.names = allnames)
         l <- length(obj.list)
@@ -211,15 +211,15 @@ vim.bol <- function(omnilist, packlist, allnames = FALSE) {
 
 vim.buildomnils <- function(p){
     pvi <- utils::packageDescription(p)$Version
-    bdir <- paste0(Sys.getenv("VIMRPLUGIN_HOME"), "/r-plugin/objlist/")
+    bdir <- paste0(Sys.getenv("VIMRPLUGIN_COMPLDIR"), "/")
     odir <- dir(bdir)
     pbuilt <- odir[grep(paste0("omnils_", p, "_"), odir)]
     fbuilt <- odir[grep(paste0("fun_", p, "_"), odir)]
-    if(length(pbuilt) > 1 || length(fbuilt) > 1 || length(fbuilt) == 0){
-        unlink(paste0(bdir, c(pbuilt, fbuilt)))
-        pbuilt <- character()
-        fbuilt <- character()
-    }
+    # if(length(pbuilt) > 1 || length(fbuilt) > 1 || length(fbuilt) == 0){
+    #     unlink(paste0(bdir, c(pbuilt, fbuilt)))
+    #     pbuilt <- character()
+    #     fbuilt <- character()
+    # }
     if(length(pbuilt) > 0){
         pvb <- sub(".*_.*_", "", pbuilt)
         if(pvb == pvi){

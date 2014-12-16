@@ -50,9 +50,8 @@
     else
         termenv <- Sys.getenv("TERM")
 
-    if(interactive() && termenv != "" && termenv != "dumb" && Sys.getenv("VIMRPLUGIN_HOME") != ""){
-        dir.create(paste0(Sys.getenv("VIMRPLUGIN_HOME"), "/r-plugin/objlist/"),
-                   showWarnings = FALSE)
+    if(interactive() && termenv != "" && termenv != "dumb" && Sys.getenv("VIMRPLUGIN_COMPLDIR") != ""){
+        dir.create(Sys.getenv("VIMRPLUGIN_COMPLDIR"), showWarnings = FALSE)
         .C("vimcom_Start",
            as.integer(getOption("vimcom.verbose")),
            as.integer(getOption("vimcom.opendf")),
