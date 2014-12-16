@@ -1,7 +1,7 @@
 CC?=gcc
 CFLAGS+=-std=gnu99 -O2 -Wall
 
-all: nvimclient nvimserver libvimcom.so
+all: nvimclient nvimserver libVimR.so
 
 nvimclient: nvimclient.c
 	$(CC) $(CFLAGS) nvimclient.c -o nvimclient
@@ -9,9 +9,9 @@ nvimclient: nvimclient.c
 nvimserver: nvimserver.c
 	$(CC) $(CFLAGS) nvimserver.c -o nvimserver
 
-libvimcom.so: vimcom.c
-	$(CC) -std=gnu99 -fpic -O2 -c vimcom.c -o vimcom.o
-	$(CC) -std=gnu99 -shared -o libvimcom.so vimcom.o
+libVimR.so: vimr.c
+	$(CC) -std=gnu99 -fpic -O2 -c vimr.c -o vimr.o
+	$(CC) -std=gnu99 -shared -o libVimR.so vimr.o
 
 clean:
 

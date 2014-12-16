@@ -5,9 +5,9 @@ file.copy(files, dest, overwrite = TRUE)
 if(file.exists("symbols.rds"))
     file.copy("symbols.rds", dest, overwrite = TRUE)
 
-execs <- c("apps/nvimclient", "apps/nvimserver" , "apps/libvimcom.so")
+execs <- c("apps/nvimclient", "apps/nvimserver" , "apps/libVimR.so")
 if(WINDOWS)
-    execs <- c("apps/nvimclient.exe", "apps/nvimserver.exe" , "apps/libvimcom.dll")
+    execs <- c("apps/nvimclient.exe", "apps/nvimserver.exe" , "apps/libVimR.dll")
 if(any(file.exists(execs))){
     dest <- file.path(R_PACKAGE_DIR,  paste0('bin', R_ARCH))
     dir.create(dest, recursive = TRUE, showWarnings = FALSE)
