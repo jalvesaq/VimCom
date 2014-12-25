@@ -1,9 +1,18 @@
-AC_INIT(vimcom, 1.1-5)
+AC_INIT(vimcom, 1.2-0)
+
+# Don't enable clientserver on OS X unless the user explicitly requests it
+if test `uname` = Darwin
+then
+    want_cs="no"
+else
+    want_cs="yes"
+fi
 
 AC_ARG_ENABLE([clientserver],
-              [AS_HELP_STRING([--enable-clientserver],[support Vim clientserver feature @<:@yes@:>@])],
+              [AS_HELP_STRING([--enable-clientserver],
+                              [support Vim clientserver feature])],
               [want_clientserver="${enableval}"],
-              [want_clientserver="yes"])
+              [want_clientserver="$want_cs"])
 
 if test "x${want_clientserver}" = xyes; then
     AC_PATH_XTRA

@@ -1271,7 +1271,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe, ch
             }
 #else
             if(strcmp(srvr, "MacVim") == 0 && verbose > -1){
-                REprintf("vimcom: MacVim isn't fully supported by vimcom.");
+                REprintf("vimcom: MacVim isn't fully supported by vimcom.\n");
                 REprintf("             Please, in MacVim, enter Normal mode and type:\n");
                 REprintf("             :h r-plugin-nox\n");
             } else if(strcmp(srvr, "NoClientServer") == 0 && verbose > -1){
