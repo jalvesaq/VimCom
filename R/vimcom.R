@@ -50,7 +50,7 @@
     else
         termenv <- Sys.getenv("TERM")
 
-    if(interactive() && termenv != "" && termenv != "dumb" && Sys.getenv("VIMRPLUGIN_COMPLDIR") != ""){
+    if(interactive() && termenv != "" && termenv != "NeovimTerm" && termenv != "dumb" && Sys.getenv("VIMRPLUGIN_COMPLDIR") != ""){
         dir.create(Sys.getenv("VIMRPLUGIN_COMPLDIR"), showWarnings = FALSE)
         .C("vimcom_Start",
            as.integer(getOption("vimcom.verbose")),
@@ -62,14 +62,6 @@
            path.package("vimcom"),
            as.character(utils::packageVersion("vimcom")),
            PACKAGE="vimcom")
-    }
-    if(termenv == "NeovimTerm"){
-        # "pager" and "editor" can't be optional because Neovim buffer isn't a
-        # real terminal.
-        options(pager = vim.hmsg,
-                # continue = "#<#\n", # workaround for Neovim job limitation
-                # prompt = "#>#\n", # https://github.com/neovim/neovim/issues/1574
-                editor = vim_edit)
     }
 }
 

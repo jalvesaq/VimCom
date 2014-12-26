@@ -7,13 +7,7 @@ else
     LDFLAGS+=-m32 -shared -s -static-libgcc
 endif
 
-all: nvimclient.exe nvimserver.exe libVimR.dll
-
-nvimclient.exe: nvimclient.c
-	$(CC) $(CFLAGS) nvimclient.c -lWs2_32 -o nvimclient
-
-nvimserver.exe: nvimserver.c
-	$(CC) $(CFLAGS) nvimserver.c -lWs2_32 -o nvimserver
+all: libVimR.dll
 
 libVimR.dll: vimr.c
 	$(CC) $(CFLAGS) -c vimr.c -o vimr.o

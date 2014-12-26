@@ -28,7 +28,7 @@
 #include <signal.h>
 #endif
 
-#ifndef NEOVIM_ONLY
+#ifndef NO_X_CLIENTSERVER
 #include "vimremote.h"
 static int vimremote_initialized = 0;
 #endif
@@ -36,7 +36,6 @@ static int vimremote_initialized = 0;
 static char vimcom_version[32];
 
 static int Xdisp = 0;
-static int Neovim = 0;
 static pid_t R_PID;
 
 static int vimcom_initialized = 0;
@@ -108,7 +107,19 @@ static void vimcom_del_newline(char *buf)
         }
 }
 
-#ifndef NEOVIM_ONLY
+static void vimcom_mvimclient(const char *expr, char *svrnm)
+{
+    char buf[256];
+    snprintf(buf, 255, "mvim --servername %s --remote-expr \"%s\" >/dev/null", svrnm, expr);
+    int ret = system(buf);
+    if(ret != 0){
+        REprintf("vimcom: system command \"%s\" returned %d.\n", buf, ret);
+    }
+}
+
+#ifdef NO_X_CLIENTSERVER
+static void vimcom_noclient(const char *expr, char *svrnm) { }
+#else
 static void vimcom_vimclient(const char *expr, char *svrnm)
 {
     char *result = NULL;
@@ -134,124 +145,6 @@ static void vimcom_vimclient(const char *expr, char *svrnm)
         Rprintf("Remoteexpr result: \"%s\"\n", result == NULL ? "NULL" : result);
     if(result)
         free(result);
-}
-#endif
-
-#ifndef WIN32
-static void vimcom_nvimclient(const char *msg, char *port)
-{
-    struct addrinfo hints;
-    struct addrinfo *result, *rp;
-    char portstr[16];
-    int s, a;
-    size_t len;
-    int srvport = atoi(port);
-
-    if(verbose > 2)
-        Rprintf("vimcom_nvimclient(%s): '%s' (%d)\n", msg, port, srvport);
-    if(port[0] == 0){
-        if(verbose > 3)
-            REprintf("vimcom_nvimclient() called although Neovim server port is undefined\n");
-        return;
-    }
-
-    /* Obtain address(es) matching host/port */
-
-    memset(&hints, 0, sizeof(struct addrinfo));
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_DGRAM;
-    hints.ai_flags = 0;
-    hints.ai_protocol = 0;
-
-    sprintf(portstr, "%d", srvport);
-    a = getaddrinfo("127.0.0.1", portstr, &hints, &result);
-    if (a != 0) {
-        REprintf("Error: getaddrinfo: %s\n", gai_strerror(a));
-        objbr_auto = 0;
-        return;
-    }
-
-    for (rp = result; rp != NULL; rp = rp->ai_next) {
-        s = socket(rp->ai_family, rp->ai_socktype,
-                rp->ai_protocol);
-        if (s == -1)
-            continue;
-
-        if (connect(s, rp->ai_addr, rp->ai_addrlen) != -1)
-            break;		   /* Success */
-
-        close(s);
-    }
-
-    if (rp == NULL) {		   /* No address succeeded */
-        REprintf("Error: Could not connect\n");
-        objbr_auto = 0;
-        return;
-    }
-
-    freeaddrinfo(result);	   /* No longer needed */
-
-    /* Prefix VIMRPLUGIN_SECRET to msg to increase security.
-     * The vimclient does not need this because it is protect by the X server. */
-    char finalmsg[256];
-    strncpy(finalmsg, vimsecr, 255);
-    strncat(finalmsg, "call ", 255);
-    strncat(finalmsg, msg, 255);
-    len = strlen(finalmsg);
-    if (write(s, finalmsg, len) != len) {
-        REprintf("Error: partial/failed write\n");
-        objbr_auto = 0;
-        return;
-    }
-}
-#endif
-
-#ifdef WIN32
-static void vimcom_nvimclient(const char *msg, char *port)
-{
-    WSADATA wsaData;
-    struct sockaddr_in peer_addr;
-    SOCKET sfd;
-
-    if(verbose > 2)
-        Rprintf("vimcom_nvimclient(%s): '%s'\n", msg, port);
-    if(port[0] == 0){
-        if(verbose > 3)
-            REprintf("vimcom_nvimclient() called although Neovim server port is undefined\n");
-        return;
-    }
-
-    WSAStartup(MAKEWORD(2, 2), &wsaData);
-    sfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-
-    if(sfd < 0){
-        REprintf("vimcom_nvimclient socket failed.\n");
-        return;
-    }
-
-    peer_addr.sin_family = AF_INET;
-    peer_addr.sin_port = htons(atoi(port));
-    peer_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-    if(connect(sfd, (struct sockaddr *)&peer_addr, sizeof(peer_addr)) < 0){
-        REprintf("vimcom_nvimclient could not connect.\n");
-        return;
-    }
-
-    /* Prefix VIMRPLUGIN_SECRET to msg to increase security.
-     * The vimclient does not need this because it is protect by the X server. */
-    char finalmsg[256];
-    strncpy(finalmsg, vimsecr, 255);
-    strncat(finalmsg, "call ", 255);
-    strncat(finalmsg, msg, 255);
-    int len = strlen(finalmsg);
-    if (send(sfd, finalmsg, len+1, 0) < 0) {
-        REprintf("vimcom_nvimclient failed sending message.\n");
-        return;
-    }
-
-    if(closesocket(sfd) < 0)
-        REprintf("vimcom_nvimclient error closing socket.\n");
-    return;
 }
 #endif
 
@@ -986,13 +879,6 @@ static void *vimcom_server_thread(void *arg)
     if(verbose > 1)
         REprintf("vimcom port: %d\n", bindportn);
 
-#ifndef WIN32
-    if(Neovim){
-        flag_lslibs = 1;
-        vimcom_fire();
-    }
-#endif
-
     // Save a file to indicate that vimcom is running
     char fn[512];
     snprintf(fn, 510, "%s/vimcom_running_%s", tmpdir, getenv("VIMINSTANCEID"));
@@ -1052,7 +938,7 @@ static void *vimcom_server_thread(void *arg)
 
         switch(buf[0]){
             case 1: // Set Editor server name or port number
-                if(Xdisp || Neovim){
+                if(Xdisp){
                     bbuf = buf;
                     bbuf++;
                     strcpy(edsrvr, bbuf);
@@ -1063,7 +949,7 @@ static void *vimcom_server_thread(void *arg)
                 }
                 break;
             case 2: // Set Object Browser server name or port number
-                if(Xdisp || Neovim){
+                if(Xdisp){
                     bbuf = buf;
                     bbuf++;
                     objbr_auto = 1;
@@ -1233,9 +1119,9 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe, ch
     always_ls_env = *alw;
     labelerr = *lbe;
 
-#ifdef NEOVIM_ONLY
+#ifdef NO_X_CLIENTSERVER
     Xdisp = 1;
-    vimcom_client_ptr = vimcom_nvimclient;
+    vimcom_client_ptr = vimcom_noclient;
 #else
     vimcom_client_ptr = vimcom_vimclient;
 #ifdef WIN32
@@ -1260,20 +1146,11 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe, ch
             REprintf("vimcom: Environment variable VIMRPLUGIN_SECRET is missing.\n");
         char *srvr = getenv("VIMEDITOR_SVRNM");
         if(srvr){
-#ifdef NEOVIM_ONLY
-            if(strstr(srvr, "Neovim_") == NULL){
-                REprintf("Warning: this version of vimcom was built only for Neovim.\nThere is no support for either X11 or Windows 'clientserver' feature.\n");
-            } else {
-                vimcom_client_ptr = vimcom_nvimclient;
-                Neovim = 1;
+            if(strstr(srvr, "MacVim_") == srvr){
+                vimcom_client_ptr = vimcom_mvimclient;
+                strncpy(edsrvr, srvr + 7, 127);
                 if(verbose > 1)
-                    Rprintf("R called by Neovim\n");
-            }
-#else
-            if(strcmp(srvr, "MacVim") == 0 && verbose > -1){
-                REprintf("vimcom: MacVim isn't fully supported by vimcom.\n");
-                REprintf("             Please, in MacVim, enter Normal mode and type:\n");
-                REprintf("             :h r-plugin-nox\n");
+                    Rprintf("vimcom: R started by MacVim (servername = %s).\n", edsrvr);
             } else if(strcmp(srvr, "NoClientServer") == 0 && verbose > -1){
                 REprintf("vimcom: Vim was built without the 'clientserver' feature.\n");
                 REprintf("             Please, in Vim, enter Normal mode and type:\n");
@@ -1285,16 +1162,10 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe, ch
                     REprintf("vimcom: There is no X Server running.\n");
                 REprintf("             Please, in Vim, enter Normal mode and type:\n");
                 REprintf("             :h r-plugin-nox\n");
-            } else if(strstr(srvr, "Neovim_")){
-                vimcom_client_ptr = vimcom_nvimclient;
-                Neovim = 1;
-                if(verbose > 1)
-                    Rprintf("R called by Neovim\n");
             } else {
                 strncpy(edsrvr, srvr, 127);
                 vimcom_del_newline(edsrvr);
             }
-#endif
         } else {
             if(verbose > -1)
                 REprintf("vimcom: Vim's server is unknown.\n");
@@ -1308,7 +1179,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe, ch
         return;
     }
 
-#ifndef NEOVIM_ONLY
+#ifndef NO_X_CLIENTSERVER
     if(Xdisp){
         if(vimremote_init() == 0)
             vimremote_initialized = 1;
@@ -1389,7 +1260,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe, ch
 
 void vimcom_Stop()
 {
-#ifndef NEOVIM_ONLY
+#ifndef NO_X_CLIENTSERVER
     if(vimremote_initialized && vimremote_uninit() != 0){
         REprintf("Error: vimremote_uninit() failed.\n");
     }

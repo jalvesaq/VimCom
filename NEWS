@@ -1,8 +1,14 @@
-Version 1.1-9 (2014-12-03)
+Version 1.1-16 (2014-12-26)
 
  - Host the Vim-R-plugin TCP code.
 
  - Don't export functions that are called through vimcom TCP server.
+
+ - By default, don't build support for Vim's clientserver feature on OS X.
+
+ - Support MacVim clientserver feature through a call to system("mvim ...")
+
+ - Remove support for Neovim. See https://github.com/jalvesaq/nvimcom
 
 Version 1.1-0 (2014-11-13)
 

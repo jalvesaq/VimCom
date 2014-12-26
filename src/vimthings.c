@@ -3,7 +3,7 @@
  * available at http://www.vim.org/scripts/script.php?script_id=3482 */
 
 
-#ifndef NEOVIM_ONLY
+#ifndef NO_X_CLIENTSERVER
 #include "vimthings.h"
 
 /************************************************************************

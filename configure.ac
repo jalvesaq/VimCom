@@ -30,7 +30,7 @@ if test "x${want_clientserver}" = xyes; then
     echo "    X_LIBS         : $X_LIBS"
     echo ""
 else
-    XCFLAGS="-DNEOVIM_ONLY $X_CFLAGS"
+    XCFLAGS="-DNO_X_CLIENTSERVER $X_CFLAGS"
     XLIBS="$X_LIBS"
     AC_SUBST(XLIBS)
     AC_SUBST(XCFLAGS)
