@@ -57,6 +57,7 @@ static char globenv[512];
 static char strL[16];
 static char strT[16];
 static char tmpdir[512];
+static char macvim[512];
 static char vimcom_home[1024];
 static int objbr_auto = 0;
 static int has_new_lib = 0;
@@ -109,8 +110,8 @@ static void vimcom_del_newline(char *buf)
 
 static void vimcom_mvimclient(const char *expr, char *svrnm)
 {
-    char buf[256];
-    snprintf(buf, 255, "mvim --servername %s --remote-expr \"%s\" >/dev/null", svrnm, expr);
+    char buf[512];
+    snprintf(buf, 511, "%s --servername %s --remote-expr \"%s\" >/dev/null", macvim, svrnm, expr);
     int ret = system(buf);
     if(ret != 0){
         REprintf("vimcom: system command \"%s\" returned %d.\n", buf, ret);
@@ -1149,6 +1150,15 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *alw, int *lbe, ch
             if(strstr(srvr, "MacVim_") == srvr){
                 vimcom_client_ptr = vimcom_mvimclient;
                 strncpy(edsrvr, srvr + 7, 127);
+                if(getenv("VIM_BINARY_PATH")){
+                    strncpy(macvim, getenv("VIM_BINARY_PATH"), 500);
+                    if(strlen(macvim) < 3)
+                        REprintf("vimcom: VIM_BINARY_PATH is too short: \"%s\".\n", macvim);
+                    strcpy(macvim, "mvim");
+                } else {
+                    REprintf("vimcom: VIM_BINARY_PATH environment variable not found.\n");
+                    strcpy(macvim, "mvim");
+                }
                 if(verbose > 1)
                     Rprintf("vimcom: R started by MacVim (servername = %s).\n", edsrvr);
             } else if(strcmp(srvr, "NoClientServer") == 0 && verbose > -1){
