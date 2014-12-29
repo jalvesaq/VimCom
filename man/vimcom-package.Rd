@@ -16,7 +16,6 @@
     vimcom.opendf   \tab Show data.frames elements.             \tab TRUE    \cr
     vimcom.openlist \tab Show lists elements.                   \tab FALSE   \cr
     vimcom.allnames \tab Show .GlobalEnv hidden objects.        \tab FALSE   \cr
-    vimcom.alwaysls \tab Update the Object Browser more.        \tab TRUE    \cr
     vimcom.labelerr \tab Warn if label is not \samp{character}. \tab TRUE    \cr
     vimcom.texerrs  \tab Output TeX errors and warnings.        \tab TRUE    \cr
     vimcom.vimpager \tab Show R documentation in Vim.           \tab TRUE    \cr
@@ -39,10 +38,6 @@
   closed) of, respectively, data.frames and lists. The options are ignored for
   data.frames and lists of libraries which are always started closed.
 
-  If the value of \samp{vimcom.alwaysls} is \samp{FALSE}, the Object Browser
-  will update the R's workspace list of objects only when the number of
-  objects changes.
-
   If an object R's workspace has the attribute \samp{label}, it is displayed
   in Vim's Object Browser. If the \samp{label} attribute is not of class
   \samp{"character"}, and if  \samp{vimcom.labelerr} is \samp{TRUE}, an error
@@ -55,7 +50,8 @@
 
   If the value of \samp{vimcom.vimpager} is true, the pager becomes a function
   that will open R documentation in Vim (If it does not work for you, see the
-  Vim-R-plugin section \samp{r-plugin-nox}).
+  Vim-R-plugin section \samp{r-plugin-nox}). The default value for MacVim is
+  \samp{FALSE}.
 
   You should put some of the options above in your Rprofile rather than
   setting them and loading the vimcom package manually. Below is an

@@ -27,13 +27,15 @@
     if(is.null(getOption("vimcom.texerrs")))
         options(vimcom.texerrs = TRUE)
 
-    if(is.null(getOption("vimcom.alwaysls")))
-        options(vimcom.alwaysls = TRUE)
+    if(length(grep("MacVim", Sys.getenv("VIMEDITOR_SVRNM"))) > 0){
+        if(is.null(getOption("vimcom.vimpager")))
+            options(vimcom.vimpager = FALSE)
+    }
 
     if(is.null(getOption("vimcom.labelerr")))
         options(vimcom.labelwarn = TRUE)
 
-    if(Sys.getenv("VIMEDITOR_SVRNM") %in% c("", "MacVim", "NoClientServer", "NoServerName"))
+    if(Sys.getenv("VIMEDITOR_SVRNM") %in% c("", "NoClientServer", "NoServerName"))
         options(vimcom.vimpager = FALSE)
     if(is.null(getOption("vimcom.vimpager"))){
         options(vimcom.vimpager = TRUE)
@@ -57,7 +59,6 @@
            as.integer(getOption("vimcom.opendf")),
            as.integer(getOption("vimcom.openlist")),
            as.integer(getOption("vimcom.allnames")),
-           as.integer(getOption("vimcom.alwaysls")),
            as.integer(getOption("vimcom.labelerr")),
            path.package("vimcom"),
            as.character(utils::packageVersion("vimcom")),
