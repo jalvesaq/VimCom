@@ -1,18 +1,14 @@
 # VimCom
 
 This is the development version of the R package "VimCom", which runs a server
-in R to receive messages from the [Vim-R-plugin]. This package has support for
-both [Vim] and [Neovim].
+in R to receive messages from the [Vim-R-plugin]. This package has support
+only for [Vim]. If you use [Neovim], please, look at [nvimcom].
 
 Note that you only need this version of VimCom if you are using the
 development version of [Vim-R-plugin]. If you are using a [released version of
 Vim-R-plugin], you will also need a [released version of vimcom].
 
 ## How to install
-
-To build the support for Vim's 'clientserver' on Unix systems (such as Linux
-and Mac OS X), the X11 header libraries must be installed. Please access the
-[official vimcom webpage] for details.
 
 The easiest way to install vimcom is to use the [devtools] package.
 
@@ -28,17 +24,18 @@ git clone https://github.com/jalvesaq/VimCom.git
 R CMD INSTALL VimCom
 ```
 
-The communication with Neovim requires neither X11 nor Windows. Hence, if you
-will use the package only with Neovim, you do not need the support for Vim's
-'clientserver' feature, which is disabled if the package is installed with the
-command below:
+On Mac OS X, by default, vimcom will be compiled without support for Vim's
+clientserver feature, which depends on the X Server. On any other Unix system,
+the package is built with support for X Server and, consequently, the X11
+headers must be installed. Please access the [official vimcom webpage] for
+details.
+
+To enable the support for Vim's 'clientserver' on Mac OS X, do the following
 
 ```sh
-R CMD INSTALL --configure-args='--disable-clientserver' VimCom
+R CMD INSTALL --configure-args='--enable-clientserver' VimCom
 ```
 
-Of course, without support for the 'clientserver' feature you also do not need
-to install the X11 headers on Unix.
 
 
 ## vimcom *versus* vimcom.plus
@@ -59,3 +56,4 @@ name back to "vimcom".
 [released version of Vim-R-plugin]: http://www.vim.org/scripts/script.php?script_id=2628
 [released version of vimcom]: http://www.lepem.ufc.br/jaa/vimcom.html
 [devtools]: http://cran.r-project.org/web/packages/devtools/index.html
+[nvimcom]: https://github.com/jalvesaq/nvimcom
