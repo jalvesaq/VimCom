@@ -1,6 +1,8 @@
-Version 1.1-16 (2014-12-26)
+Version 1.1-17 (2015-01-10)
 
  - Host the Vim-R-plugin TCP code.
+
+ - Remove option vimcom.alwaysls.
 
  - Don't export functions that are called through vimcom TCP server.
 

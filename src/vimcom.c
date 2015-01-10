@@ -801,11 +801,9 @@ static void *vimcom_server_thread(void *arg)
 #endif
 {
     unsigned short bindportn = 10000;
-    ssize_t nsent;
     ssize_t nread;
     int bsize = 5012;
     char buf[bsize];
-    char rep[bsize];
     int result;
 
 #ifdef WIN32
@@ -927,23 +925,12 @@ static void *vimcom_server_thread(void *arg)
 #else
         fprintf(f, "%s\n%s\n%d\n%d\n", vimcom_version, vimcom_home, bindportn, R_PID);
 #endif
-#ifdef WIN32
-        HWND myHandle = GetForegroundWindow();
-        snprintf(fn, 510, "%s/rconsole_hwnd_%s", tmpdir, getenv("VIMRPLUGIN_SECRET"));
-        FILE *h = fopen(fn, "w");
-        if(h){
-            fwrite(&myHandle, sizeof(HWND), 1, h);
-            fclose(h);
-        }
-#endif
         fclose(f);
     }
 
     /* Read datagrams and reply to sender */
     for (;;) {
         memset(buf, 0, bsize);
-        memset(rep, 0, bsize);
-        strcpy(rep, "UNKNOWN");
 
 #ifdef WIN32
         nread = recvfrom(sfd, buf, bsize, 0,
@@ -979,9 +966,6 @@ static void *vimcom_server_thread(void *arg)
                     bbuf++;
                     strcpy(edsrvr, bbuf);
                     vimcom_del_newline(edsrvr);
-                    sprintf(rep, "Editor server name set to %s\n", edsrvr);
-                } else {
-                    strcpy(rep, "The DISPLAY variable is not set.");
                 }
                 break;
             case 2: // Set Object Browser server name or port number
@@ -991,15 +975,11 @@ static void *vimcom_server_thread(void *arg)
                     objbr_auto = 1;
                     strcpy(obsrvr, bbuf);
                     vimcom_del_newline(obsrvr);
-                    sprintf(rep, "Object Browser server name set to %s\n", obsrvr);
-                } else {
-                    strcpy(rep, "The DISPLAY variable is not set.");
                 }
                 break;
 #ifdef WIN32
             case 3: // Set R as busy
                 r_is_busy = 1;
-                strcpy(rep, "R set as busy.");
                 break;
 #endif
             case 4: // Stop automatic update of Object Browser info
@@ -1007,9 +987,7 @@ static void *vimcom_server_thread(void *arg)
                 break;
             case 5: // Update Object Browser (.GlobalEnv and Libraries)
 #ifdef WIN32
-                if(r_is_busy){
-                    strcpy(rep, "R is busy.");
-                } else {
+                if(!r_is_busy){
                     if(buf[1] == 'B' || buf[1] == 'G')
                         vimcom_list_env();
                     if(buf[1] == 'B' || buf[1] == 'L')
@@ -1025,10 +1003,8 @@ static void *vimcom_server_thread(void *arg)
                 break;
             case 6: // Toggle list status
 #ifdef WIN32
-                if(r_is_busy){
-                    strcpy(rep, "R is busy.");
+                if(r_is_busy)
                     break;
-                }
 #endif
                 bbuf = buf;
                 bbuf++;
@@ -1051,14 +1027,11 @@ static void *vimcom_server_thread(void *arg)
 #ifndef WIN32
                 vimcom_fire();
 #endif
-                strcpy(rep, "OK");
                 break;
             case 7: // Close/open all lists
 #ifdef WIN32
-                if(r_is_busy){
-                    strcpy(rep, "R is busy.");
+                if(r_is_busy)
                     break;
-                }
                 toggling_list = 1;
 #endif
                 bbuf = buf;
@@ -1103,9 +1076,7 @@ static void *vimcom_server_thread(void *arg)
                 if(strstr(bbuf, getenv("VIMINSTANCEID")) == bbuf){
                     bbuf += strlen(getenv("VIMINSTANCEID"));
 #ifdef WIN32
-                    if(r_is_busy)
-                        strcpy(rep, "R is busy.");
-                    else
+                    if(!r_is_busy)
                         vimcom_eval_expr(bbuf);
 #else
                     strncpy(flag_eval, bbuf, 510);
@@ -1119,14 +1090,6 @@ static void *vimcom_server_thread(void *arg)
                 REprintf("\nError [vimcom]: Invalid message received: %s\n", buf);
                 break;
         }
-
-        nsent = strlen(rep);
-        if (sendto(sfd, rep, nsent, 0, (struct sockaddr *) &peer_addr, peer_addr_len) != nsent)
-            REprintf("Error sending response. [vimcom]\n");
-
-        if(verbose > 1)
-            REprintf("vimcom sent: %s\n", rep);
-
     }
 #ifdef WIN32
     REprintf("vimcom: Finished receiving. Closing socket.\n");

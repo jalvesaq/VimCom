@@ -85,6 +85,7 @@ const char *SendToVimCom(char *instr)
 #endif
 
 #ifdef WIN32
+
 const char *SendToVimCom(const char *instr)
 {
     strcpy(Reply, "OK");
@@ -131,38 +132,17 @@ const char *SendToVimCom(const char *instr)
 HWND RConsole = NULL;
 int Rterm = 0;
 
-static int FindRConsole(){
-    if(!RConsole){
-        // Read value of R Console Handle saved by src/vimcom.c
-        char fn[512];
-        snprintf(fn, 510, "%s/rconsole_hwnd_%s", getenv("VIMRPLUGIN_TMPDIR"),
-                getenv("VIMRPLUGIN_SECRET"));
-        FILE *h = fopen(fn, "r");
-        if(h){
-            fread(&RConsole, sizeof(HWND), 1, h);
-            fclose(h);
-        } else {
-            RConsole = NULL;
-            snprintf(Reply, 510, "Could not open file: \"%s/rconsole_hwnd_%s\"",
-                    getenv("VIMRPLUGIN_TMPDIR"),
-                    getenv("VIMRPLUGIN_SECRET"));
-            return 0;
-        }
-    }
-    if(RConsole){
-        char buf[256];
-        if(GetWindowText(RConsole, buf, 255)){
-            snprintf(Reply, 255, "Yes: \"%s\"", buf);
-            return 1;
-        } else {
-            RConsole = NULL;
-            strcpy(Reply, "File with handle exists, but R window not found.");
-            return 0;
-        }
-    }
-
-    strcpy(Reply, "File filled with zeros?");
-    return 0;
+const char *FindRConsole(char *Rttl){
+#ifdef _WIN64
+    RConsole = FindWindow(NULL, "R Console (64-bit)");
+#else
+    RConsole = FindWindow(NULL, "R Console (32-bit)");
+#endif
+    if(RConsole)
+	strcpy(Reply, "OK");
+    else
+	strcpy(Reply, "NotFound");
+    return(Reply);
 }
 
 static void RaiseRConsole(){
@@ -182,11 +162,6 @@ static void RightClick(){
 }
 
 static void CntrlV(){
-    /* FIXME: This function isn't working!
-       See: https://github.com/jcfaria/Vim-R-plugin/issues/144
-       Below are some failed attempts of writing it. */
-
-
     /* Code that used to work in Python. Code was sent to R Console without
      * raising its window.
     keybd_event(0x11, 0, 0, 0);
@@ -214,31 +189,39 @@ static void CntrlV(){
     PostMessage(RConsole, WM_SYSKEYUP, MapVirtualKey(VK_CONTROL, 0), 0 );
     */
 
-    // Copied from SendQuitMsg()
-    HWND myHandle = GetForegroundWindow();
+    // This is the most inefficient way of sending Ctrl+V
     RaiseRConsole();
-
     Sleep(0.1);
     keybd_event(VK_CONTROL, 0, 0, 0);
     keybd_event(VkKeyScan('V'), 0, KEYEVENTF_EXTENDEDKEY | 0, 0);
     Sleep(0.05);
     keybd_event(VkKeyScan('V'), 0, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, 0);
     keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0);
-    Sleep(0.05);
+}
 
-    SetForegroundWindow(myHandle);
+static void CopyTxtToCB(char *str)
+{
+    const size_t len = strlen(str) + 1;
+    HGLOBAL m = GlobalAlloc(GMEM_MOVEABLE, len);
+    memcpy(GlobalLock(m), str, len);
+    GlobalUnlock(m);
+    OpenClipboard(0);
+    EmptyClipboard();
+    SetClipboardData(CF_TEXT, m);
+    CloseClipboard();
 }
 
 const char *SendToRConsole(char *aString){
-    if(!FindRConsole())
-        return(Reply);
+    if(!RConsole)
+	FindRConsole(NULL);
+    if(!RConsole){
+	strcpy(Reply, "R Console not found");
+	return(Reply);
+    }
 
     SendToVimCom("\003Set R as busy [SendToRConsole()]");
-    OpenClipboard(0);
-    EmptyClipboard();
-    SetClipboardData(CF_TEXT, aString);
-    CloseClipboard();
 
+    CopyTxtToCB(aString);
     if(Rterm)
         RightClick();
     else
@@ -248,14 +231,13 @@ const char *SendToRConsole(char *aString){
     return(Reply);
 }
 
-const char *IsRRunning(char *nothing){
-    FindRConsole();
-    return(Reply);
-}
-
 const char *RClearConsole(char *what){
-    if(!FindRConsole())
-        return(Reply);
+    if(!RConsole)
+	FindRConsole(NULL);
+    if(!RConsole){
+	strcpy(Reply, "R Console not found");
+	return(Reply);
+    }
 
     keybd_event(VK_CONTROL, 0, 0, 0);
     if(!PostMessage(RConsole, 0x100, 0x4C, 0x002F0001)){
@@ -274,30 +256,8 @@ const char *RClearConsole(char *what){
 }
 
 const char *SendQuitMsg(char *aString){
-    if(!FindRConsole())
-        return(Reply);
-
-    SendToVimCom("\003Set R as busy [SendQuitMsg()]");
-    OpenClipboard(0);
-    EmptyClipboard();
-    SetClipboardData(CF_TEXT, aString);
-    CloseClipboard();
-    RaiseRConsole();
-
-    if(Rterm){
-        RightClick();
-    } else {
-        Sleep(0.1);
-        keybd_event(VK_CONTROL, 0, 0, 0);
-        keybd_event(VkKeyScan('V'), 0, KEYEVENTF_EXTENDEDKEY | 0, 0);
-        Sleep(0.05);
-        keybd_event(VkKeyScan('V'), 0, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, 0);
-        keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0);
-        Sleep(0.05);
-    }
+    SendToRConsole(aString);
     RConsole = NULL;
-
-    strcpy(Reply, "OK");
     return(Reply);
 }
 
