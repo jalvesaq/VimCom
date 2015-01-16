@@ -992,6 +992,12 @@ static void *vimcom_server_thread(void *arg)
                         vimcom_list_env();
                     if(buf[1] == 'B' || buf[1] == 'L')
                         vimcom_list_libs();
+		    if(buf[1] == 'B')
+			vimcom_client_ptr("UpdateOB('both')", obsrvr);
+		    else if(buf[1] == 'G')
+			vimcom_client_ptr("UpdateOB('GlobalEnv')", obsrvr);
+		    else if(buf[1] == 'L')
+			vimcom_client_ptr("UpdateOB('libraries')", obsrvr);
                 }
 #else
                 if(buf[1] == 'B' || buf[1] == 'G')
@@ -1014,12 +1020,14 @@ static void *vimcom_server_thread(void *arg)
 #ifdef WIN32
                     toggling_list = 1;
                     vimcom_list_libs();
+		    vimcom_client_ptr("UpdateOB('libraries')", obsrvr);
 #else
                     flag_lslibs = 1;
 #endif
                 } else {
 #ifdef WIN32
                     vimcom_list_env();
+		    vimcom_client_ptr("UpdateOB('GlobalEnv')", obsrvr);
 #else
                     flag_lsenv = 1;
 #endif
@@ -1064,7 +1072,8 @@ static void *vimcom_server_thread(void *arg)
 #endif
                 }
 #ifdef WIN32
-                if(status > 1 && obsrvr[0] != 0)
+		toggling_list = 0;
+                if(obsrvr[0] != 0)
                     vimcom_client_ptr("UpdateOB('both')", obsrvr);
 #else
                 vimcom_fire();

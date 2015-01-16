@@ -133,11 +133,12 @@ HWND RConsole = NULL;
 int Rterm = 0;
 
 const char *FindRConsole(char *Rttl){
-#ifdef _WIN64
     RConsole = FindWindow(NULL, "R Console (64-bit)");
-#else
-    RConsole = FindWindow(NULL, "R Console (32-bit)");
-#endif
+    if(!RConsole){
+	RConsole = FindWindow(NULL, "R Console (32-bit)");
+	if(!RConsole)
+	    RConsole = FindWindow(NULL, "R Console");
+    }
     if(RConsole)
 	strcpy(Reply, "OK");
     else
