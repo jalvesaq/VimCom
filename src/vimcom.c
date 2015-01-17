@@ -134,7 +134,7 @@ static void vimcom_del_newline(char *buf)
 static void vimcom_mvimclient(const char *expr, char *svrnm)
 {
     char buf[512];
-    snprintf(buf, 511, "%s --servername %s --remote-expr \"%s\" >/dev/null", macvim, svrnm, expr);
+    snprintf(buf, 511, "\"%s\" --servername %s --remote-expr \"%s\" >/dev/null", macvim, svrnm, expr);
     int ret = system(buf);
     if(ret != 0){
         REprintf("vimcom: system command \"%s\" returned %d.\n", buf, ret);
@@ -1154,9 +1154,10 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *lbe, char **pth, 
                 strncpy(edsrvr, srvr + 7, 127);
                 if(getenv("VIM_BINARY_PATH")){
                     strncpy(macvim, getenv("VIM_BINARY_PATH"), 500);
-                    if(strlen(macvim) < 3)
+                    if(strlen(macvim) < 3){
                         REprintf("vimcom: VIM_BINARY_PATH is too short: \"%s\".\n", macvim);
-                    strcpy(macvim, "mvim");
+                        strcpy(macvim, "mvim");
+		    }
                 } else {
                     REprintf("vimcom: VIM_BINARY_PATH environment variable not found.\n");
                     strcpy(macvim, "mvim");

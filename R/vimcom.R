@@ -27,19 +27,13 @@
     if(is.null(getOption("vimcom.texerrs")))
         options(vimcom.texerrs = TRUE)
 
-    if(length(grep("MacVim", Sys.getenv("VIMEDITOR_SVRNM"))) > 0){
-        if(is.null(getOption("vimcom.vimpager")))
-            options(vimcom.vimpager = FALSE)
-    }
-
     if(is.null(getOption("vimcom.labelerr")))
         options(vimcom.labelwarn = TRUE)
 
     if(Sys.getenv("VIMEDITOR_SVRNM") %in% c("", "NoClientServer", "NoServerName"))
         options(vimcom.vimpager = FALSE)
-    if(is.null(getOption("vimcom.vimpager"))){
+    if(is.null(getOption("vimcom.vimpager")))
         options(vimcom.vimpager = TRUE)
-    }
     if(getOption("vimcom.vimpager"))
         options(pager = vim.hmsg)
 }
@@ -52,7 +46,7 @@
     else
         termenv <- Sys.getenv("TERM")
 
-    if(interactive() && termenv != "" && termenv != "NeovimTerm" && termenv != "dumb" && Sys.getenv("VIMRPLUGIN_COMPLDIR") != ""){
+    if(interactive() && termenv != "NeovimTerm" && termenv != "dumb" && Sys.getenv("VIMRPLUGIN_COMPLDIR") != ""){
         dir.create(Sys.getenv("VIMRPLUGIN_COMPLDIR"), showWarnings = FALSE)
         .C("vimcom_Start",
            as.integer(getOption("vimcom.verbose")),

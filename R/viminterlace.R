@@ -152,11 +152,7 @@ ShowTexErrors <- function(x)
 OpenPDF <- function(x)
 {
     path <- sub("\\.tex$", ".pdf", x)
-    if(.Platform$OS.type == "windows" && identical(getOption("pdfviewer"), file.path(R.home("bin"), "open.exe"))){
-        shell.exec(path)
-    } else {
-        .C("vimcom_msg_to_vim", paste0("ROpenPDF('", getwd(), "/", path, "')"), PACKAGE="vimcom")
-    }
+    .C("vimcom_msg_to_vim", paste0("ROpenPDF('", getwd(), "/", path, "')"), PACKAGE="vimcom")
     return(invisible(NULL))
 }
 

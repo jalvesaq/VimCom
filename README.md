@@ -21,7 +21,12 @@ emulator:
 
 ```sh
 git clone https://github.com/jalvesaq/VimCom.git
-R CMD INSTALL VimCom
+```
+
+And, then, do in R:
+
+```s
+install.packages("path/to/VimCom", type = "source", repos = NULL)
 ```
 
 On Mac OS X, by default, vimcom will be compiled without support for Vim's
