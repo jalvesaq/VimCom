@@ -130,14 +130,22 @@ const char *SendToVimCom(const char *instr)
 }
 
 HWND RConsole = NULL;
-int Rterm = 0;
 
 const char *FindRConsole(char *Rttl){
-    RConsole = FindWindow(NULL, "R Console (64-bit)");
-    if(!RConsole){
-        RConsole = FindWindow(NULL, "R Console (32-bit)");
-        if(!RConsole)
-            RConsole = FindWindow(NULL, "R Console");
+    if(*Rttl == 'T'){
+        RConsole = FindWindow(NULL, "RTerm (64-bit)");
+        if(!RConsole){
+            RConsole = FindWindow(NULL, "RTerm (32-bit)");
+            if(!RConsole)
+                RConsole = FindWindow(NULL, "RTerm");
+        }
+    } else {
+        RConsole = FindWindow(NULL, "R Console (64-bit)");
+        if(!RConsole){
+            RConsole = FindWindow(NULL, "R Console (32-bit)");
+            if(!RConsole)
+                RConsole = FindWindow(NULL, "R Console");
+        }
     }
     if(RConsole)
         strcpy(Reply, "OK");
@@ -149,27 +157,6 @@ const char *FindRConsole(char *Rttl){
 static void RaiseRConsole(){
     SetForegroundWindow(RConsole);
     Sleep(atof(getenv("VIM_SLEEPTIME")) / 1000);
-}
-
-static void RightClick(){
-    HWND myHandle = GetForegroundWindow();
-    RaiseRConsole();
-    LPARAM lParam = (100 << 16) | 100;
-    SendMessage(RConsole, WM_RBUTTONDOWN, 0, lParam);
-    SendMessage(RConsole, WM_RBUTTONUP, 0, lParam);
-    Sleep(0.05);
-    SetForegroundWindow(myHandle);
-}
-
-static void CntrlV(){
-    // This is the most inefficient way of sending Ctrl+V. See:
-    // http://stackoverflow.com/questions/27976500/postmessage-ctrlv-without-raising-the-window
-    RaiseRConsole();
-    keybd_event(VK_CONTROL, 0, 0, 0);
-    keybd_event(VkKeyScan('V'), 0, KEYEVENTF_EXTENDEDKEY | 0, 0);
-    Sleep(0.05);
-    keybd_event(VkKeyScan('V'), 0, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, 0);
-    keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0);
 }
 
 static void CopyTxtToCB(char *str)
@@ -184,9 +171,9 @@ static void CopyTxtToCB(char *str)
     CloseClipboard();
 }
 
-const char *SendToRConsole(char *aString){
+const char *SendToRTerm(char *aString){
     if(!RConsole)
-        FindRConsole(NULL);
+        FindRConsole("Term");
     if(!RConsole){
         strcpy(Reply, "R Console not found");
         return(Reply);
@@ -195,10 +182,37 @@ const char *SendToRConsole(char *aString){
     SendToVimCom("\003Set R as busy [SendToRConsole()]");
 
     CopyTxtToCB(aString);
-    if(Rterm)
-        RightClick();
-    else
-        CntrlV();
+
+    RaiseRConsole();
+    LPARAM lParam = (100 << 16) | 100;
+    SendMessage(RConsole, WM_RBUTTONDOWN, 0, lParam);
+    SendMessage(RConsole, WM_RBUTTONUP, 0, lParam);
+    Sleep(0.05);
+
+    strcpy(Reply, "OK");
+    return(Reply);
+}
+
+const char *SendToRConsole(char *aString){
+    if(!RConsole)
+        FindRConsole("Rgui");
+    if(!RConsole){
+        strcpy(Reply, "R Console not found");
+        return(Reply);
+    }
+
+    SendToVimCom("\003Set R as busy [SendToRConsole()]");
+
+    CopyTxtToCB(aString);
+
+    // This is the most inefficient way of sending Ctrl+V. See:
+    // http://stackoverflow.com/questions/27976500/postmessage-ctrlv-without-raising-the-window
+    RaiseRConsole();
+    keybd_event(VK_CONTROL, 0, 0, 0);
+    keybd_event(VkKeyScan('V'), 0, KEYEVENTF_EXTENDEDKEY | 0, 0);
+    Sleep(0.05);
+    keybd_event(VkKeyScan('V'), 0, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, 0);
+    keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0);
 
     strcpy(Reply, "OK");
     return(Reply);
@@ -206,7 +220,7 @@ const char *SendToRConsole(char *aString){
 
 const char *RClearConsole(char *what){
     if(!RConsole)
-        FindRConsole(NULL);
+        FindRConsole(what);
     if(!RConsole){
         strcpy(Reply, "R Console not found");
         return(Reply);

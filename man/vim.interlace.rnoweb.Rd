@@ -8,8 +8,7 @@
 vim.interlace.rnoweb(rnowebfile, rnwdir, latexcmd,
                      latexmk = TRUE, synctex = TRUE,
                      bibtex = FALSE, knit = TRUE,
-                     buildpdf = TRUE, view = TRUE,
-                     quiet = TRUE, ...)
+                     buildpdf = TRUE, view = TRUE, ...)
 }
 \arguments{
   \item{rnowebfile}{The Rnoweb file to be processed.}
@@ -21,6 +20,5 @@ vim.interlace.rnoweb(rnowebfile, rnwdir, latexcmd,
   \item{knit}{Whether to use knitr instead of Sweave.}
   \item{buildpdf}{Whether to compile the PDF.}
   \item{view}{Logical value indicating whether to show the generated PDF document.}
-  \item{quiet}{Whether to pass \code{quiet = TRUE} to \link[tools]{texi2pdf} (Windows only).}
   \item{\dots}{Further arguments to be passed to \code{Sweave}.}
 }

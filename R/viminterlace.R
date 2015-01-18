@@ -157,7 +157,7 @@ OpenPDF <- function(x)
 }
 
 vim.interlace.rnoweb <- function(rnowebfile, rnwdir, latexcmd, latexmk = TRUE, synctex = TRUE, bibtex = FALSE,
-                                 knit = TRUE, buildpdf = TRUE, view = TRUE, quiet = TRUE, ...)
+                                 knit = TRUE, buildpdf = TRUE, view = TRUE, ...)
 {
     oldwd <- getwd()
     on.exit(setwd(oldwd))
