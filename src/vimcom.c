@@ -69,7 +69,6 @@ static int has_new_obj = 0;
 #ifdef WIN32
 static int r_is_busy = 1;
 static int tcltkerr = 0;
-static int toggling_list = 0;
 #else
 static int fired = 0;
 static char flag_eval[512];
@@ -149,13 +148,6 @@ static void vimcom_vimclient(const char *expr, char *svrnm)
     char *result = NULL;
     if(!Xdisp)
         return;
-#ifdef WIN32
-    /* Avoid cross message between Vim and R */
-    if(toggling_list){
-        toggling_list = 0;
-        return;
-    }
-#endif
     if(verbose > 2)
         Rprintf("vimcom_vimclient(%s): '%s'\n", expr, svrnm);
     if(svrnm[0] == 0){
@@ -992,12 +984,12 @@ static void *vimcom_server_thread(void *arg)
                         vimcom_list_env();
                     if(buf[1] == 'B' || buf[1] == 'L')
                         vimcom_list_libs();
-		    if(buf[1] == 'B')
-			vimcom_client_ptr("UpdateOB('both')", obsrvr);
-		    else if(buf[1] == 'G')
-			vimcom_client_ptr("UpdateOB('GlobalEnv')", obsrvr);
-		    else if(buf[1] == 'L')
-			vimcom_client_ptr("UpdateOB('libraries')", obsrvr);
+                    if(buf[1] == 'B')
+                        vimcom_client_ptr("UpdateOB('both')", obsrvr);
+                    else if(buf[1] == 'G')
+                        vimcom_client_ptr("UpdateOB('GlobalEnv')", obsrvr);
+                    else if(buf[1] == 'L')
+                        vimcom_client_ptr("UpdateOB('libraries')", obsrvr);
                 }
 #else
                 if(buf[1] == 'B' || buf[1] == 'G')
@@ -1018,16 +1010,15 @@ static void *vimcom_server_thread(void *arg)
                 if(strstr(bbuf, "package:") == bbuf){
                     openclosel = 1;
 #ifdef WIN32
-                    toggling_list = 1;
                     vimcom_list_libs();
-		    vimcom_client_ptr("UpdateOB('libraries')", obsrvr);
+                    vimcom_client_ptr("UpdateOB('libraries')", obsrvr);
 #else
                     flag_lslibs = 1;
 #endif
                 } else {
 #ifdef WIN32
                     vimcom_list_env();
-		    vimcom_client_ptr("UpdateOB('GlobalEnv')", obsrvr);
+                    vimcom_client_ptr("UpdateOB('GlobalEnv')", obsrvr);
 #else
                     flag_lsenv = 1;
 #endif
@@ -1040,7 +1031,6 @@ static void *vimcom_server_thread(void *arg)
 #ifdef WIN32
                 if(r_is_busy)
                     break;
-                toggling_list = 1;
 #endif
                 bbuf = buf;
                 bbuf++;
@@ -1072,9 +1062,7 @@ static void *vimcom_server_thread(void *arg)
 #endif
                 }
 #ifdef WIN32
-		toggling_list = 0;
-                if(obsrvr[0] != 0)
-                    vimcom_client_ptr("UpdateOB('both')", obsrvr);
+                vimcom_client_ptr("UpdateOB('both')", obsrvr);
 #else
                 vimcom_fire();
 #endif
@@ -1157,7 +1145,7 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *lbe, char **pth, 
                     if(strlen(macvim) < 3){
                         REprintf("vimcom: VIM_BINARY_PATH is too short: \"%s\".\n", macvim);
                         strcpy(macvim, "mvim");
-		    }
+                    }
                 } else {
                     REprintf("vimcom: VIM_BINARY_PATH environment variable not found.\n");
                     strcpy(macvim, "mvim");

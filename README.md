@@ -30,17 +30,18 @@ install.packages("path/to/VimCom", type = "source", repos = NULL)
 ```
 
 On Mac OS X, by default, vimcom will be compiled without support for Vim's
-clientserver feature, which depends on the X Server. On any other Unix system,
-the package is built with support for X Server and, consequently, the X11
-headers must be installed. Please access the [official vimcom webpage] for
-details.
+clientserver feature, which depends on the X Server. MacVim's clientserver
+feature depends on Cocoa. On any other Unix system, the package is built with
+support for X Server and, consequently, the X11 headers must be installed.
+Please access the [official vimcom webpage] for details.
 
-To enable the support for Vim's 'clientserver' on Mac OS X, do the following
+To enable the support for Vim's 'clientserver' based on the X Server on Mac OS
+X, do the following:
 
-```sh
-R CMD INSTALL --configure-args='--enable-clientserver' VimCom
+```s
+install.packages("path/to/VimCom", type = "source", repos = NULL,
+                  configure.args = "--enable-clientserver")
 ```
-
 
 
 ## vimcom *versus* vimcom.plus

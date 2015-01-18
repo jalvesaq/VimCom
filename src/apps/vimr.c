@@ -135,26 +135,25 @@ int Rterm = 0;
 const char *FindRConsole(char *Rttl){
     RConsole = FindWindow(NULL, "R Console (64-bit)");
     if(!RConsole){
-	RConsole = FindWindow(NULL, "R Console (32-bit)");
-	if(!RConsole)
-	    RConsole = FindWindow(NULL, "R Console");
+        RConsole = FindWindow(NULL, "R Console (32-bit)");
+        if(!RConsole)
+            RConsole = FindWindow(NULL, "R Console");
     }
     if(RConsole)
-	strcpy(Reply, "OK");
+        strcpy(Reply, "OK");
     else
-	strcpy(Reply, "NotFound");
+        strcpy(Reply, "NotFound");
     return(Reply);
 }
 
 static void RaiseRConsole(){
     SetForegroundWindow(RConsole);
-    Sleep(0.1);
+    Sleep(atof(getenv("VIM_SLEEPTIME")) / 1000);
 }
 
 static void RightClick(){
     HWND myHandle = GetForegroundWindow();
     RaiseRConsole();
-    Sleep(0.05);
     LPARAM lParam = (100 << 16) | 100;
     SendMessage(RConsole, WM_RBUTTONDOWN, 0, lParam);
     SendMessage(RConsole, WM_RBUTTONUP, 0, lParam);
@@ -163,36 +162,9 @@ static void RightClick(){
 }
 
 static void CntrlV(){
-    /* Code that used to work in Python. Code was sent to R Console without
-     * raising its window.
-    keybd_event(0x11, 0, 0, 0);
-    if(!PostMessage(RConsole, 0x100, 0x56, 0x002F0001))
-        RConsole = NULL;
-    if(RConsole){
-        Sleep(0.05);
-        PostMessage(RConsole, 0x101, 0x56, 0xC02F0001);
-    }
-    keybd_event(0x11, 0, 2, 0);
-    */
-
-
-    /* This is an attempt of using only PostMessage, but I don't know how to
-     * write the last argument (lParam).
-    // Send CTRL down
-    PostMessage(RConsole, WM_SYSKEYDOWN, MapVirtualKey(VK_CONTROL, 0), 0);
-
-    // Send V down and up
-    PostMessage(RConsole, 0x100, 0x56, 0x002F0001);
-    Sleep(50);
-    PostMessage(RConsole, 0x101, 0x56, 0xC02F0001 );
-
-    // Send CTRL up
-    PostMessage(RConsole, WM_SYSKEYUP, MapVirtualKey(VK_CONTROL, 0), 0 );
-    */
-
-    // This is the most inefficient way of sending Ctrl+V
+    // This is the most inefficient way of sending Ctrl+V. See:
+    // http://stackoverflow.com/questions/27976500/postmessage-ctrlv-without-raising-the-window
     RaiseRConsole();
-    Sleep(0.1);
     keybd_event(VK_CONTROL, 0, 0, 0);
     keybd_event(VkKeyScan('V'), 0, KEYEVENTF_EXTENDEDKEY | 0, 0);
     Sleep(0.05);
@@ -214,10 +186,10 @@ static void CopyTxtToCB(char *str)
 
 const char *SendToRConsole(char *aString){
     if(!RConsole)
-	FindRConsole(NULL);
+        FindRConsole(NULL);
     if(!RConsole){
-	strcpy(Reply, "R Console not found");
-	return(Reply);
+        strcpy(Reply, "R Console not found");
+        return(Reply);
     }
 
     SendToVimCom("\003Set R as busy [SendToRConsole()]");
@@ -234,22 +206,17 @@ const char *SendToRConsole(char *aString){
 
 const char *RClearConsole(char *what){
     if(!RConsole)
-	FindRConsole(NULL);
+        FindRConsole(NULL);
     if(!RConsole){
-	strcpy(Reply, "R Console not found");
-	return(Reply);
+        strcpy(Reply, "R Console not found");
+        return(Reply);
     }
 
+    RaiseRConsole();
     keybd_event(VK_CONTROL, 0, 0, 0);
-    if(!PostMessage(RConsole, 0x100, 0x4C, 0x002F0001)){
-        strcpy(Reply, "R Console window not found [1].");
-        RConsole = NULL;
-    }
-    if(RConsole){
-        Sleep(0.05);
-        if(!PostMessage(RConsole, 0x101, 0x4C, 0xC02F0001))
-            strcpy(Reply, "R Console window not found [2].");
-    }
+    keybd_event(VkKeyScan('L'), 0, KEYEVENTF_EXTENDEDKEY | 0, 0);
+    Sleep(0.05);
+    keybd_event(VkKeyScan('L'), 0, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, 0);
     keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0);
 
     strcpy(Reply, "OK");
