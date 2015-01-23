@@ -159,18 +159,6 @@ static void RaiseRConsole(){
     Sleep(atof(getenv("VIM_SLEEPTIME")) / 1000);
 }
 
-static void CopyTxtToCB(char *str)
-{
-    const size_t len = strlen(str) + 1;
-    HGLOBAL m = GlobalAlloc(GMEM_MOVEABLE, len);
-    memcpy(GlobalLock(m), str, len);
-    GlobalUnlock(m);
-    OpenClipboard(0);
-    EmptyClipboard();
-    SetClipboardData(CF_TEXT, m);
-    CloseClipboard();
-}
-
 const char *SendToRTerm(char *aString){
     if(!RConsole)
         FindRConsole("Term");
@@ -180,8 +168,6 @@ const char *SendToRTerm(char *aString){
     }
 
     SendToVimCom("\003Set R as busy [SendToRConsole()]");
-
-    CopyTxtToCB(aString);
 
     RaiseRConsole();
     LPARAM lParam = (100 << 16) | 100;
@@ -202,8 +188,6 @@ const char *SendToRConsole(char *aString){
     }
 
     SendToVimCom("\003Set R as busy [SendToRConsole()]");
-
-    CopyTxtToCB(aString);
 
     // This is the most inefficient way of sending Ctrl+V. See:
     // http://stackoverflow.com/questions/27976500/postmessage-ctrlv-without-raising-the-window
@@ -234,12 +218,6 @@ const char *RClearConsole(char *what){
     keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0);
 
     strcpy(Reply, "OK");
-    return(Reply);
-}
-
-const char *SendQuitMsg(char *aString){
-    SendToRConsole(aString);
-    RConsole = NULL;
     return(Reply);
 }
 
