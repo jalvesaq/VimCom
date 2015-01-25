@@ -156,7 +156,7 @@ const char *FindRConsole(char *Rttl){
 
 static void RaiseRConsole(){
     SetForegroundWindow(RConsole);
-    Sleep(atof(getenv("VIM_SLEEPTIME")) / 1000);
+    Sleep(0.05);
 }
 
 const char *SendToRTerm(char *aString){
@@ -216,6 +216,140 @@ const char *RClearConsole(char *what){
     Sleep(0.05);
     keybd_event(VkKeyScan('L'), 0, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, 0);
     keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0);
+
+    strcpy(Reply, "OK");
+    return(Reply);
+}
+
+const char *SaveWinPos(char *cachedir){
+    if(!RConsole)
+        FindRConsole("RGui");
+    if(!RConsole){
+        strcpy(Reply, "R Console not found");
+        return(Reply);
+    }
+
+    HWND GVimHwnd = GetActiveWindow();
+    if(!GVimHwnd){
+        snprintf(Reply, 254, "Could not get active window");
+        return(Reply);
+    }
+
+    RECT rcR, rcV;
+    if(!GetWindowRect(RConsole, &rcR)){
+        strcpy(Reply, "Could not get R Console position");
+        return(Reply);
+    }
+
+    if(!GetWindowRect(GVimHwnd, &rcV)){
+        strcpy(Reply, "Could not get GVim position");
+        return(Reply);
+    }
+
+    rcR.right = rcR.right - rcR.left;
+    rcR.bottom = rcR.bottom - rcR.top;
+    rcV.right = rcV.right - rcV.left;
+    rcV.bottom = rcV.bottom - rcV.top;
+
+    char fname[512];
+    snprintf(fname, 511, "%s/win_pos", cachedir);
+    FILE *f = fopen(fname, "w");
+    if(f == NULL){
+        snprintf(Reply, 254, "Could not write to '%s'", fname);
+        return(Reply);
+    }
+    fprintf(f, "%ld\n%ld\n%ld\n%ld\n%ld\n%ld\n%ld\n%ld\n",
+            rcR.left, rcR.top, rcR.right, rcR.bottom,
+            rcV.left, rcV.top, rcV.right, rcV.bottom);
+    fclose(f);
+
+    strcpy(Reply, "OK");
+    return(Reply);
+}
+
+const char *ArrangeWindows(char *cachedir){
+    char fname[512];
+    snprintf(fname, 511, "%s/win_pos", cachedir);
+    FILE *f = fopen(fname, "r");
+    if(f == NULL){
+        snprintf(Reply, 254, "Could not read '%s'", fname);
+        return(Reply);
+    }
+
+    if(!RConsole)
+        FindRConsole("RGui");
+    if(!RConsole){
+        strcpy(Reply, "R Console not found");
+        return(Reply);
+    }
+
+    HWND GVimHwnd = GetActiveWindow();
+    if(!GVimHwnd){
+        snprintf(Reply, 254, "Could not get active window");
+        return(Reply);
+    }
+
+    RECT rcR, rcV;
+    char b[32];
+    if((fgets(b, 31, f))){
+        rcR.left = atol(b);
+    } else {
+        strcpy(Reply, "Error reading R left position");
+        return(Reply);
+    }
+    if((fgets(b, 31, f))){
+        rcR.top = atol(b);
+    } else {
+        strcpy(Reply, "Error reading R top position");
+        return(Reply);
+    }
+    if((fgets(b, 31, f))){
+        rcR.right = atol(b);
+    } else {
+        strcpy(Reply, "Error reading R right position");
+        return(Reply);
+    }
+    if((fgets(b, 31, f))){
+        rcR.bottom = atol(b);
+    } else {
+        strcpy(Reply, "Error reading R bottom position");
+        return(Reply);
+    }
+    if((fgets(b, 31, f))){
+        rcV.left = atol(b);
+    } else {
+        strcpy(Reply, "Error reading GVim left position");
+        return(Reply);
+    }
+    if((fgets(b, 31, f))){
+        rcV.top = atol(b);
+    } else {
+        strcpy(Reply, "Error reading GVim top position");
+        return(Reply);
+    }
+    if((fgets(b, 31, f))){
+        rcV.right = atol(b);
+    } else {
+        strcpy(Reply, "Error reading GVim right position");
+        return(Reply);
+    }
+    if((fgets(b, 31, f))){
+        rcV.bottom = atol(b);
+    } else {
+        strcpy(Reply, "Error reading GVim bottom position");
+        return(Reply);
+    }
+
+    if(!SetWindowPos(RConsole, HWND_NOTOPMOST,
+                rcR.left, rcR.top, rcR.right, rcR.bottom, 0)){
+        strcpy(Reply, "Error positioning GVim window");
+        return(Reply);
+    }
+    if(!SetWindowPos(GVimHwnd, HWND_TOPMOST,
+                rcV.left, rcV.top, rcV.right, rcV.bottom, 0)){
+        strcpy(Reply, "Error positioning GVim window");
+        return(Reply);
+    }
 
     strcpy(Reply, "OK");
     return(Reply);
