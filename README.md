@@ -13,7 +13,7 @@ Vim-R-plugin], you will also need a [released version of vimcom].
 The easiest way to install vimcom is to use the [devtools] package.
 
 ```s
-devtools::install_github("VimCom", "jalvesaq")
+devtools::install_github("jalvesaq/VimCom")
 ```
 
 To manually download and install VimCom, do the following in a terminal
