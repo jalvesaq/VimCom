@@ -1125,6 +1125,12 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *lbe, char **pth, 
 #endif
 #endif
 
+    char *srvr = getenv("VIMEDITOR_SVRNM");
+
+    // X11 will not be used if R was called by MacVim
+    if(srvr && strstr(srvr, "MacVim_") == srvr)
+        Xdisp = 0;
+
     R_PID = getpid();
     strncpy(vimcom_version, *vcv, 31);
 
@@ -1135,7 +1141,6 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *lbe, char **pth, 
             strncpy(vimsecr, getenv("VIMRPLUGIN_SECRET"), 127);
         else
             REprintf("vimcom: Environment variable VIMRPLUGIN_SECRET is missing.\n");
-        char *srvr = getenv("VIMEDITOR_SVRNM");
         if(srvr){
             if(strstr(srvr, "MacVim_") == srvr){
                 vimcom_client_ptr = vimcom_mvimclient;
