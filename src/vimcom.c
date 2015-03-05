@@ -952,7 +952,7 @@ static void *vimcom_server_thread(void *arg)
         }
 
         switch(buf[0]){
-            case 1: // Set Editor server name or port number
+            case 1: // Set Editor server name
                 if(Xdisp){
                     bbuf = buf;
                     bbuf++;
@@ -960,7 +960,7 @@ static void *vimcom_server_thread(void *arg)
                     vimcom_del_newline(edsrvr);
                 }
                 break;
-            case 2: // Set Object Browser server name or port number
+            case 2: // Set Object Browser server name
                 if(Xdisp){
                     bbuf = buf;
                     bbuf++;

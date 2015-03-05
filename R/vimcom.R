@@ -8,7 +8,7 @@
 ###############################################################
 
 .onLoad <- function(libname, pkgname) {
-    if(Sys.getenv("VIMRPLUGIN_TMPDIR") == "" || Sys.getenv("VIMRPLUGIN_TMPDIR") == "None")
+    if(Sys.getenv("VIMRPLUGIN_TMPDIR") == "")
         return(invisible(NULL))
     library.dynam("vimcom", pkgname, libname, local = FALSE)
 
@@ -39,7 +39,7 @@
 }
 
 .onAttach <- function(libname, pkgname) {
-    if(Sys.getenv("VIMRPLUGIN_TMPDIR") == "" || Sys.getenv("VIMRPLUGIN_TMPDIR") == "None")
+    if(Sys.getenv("VIMRPLUGIN_TMPDIR") == "")
         return(invisible(NULL))
     if(version$os == "mingw32")
         termenv <- "MinGW"

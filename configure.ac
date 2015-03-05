@@ -1,4 +1,4 @@
-AC_INIT(vimcom, 1.2-0)
+AC_INIT(vimcom, 1.2-1)
 
 # Don't enable clientserver on OS X unless the user explicitly requests it
 if test `uname` = Darwin
