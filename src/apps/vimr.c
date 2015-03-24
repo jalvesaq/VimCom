@@ -345,7 +345,7 @@ const char *ArrangeWindows(char *cachedir){
         strcpy(Reply, "Error positioning GVim window");
         return(Reply);
     }
-    if(!SetWindowPos(GVimHwnd, HWND_TOPMOST,
+    if(!SetWindowPos(GVimHwnd, HWND_NOTOPMOST,
                 rcV.left, rcV.top, rcV.right, rcV.bottom, 0)){
         strcpy(Reply, "Error positioning GVim window");
         return(Reply);
