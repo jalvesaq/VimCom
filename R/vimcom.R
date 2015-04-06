@@ -15,25 +15,22 @@
     if(is.null(getOption("vimcom.verbose")))
         options(vimcom.verbose = 0)
 
-    if(is.null(getOption("vimcom.opendf")))
-        options(vimcom.opendf = TRUE)
-
-    if(is.null(getOption("vimcom.openlist")))
-        options(vimcom.openlist = FALSE)
-
-    if(is.null(getOption("vimcom.allnames")))
-        options(vimcom.allnames = FALSE)
-
-    if(is.null(getOption("vimcom.texerrs")))
-        options(vimcom.texerrs = TRUE)
-
-    if(is.null(getOption("vimcom.labelerr")))
-        options(vimcom.labelwarn = TRUE)
-
     if(Sys.getenv("VIMEDITOR_SVRNM") %in% c("", "NoClientServer", "NoServerName"))
         options(vimcom.vimpager = FALSE)
-    if(is.null(getOption("vimcom.vimpager")))
-        options(vimcom.vimpager = TRUE)
+
+    # The remaining options are set by Neovim. Don't try to set them in your
+    # ~/.Rprofile because they will be overridden here:
+    if(file.exists(paste0(Sys.getenv("VIMRPLUGIN_TMPDIR"), "/start_options.R"))){
+        source(paste0(Sys.getenv("VIMRPLUGIN_TMPDIR"), "/start_options.R"))
+    } else {
+        options(vimcom.opendf = TRUE)
+        options(vimcom.openlist = FALSE)
+        options(vimcom.allnames = FALSE)
+        options(vimcom.texerrs = TRUE)
+        options(vimcom.labelerr = TRUE)
+        if(is.null(getOption("vimcom.vimpager")))
+            options(vimcom.vimpager = TRUE)
+    }
     if(getOption("vimcom.vimpager"))
         options(pager = vim.hmsg)
 }
