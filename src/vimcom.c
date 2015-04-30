@@ -503,12 +503,14 @@ static void vimcom_eval_expr(const char *buf)
 #ifdef WIN32
     if(tcltkerr){
         fprintf(rep, "Error: \"vimcom\" and \"tcltk\" packages are incompatible!\n");
+        fclose(rep);
         return;
     } else {
         if(objbr_auto == 0)
             vimcom_checklibs();
         if(tcltkerr){
             fprintf(rep, "Error: \"vimcom\" and \"tcltk\" packages are incompatible!\n");
+            fclose(rep);
             return;
         }
     }
