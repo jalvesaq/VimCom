@@ -101,3 +101,9 @@ vim_edit <- function(name, file, title)
     unlink(finalB)
     return(invisible(x))
 }
+
+vim_capture_source_output <- function(s, o)
+{
+    capture.output(base::source(s, echo = TRUE), file = o)
+    .C("vimcom_msg_to_vim", paste0("GetROutput('", o, "')"), PACKAGE="vimcom")
+}
