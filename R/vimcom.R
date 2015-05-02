@@ -118,7 +118,7 @@ vim_viewdf <- function(oname)
         return(invisible(NULL))
     }
     if(is.data.frame(o) || is.matrix(o)){
-        write.table(o, sep = "\t", row.names = FALSE,
+        write.table(o, sep = "\t", row.names = FALSE, quote = FALSE,
                     file = paste0(Sys.getenv("VIMRPLUGIN_TMPDIR"), "/Rinsert"))
         .C("vimcom_msg_to_vim", paste0("RViewDF('", oname, "')"), PACKAGE="vimcom")
     } else {
