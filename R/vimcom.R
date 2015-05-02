@@ -107,3 +107,24 @@ vim_capture_source_output <- function(s, o)
     capture.output(base::source(s, echo = TRUE), file = o)
     .C("vimcom_msg_to_vim", paste0("GetROutput('", o, "')"), PACKAGE="vimcom")
 }
+
+vim_viewdf <- function(oname)
+{
+    ok <- try(o <- get(oname, envir = .GlobalEnv), silent = TRUE)
+    if(inherits(ok, "try-error")){
+        .C("vimcom_msg_to_vim",
+           paste0("RWarningMsg('", '"', oname, '"', " not found in .GlobalEnv')"),
+           PACKAGE="vimcom")
+        return(invisible(NULL))
+    }
+    if(is.data.frame(o) || is.matrix(o)){
+        write.table(o, sep = "\t", row.names = FALSE,
+                    file = paste0(Sys.getenv("VIMRPLUGIN_TMPDIR"), "/Rinsert"))
+        .C("vimcom_msg_to_vim", paste0("RViewDF('", oname, "')"), PACKAGE="vimcom")
+    } else {
+        .C("vimcom_msg_to_vim",
+           paste0("RWarningMsg('", '"', oname, '"', " is not a data.frame or matrix')"),
+           PACKAGE="vimcom")
+    }
+    return(invisible(NULL))
+}
