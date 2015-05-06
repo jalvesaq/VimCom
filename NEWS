@@ -1,3 +1,7 @@
+Version 1.2-5 (2015-05-06)
+
+ - New hidden functions used by the Vim-R-plugin.
+
 Version 1.2-3 (2015-04-09)
 
  - Move the control of most options from .Rprofile to ~/.vimrc.
