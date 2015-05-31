@@ -143,7 +143,6 @@ vim.list.args <- function(ff){
                        "prod", "max", "min", "range", "Arg", "Conj", "Im",
                        "Mod", "Re")
 
-    ff <- deparse(substitute(ff))
     keyf <- paste("^", ff, "$", sep="")
     is.generic <- (length(grep(keyf, knownGenerics)) > 0)
     if(is.generic){
