@@ -424,6 +424,19 @@ char *vimcom_browser_line(SEXP *x, const char *xname, const char *curenv, const 
     return p;
 }
 
+static void vimcom_write_obbr()
+{
+    strcpy(obbrbuf1, obbrbuf2);
+    FILE *f = fopen(globenv, "w");
+    if(f == NULL){
+        REprintf("Error: Could not write to '%s'. [vimcom]\n", globenv);
+        return;
+    }
+    fprintf(f, "%s", obbrbuf1);
+    fclose(f);
+    has_new_obj = 1;
+}
+
 static void vimcom_list_env()
 {
     const char *varName;
@@ -459,19 +472,16 @@ static void vimcom_list_env()
         gettimeofday(&middle, NULL);
 #endif
 
-    int len = strlen(obbrbuf2);
-    for(int i = 0; i < len; i++){
-        if(obbrbuf1[i] != obbrbuf2[i]){
-            strcpy(obbrbuf1, obbrbuf2);
-            FILE *f = fopen(globenv, "w");
-            if(f == NULL){
-                REprintf("Error: Could not write to '%s'. [vimcom]\n", globenv);
-                return;
+    int len1 = strlen(obbrbuf1);
+    int len2 = strlen(obbrbuf2);
+    if(len1 != len2){
+        vimcom_write_obbr();
+    } else {
+        for(int i = 0; i < len1; i++){
+            if(obbrbuf1[i] != obbrbuf2[i]){
+                vimcom_write_obbr();
+                break;
             }
-            fprintf(f, "%s", obbrbuf1);
-            fclose(f);
-            has_new_obj = 1;
-            break;
         }
     }
 #ifndef WIN32
