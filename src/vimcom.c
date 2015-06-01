@@ -1013,6 +1013,22 @@ static void *vimcom_server_thread(void *arg)
 #endif
                 bbuf = buf;
                 bbuf++;
+                if(*bbuf == '&'){
+                    bbuf++;
+#ifdef WIN32
+                    char flag_eval[512];
+                    snprintf(flag_eval, 510, "%s <- %s", bbuf, bbuf);
+                    vimcom_eval_expr(flag_eval);
+                    *flag_eval = 0;
+                    vimcom_list_env();
+                    vimcom_client_ptr("UpdateOB('GlobalEnv')", obsrvr);
+#else
+                    snprintf(flag_eval, 510, "%s <- %s", bbuf, bbuf);
+                    flag_lsenv = 1;
+                    vimcom_fire();
+#endif
+                    break;
+                }
                 vimcom_toggle_list_status(bbuf);
                 if(strstr(bbuf, "package:") == bbuf){
                     openclosel = 1;
