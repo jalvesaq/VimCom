@@ -234,40 +234,35 @@ char *vimcom_browser_line(SEXP *x, const char *xname, const char *curenv, const 
     if(obbrbufzise < strlen(obbrbuf2) + 1024)
         p = vimcom_grow_obbrbuf();
 
+    p = vimcom_strcat(p, prefix);
     if(Rf_isLogical(*x)){
-        p = vimcom_strcat(p, prefix);
         p = vimcom_strcat(p, "%#");
         strcpy(xclass, "logical");
     } else if(Rf_isNumeric(*x)){
-        p = vimcom_strcat(p, prefix);
         p = vimcom_strcat(p, "{#");
         strcpy(xclass, "numeric");
     } else if(Rf_isFactor(*x)){
-        p = vimcom_strcat(p, prefix);
         p = vimcom_strcat(p, "'#");
         strcpy(xclass, "factor");
     } else if(Rf_isValidString(*x)){
-        p = vimcom_strcat(p, prefix);
         p = vimcom_strcat(p, "\"#");
         strcpy(xclass, "character");
     } else if(Rf_isFunction(*x)){
-        p = vimcom_strcat(p, prefix);
         p = vimcom_strcat(p, "(#");
         strcpy(xclass, "function");
     } else if(Rf_isFrame(*x)){
-        p = vimcom_strcat(p, prefix);
         p = vimcom_strcat(p, "[#");
         strcpy(xclass, "data.frame");
     } else if(Rf_isNewList(*x)){
-        p = vimcom_strcat(p, prefix);
         p = vimcom_strcat(p, "[#");
         strcpy(xclass, "list");
     } else if(Rf_isS4(*x)){
-        p = vimcom_strcat(p, prefix);
         p = vimcom_strcat(p, "<#");
         strcpy(xclass, "s4");
+    } else if(TYPEOF(*x) == PROMSXP){
+        p = vimcom_strcat(p, "&#");
+        strcpy(xclass, "lazy");
     } else {
-        p = vimcom_strcat(p, prefix);
         p = vimcom_strcat(p, "=#");
         strcpy(xclass, "other");
     }
