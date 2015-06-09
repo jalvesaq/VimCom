@@ -5,3 +5,8 @@ config.status
 src/Makevars
 src/*.o
 src/*.so
+src/*.dll
+src/apps/*.o
+src/apps/*.so
+src/apps/*.dll
+.*.sw?
