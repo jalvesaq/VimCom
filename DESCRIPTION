@@ -1,9 +1,10 @@
 Package: vimcom
 Version: 1.2-6
-Date: 2015-05-31
+Date: 2015-06-12
 Title: Intermediate the communication between Vim and R
 Author: Jakson Aquino
 Maintainer: Jakson Alves de Aquino <jalvesaq@gmail.com>
+Depends: R (>= 3.0.0)
 Suggests: knitr, rmarkdown, devtools
 Imports: tools
 Description: Provide a service to intermediate the communication between Vim (or Neovim) and R.

@@ -1,3 +1,7 @@
+Version 1.2-6 (2015-06-12)
+
+ - Improve Object Browser support for lazy load objects.
+
 Version 1.2-5 (2015-05-06)
 
  - New hidden functions used by the Vim-R-plugin.
