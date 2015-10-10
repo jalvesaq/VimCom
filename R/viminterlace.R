@@ -100,6 +100,14 @@ GetRnwLines <- function(x, l)
 ShowTexErrors <- function(x)
 {
     l <- readLines(x, encoding = "latin1")
+    if(length(grep(sub("log$", "tex", x), l)) == 0){
+        # XeLaTeX uses UTF-8
+        l8 <- readLines(x, encoding = "utf-8")
+        if(length(grep(sub("log$", "tex", x), l8)) > 0){
+            l <- l8
+        }
+    }
+
     llen <- length(l)
     lf <- character(llen)
     lev <- 1
