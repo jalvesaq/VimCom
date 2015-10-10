@@ -215,16 +215,21 @@ vim.interlace.rnoweb <- function(rnowebfile, rnwdir, latexcmd, latexmk = TRUE, s
 		    latexcmd = "pdflatex -file-line-error"
 	    }
 	}
-	system(paste(latexcmd, Sres))
-	if(bibtex){
-	    system(paste("bibtex", sub("\\.tex$", ".aux", Sres)))
-	    system(paste(latexcmd, Sres))
-	    system(paste(latexcmd, Sres))
-	}
-        if(view)
-            OpenPDF(Sres)
-        if(getOption("vimcom.texerrs"))
-            ShowTexErrors(sub("\\.tex$", ".log", Sres))
+        haserror <- system(paste(latexcmd, Sres))
+        if(!haserror && bibtex){
+            haserror <- system(paste("bibtex", sub("\\.tex$", ".aux", Sres)))
+            if(!haserror){
+                haserror <- system(paste(latexcmd, Sres))
+                if(!haserror)
+                    haserror <- system(paste(latexcmd, Sres))
+            }
+        }
+        if(!haserror){
+            if(view)
+                OpenPDF(Sres)
+            if(getOption("vimcom.texerrs"))
+                ShowTexErrors(sub("\\.tex$", ".log", Sres))
+        }
     }
     return(invisible(NULL))
 }
