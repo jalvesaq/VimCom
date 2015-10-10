@@ -10,6 +10,10 @@
 .onLoad <- function(libname, pkgname) {
     if(Sys.getenv("VIMRPLUGIN_TMPDIR") == "")
         return(invisible(NULL))
+    if(Sys.getenv("VIMRPLUGIN_COMPLDIR") == ""){
+        warning('Missing environment variable: "VIMRPLUGIN_COMPLDIR"')
+        return(invisible(NULL))
+    }
     library.dynam("vimcom", pkgname, libname, local = FALSE)
 
     if(is.null(getOption("vimcom.verbose")))
