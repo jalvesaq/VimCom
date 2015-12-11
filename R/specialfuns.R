@@ -26,7 +26,7 @@ vim.primitive.args <- function(x)
 
 
 # Adapted from: https://stat.ethz.ch/pipermail/ess-help/2011-March/006791.html
-vim.args <- function(funcname, txt, pkg = NULL, classfor, firstLibArg = FALSE)
+vim.args <- function(funcname, txt, pkg = NULL, objclass, firstLibArg = FALSE)
 {
     # First argument of either library() or require():
     if(firstLibArg){
@@ -37,21 +37,14 @@ vim.args <- function(funcname, txt, pkg = NULL, classfor, firstLibArg = FALSE)
 
     frm <- NA
     funcmeth <- NA
-    if(!missing(classfor) && vim.grepl("[[:punct:]]", funcname) == FALSE){
+    if(!missing(objclass) && vim.grepl("[[:punct:]]", funcname) == FALSE){
         if(length(grep(funcname, names(.knownS3Generics))) > 0){
-            curwarn <- getOption("warn")
-            options(warn = -1)
-            try(classfor <- classfor, silent = TRUE)  # classfor may be a function
-            try(.theclass <- class(classfor), silent = TRUE)
-            options(warn = curwarn)
-            if(exists(".theclass")){
-                for(i in 1:length(.theclass)){
-                    funcmeth <- paste(funcname, ".", .theclass[i], sep = "")
-                    if(existsFunction(funcmeth)){
-                        funcname <- funcmeth
-                        frm <- formals(funcmeth)
-                        break
-                    }
+            for(i in 1:length(objclass)){
+                funcmeth <- paste(funcname, ".", objclass[i], sep = "")
+                if(existsFunction(funcmeth)){
+                    funcname <- funcmeth
+                    frm <- formals(funcmeth)
+                    break
                 }
             }
         }

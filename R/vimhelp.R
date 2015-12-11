@@ -13,21 +13,14 @@ vim.hmsg <- function(files, header, title, delete.file)
     return(invisible(NULL))
 }
 
-vim.help <- function(topic, w, classfor, package)
+vim.help <- function(topic, w, objclass, package)
 {
-    if(!missing(classfor) & length(grep(topic, names(.knownS3Generics))) > 0){
-        curwarn <- getOption("warn")
-        options(warn = -1)
-        try(classfor <- classfor, silent = TRUE)  # classfor may be a function
-        try(.theclass <- class(classfor), silent = TRUE)
-        options(warn = curwarn)
-        if(exists(".theclass")){
-            for(i in 1:length(.theclass)){
-                newtopic <- paste(topic, ".", .theclass[i], sep = "")
-                if(length(utils::help(newtopic))){
-                    topic <- newtopic
-                    break
-                }
+    if(!missing(objclass) & length(grep(topic, names(.knownS3Generics))) > 0){
+        for(i in 1:length(objclass)){
+            newtopic <- paste(topic, ".", objclass[i], sep = "")
+            if(length(utils::help(newtopic))){
+                topic <- newtopic
+                break
             }
         }
     }
