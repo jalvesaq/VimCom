@@ -178,3 +178,20 @@ vim.names <- function(x)
     else
         names(x)
 }
+
+vim.getclass <- function(x)
+{
+    if(getOption("vimcom.verbose") < 3){
+        saved.warn <- getOption("warn")
+        options(warn = -1)
+        on.exit(options(warn = saved.warn))
+        tr <- try(obj <- eval(expression(x)), silent = TRUE)
+    } else {
+        tr <- try(obj <- eval(expression(x)))
+    }
+    if(class(tr)[1] == "try-error"){
+        return("Error evaluating the object")
+    } else {
+        return(class(obj)[1])
+    }
+}
