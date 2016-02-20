@@ -273,6 +273,7 @@ const char *ArrangeWindows(char *cachedir){
     FILE *f = fopen(fname, "r");
     if(f == NULL){
         snprintf(Reply, 254, "Could not read '%s'", fname);
+        fclose(f);
         return(Reply);
     }
 
@@ -280,12 +281,14 @@ const char *ArrangeWindows(char *cachedir){
         FindRConsole("RGui");
     if(!RConsole){
         strcpy(Reply, "R Console not found");
+        fclose(f);
         return(Reply);
     }
 
     HWND GVimHwnd = GetActiveWindow();
     if(!GVimHwnd){
         snprintf(Reply, 254, "Could not get active window");
+        fclose(f);
         return(Reply);
     }
 
@@ -295,63 +298,81 @@ const char *ArrangeWindows(char *cachedir){
         rcR.left = atol(b);
     } else {
         strcpy(Reply, "Error reading R left position");
+        fclose(f);
         return(Reply);
     }
     if((fgets(b, 31, f))){
         rcR.top = atol(b);
     } else {
         strcpy(Reply, "Error reading R top position");
+        fclose(f);
         return(Reply);
     }
     if((fgets(b, 31, f))){
         rcR.right = atol(b);
     } else {
         strcpy(Reply, "Error reading R right position");
+        fclose(f);
         return(Reply);
     }
     if((fgets(b, 31, f))){
         rcR.bottom = atol(b);
     } else {
         strcpy(Reply, "Error reading R bottom position");
+        fclose(f);
         return(Reply);
     }
     if((fgets(b, 31, f))){
         rcV.left = atol(b);
     } else {
         strcpy(Reply, "Error reading GVim left position");
+        fclose(f);
         return(Reply);
     }
     if((fgets(b, 31, f))){
         rcV.top = atol(b);
     } else {
         strcpy(Reply, "Error reading GVim top position");
+        fclose(f);
         return(Reply);
     }
     if((fgets(b, 31, f))){
         rcV.right = atol(b);
     } else {
         strcpy(Reply, "Error reading GVim right position");
+        fclose(f);
         return(Reply);
     }
     if((fgets(b, 31, f))){
         rcV.bottom = atol(b);
     } else {
         strcpy(Reply, "Error reading GVim bottom position");
+        fclose(f);
         return(Reply);
     }
 
-    if(!SetWindowPos(RConsole, HWND_NOTOPMOST,
-                rcR.left, rcR.top, rcR.right, rcR.bottom, 0)){
-        strcpy(Reply, "Error positioning GVim window");
-        return(Reply);
+    if(rcR.left > 0 && rcR.top > 0 && rcR.right > 0 && rcR.bottom > 0 &&
+            rcR.right > rcR.left && rcR.bottom > rcR.top){
+        if(!SetWindowPos(RConsole, HWND_NOTOPMOST,
+                    rcR.left, rcR.top, rcR.right, rcR.bottom, 0)){
+            strcpy(Reply, "Error positioning RConsole window");
+            fclose(f);
+            return(Reply);
+        }
     }
-    if(!SetWindowPos(GVimHwnd, HWND_NOTOPMOST,
-                rcV.left, rcV.top, rcV.right, rcV.bottom, 0)){
-        strcpy(Reply, "Error positioning GVim window");
-        return(Reply);
+
+    if(rcV.left > 0 && rcV.top > 0 && rcV.right > 0 && rcV.bottom > 0 &&
+            rcV.right > rcV.left && rcV.bottom > rcV.top){
+        if(!SetWindowPos(GVimHwnd, HWND_NOTOPMOST,
+                    rcV.left, rcV.top, rcV.right, rcV.bottom, 0)){
+            strcpy(Reply, "Error positioning GVim window");
+            fclose(f);
+            return(Reply);
+        }
     }
 
     strcpy(Reply, "OK");
+    fclose(f);
     return(Reply);
 }
 
