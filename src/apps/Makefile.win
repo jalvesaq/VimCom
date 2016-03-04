@@ -1,17 +1,21 @@
 CC?=gcc
 ifeq "$(WIN)" "64"
-    CFLAGS+=-m64 -std=gnu99 -O3 -Wall -DWIN32
+    CFLAGS+=-m64 -mwindows -std=gnu99 -O3 -Wall -DWIN32
     LDFLAGS+=-m64 -shared -s -static-libgcc
 else
-    CFLAGS+=-m32 -std=gnu99 -O3 -Wall -DWIN32
+    CFLAGS+=-m32 -mwindows -std=gnu99 -O3 -Wall -DWIN32
     LDFLAGS+=-m32 -shared -s -static-libgcc
 endif
 
-all: libVimR.dll
+all: vclientserver.exe libVimR.dll
+
+# Note: -lWs2_32 must be after the object files
+vclientserver.exe: vclientserver.c
+	$(CC) $(CFLAGS) vclientserver.c -o vclientserver.exe -lWs2_32
 
 libVimR.dll: vimr.c
 	$(CC) $(CFLAGS) -c vimr.c -o vimr.o
-	$(CC) $(LDFLAGS) -o libVimR.dll vimr.o -lWs2_32
+	$(CC) $(LDFLAGS) -o libVimR.dll vimr.o
 
 clean:
 

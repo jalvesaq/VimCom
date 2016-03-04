@@ -4,14 +4,13 @@
   Print an object.
 }
 \description{
-  Print an object. If the object is a function, search for a method for the
-  \code{classfor} expression. The function is supposed to be called by the
+  Print an object. The function is supposed to be called by the
   Vim-R-plugin.
 }
 \usage{
-vim.print(object, classfor)
+vim.print(object, objclass)
 }
 \arguments{
   \item{object}{An R object.}
-  \item{classfor}{The R expression following the parenthesis, if any.}
+  \item{objclass}{Class of object.}
 }

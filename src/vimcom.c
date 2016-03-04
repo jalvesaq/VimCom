@@ -29,14 +29,8 @@
 #include <sys/time.h>
 #endif
 
-#ifndef NO_X_CLIENTSERVER
-#include "vimremote.h"
-static int vimremote_initialized = 0;
-#endif
-
 static char vimcom_version[32];
 
-static int Xdisp = 0;
 static pid_t R_PID;
 
 static int vimcom_initialized = 0;
@@ -60,11 +54,8 @@ static int obbrbufzise = 4096;
 static char strL[16];
 static char strT[16];
 static char tmpdir[512];
-static char macvim[512];
 static char vimcom_home[1024];
-static int objbr_auto = 0;
-static int has_new_lib = 0;
-static int has_new_obj = 0;
+static int objbr_auto = 0; // 0 = Nothing; 1 = .GlobalEnv; 2 = Libraries
 
 #ifdef WIN32
 static int r_is_busy = 1;
@@ -84,7 +75,6 @@ typedef struct liststatus_ {
     struct liststatus_ *next;
 } ListStatus;
 
-static void (*vimcom_client_ptr)(const char *, char *);
 static int vimcom_checklibs();
 
 static ListStatus *firstList = NULL;
@@ -102,8 +92,8 @@ static pthread_t tid;
 
 char *vimcom_strcat(char* dest, const char* src)
 {
-    while (*dest) dest++;
-    while ((*dest++ = *src++));
+    while(*dest) dest++;
+    while((*dest++ = *src++));
     return --dest;
 }
 
@@ -130,43 +120,127 @@ static void vimcom_del_newline(char *buf)
         }
 }
 
-static void vimcom_mvimclient(const char *expr, char *svrnm)
+#ifndef WIN32
+static void vimcom_vimclient(const char *msg, char *port)
 {
-    char buf[512];
-    snprintf(buf, 511, "\"%s\" --servername %s --remote-expr \"%s\" >/dev/null", macvim, svrnm, expr);
-    int ret = system(buf);
-    if(ret != 0){
-        REprintf("vimcom: system command \"%s\" returned %d.\n", buf, ret);
+    struct addrinfo hints;
+    struct addrinfo *result, *rp;
+    char portstr[16];
+    int s, a;
+    size_t len;
+    int srvport = atoi(port);
+
+    if(verbose > 2)
+        Rprintf("vimcom_vimclient(%s): '%s' (%d)\n", msg, port, srvport);
+    if(port[0] == 0){
+        if(verbose > 3)
+            REprintf("vimcom_vimclient() called although Vim server port is undefined\n");
+        return;
+    }
+
+    /* Obtain address(es) matching host/port */
+
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_DGRAM;
+    hints.ai_flags = 0;
+    hints.ai_protocol = 0;
+
+    sprintf(portstr, "%d", srvport);
+    a = getaddrinfo("127.0.0.1", portstr, &hints, &result);
+    if (a != 0) {
+        REprintf("Error: getaddrinfo: %s\n", gai_strerror(a));
+        objbr_auto = 0;
+        return;
+    }
+
+    for (rp = result; rp != NULL; rp = rp->ai_next) {
+        s = socket(rp->ai_family, rp->ai_socktype,
+                rp->ai_protocol);
+        if (s == -1)
+            continue;
+
+        if (connect(s, rp->ai_addr, rp->ai_addrlen) != -1)
+            break;		   /* Success */
+
+        close(s);
+    }
+
+    if (rp == NULL) {		   /* No address succeeded */
+        REprintf("Error: Could not connect\n");
+        objbr_auto = 0;
+        return;
+    }
+
+    freeaddrinfo(result);	   /* No longer needed */
+
+    /* Prefix NVIMR_SECRET to msg to increase security.
+     * The vimclient does not need this because it is protect by the X server. */
+    char finalmsg[256];
+    strncpy(finalmsg, vimsecr, 255);
+    strncat(finalmsg, "call ", 255);
+    strncat(finalmsg, msg, 255);
+    len = strlen(finalmsg);
+    if (write(s, finalmsg, len) != len) {
+        REprintf("Error: partial/failed write\n");
+        objbr_auto = 0;
+        return;
     }
 }
+#endif
 
-#ifdef NO_X_CLIENTSERVER
-static void vimcom_noclient(const char *expr, char *svrnm) { }
-#else
-static void vimcom_vimclient(const char *expr, char *svrnm)
+#ifdef WIN32
+static void vimcom_vimclient(const char *msg, char *port)
 {
-    char *result = NULL;
-    if(!Xdisp)
-        return;
+    WSADATA wsaData;
+    struct sockaddr_in peer_addr;
+    SOCKET sfd;
+
     if(verbose > 2)
-        Rprintf("vimcom_vimclient(%s): '%s'\n", expr, svrnm);
-    if(svrnm[0] == 0){
+        Rprintf("vimcom_vimclient(%s): '%s'\n", msg, port);
+    if(port[0] == 0){
         if(verbose > 3)
-            REprintf("vimcom_vimclient() called although Vim servername is undefined\n");
+            REprintf("vimcom_vimclient() called although Vim server port is undefined\n");
         return;
     }
-    if(vimremote_remoteexpr(svrnm, expr, &result) != 0)
-        objbr_auto = 0;
-    if(verbose > 3)
-        Rprintf("Remoteexpr result: \"%s\"\n", result == NULL ? "NULL" : result);
-    if(result)
-        free(result);
+
+    WSAStartup(MAKEWORD(2, 2), &wsaData);
+    sfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+
+    if(sfd < 0){
+        REprintf("vimcom_vimclient socket failed.\n");
+        return;
+    }
+
+    peer_addr.sin_family = AF_INET;
+    peer_addr.sin_port = htons(atoi(port));
+    peer_addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    if(connect(sfd, (struct sockaddr *)&peer_addr, sizeof(peer_addr)) < 0){
+        REprintf("vimcom_vimclient could not connect.\n");
+        return;
+    }
+
+    /* Prefix NVIMR_SECRET to msg to increase security.
+     * The vimclient does not need this because it is protect by the X server. */
+    char finalmsg[256];
+    strncpy(finalmsg, vimsecr, 255);
+    strncat(finalmsg, "call ", 255);
+    strncat(finalmsg, msg, 255);
+    int len = strlen(finalmsg);
+    if (send(sfd, finalmsg, len+1, 0) < 0) {
+        REprintf("vimcom_vimclient failed sending message.\n");
+        return;
+    }
+
+    if(closesocket(sfd) < 0)
+        REprintf("vimcom_vimclient error closing socket.\n");
+    return;
 }
 #endif
 
 void vimcom_msg_to_vim(char **cmd)
 {
-    vimcom_client_ptr(*cmd, edsrvr);
+    vimcom_vimclient(*cmd, edsrvr);
 }
 
 static void vimcom_toggle_list_status(const char *x)
@@ -429,7 +503,7 @@ static void vimcom_write_obbr()
     }
     fprintf(f, "%s", obbrbuf1);
     fclose(f);
-    has_new_obj = 1;
+    vimcom_vimclient("UpdateOB('GlobalEnv')", obsrvr);
 }
 
 static void vimcom_list_env()
@@ -439,6 +513,10 @@ static void vimcom_list_env()
 
     if(tmpdir[0] == 0)
         return;
+
+    if(objbr_auto != 1)
+        return;
+
 #ifndef WIN32
     struct timeval begin, middle, end, tdiff1, tdiff2;
     if(verbose > 1)
@@ -629,7 +707,7 @@ static int vimcom_checklibs()
     }
     fclose(f);
     if(edsrvr[0] != 0)
-        vimcom_client_ptr("FillRLibList()", edsrvr);
+        vimcom_vimclient("FillRLibList()", edsrvr);
 
     return(newnlibs);
 }
@@ -637,12 +715,6 @@ static int vimcom_checklibs()
 static void vimcom_list_libs()
 {
     int newnlibs;
-    int len, len1;
-    char *libn;
-    char prefixT[64];
-    char prefixL[64];
-    char libasenv[64];
-    SEXP x, oblist, obj;
 
     if(tmpdir[0] == 0)
         return;
@@ -654,6 +726,16 @@ static void vimcom_list_libs()
 
     nlibs = newnlibs;
     openclosel = 0;
+
+    if(objbr_auto != 2)
+        return;
+
+    int len, len1;
+    char *libn;
+    char prefixT[64];
+    char prefixL[64];
+    char libasenv[64];
+    SEXP x, oblist, obj;
 
     memset(obbrbuf2, 0, obbrbufzise);
     char *p = vimcom_strcat(obbrbuf2, "Libraries | .GlobalEnv\n\n");
@@ -709,32 +791,14 @@ static void vimcom_list_libs()
     fclose(f);
     opendf = save_opendf;
     openls = save_openls;
-    has_new_lib = 2;
+    vimcom_vimclient("UpdateOB('libraries')", obsrvr);
 }
 
 Rboolean vimcom_task(SEXP expr, SEXP value, Rboolean succeeded,
         Rboolean visible, void *userData)
 {
     vimcom_list_libs();
-    if(objbr_auto){
-        vimcom_list_env();
-        switch(has_new_lib + has_new_obj){
-            case 1:
-                if(obsrvr[0] != 0)
-                    vimcom_client_ptr("UpdateOB('GlobalEnv')", obsrvr);
-                break;
-            case 2:
-                if(obsrvr[0] != 0)
-                    vimcom_client_ptr("UpdateOB('libraries')", obsrvr);
-                break;
-            case 3:
-                if(obsrvr[0] != 0)
-                    vimcom_client_ptr("UpdateOB('both')", obsrvr);
-                break;
-        }
-        has_new_lib = 0;
-        has_new_obj = 0;
-    }
+    vimcom_list_env();
 #ifdef WIN32
     r_is_busy = 0;
 #endif
@@ -751,22 +815,6 @@ static void vimcom_exec(){
         vimcom_list_env();
     if(flag_lslibs)
         vimcom_list_libs();
-    switch(has_new_lib + has_new_obj){
-        case 1:
-            if(obsrvr[0] != 0)
-                vimcom_client_ptr("UpdateOB('GlobalEnv')", obsrvr);
-            break;
-        case 2:
-            if(obsrvr[0] != 0)
-                vimcom_client_ptr("UpdateOB('libraries')", obsrvr);
-            break;
-        case 3:
-            if(obsrvr[0] != 0)
-                vimcom_client_ptr("UpdateOB('both')", obsrvr);
-            break;
-    }
-    has_new_lib = 0;
-    has_new_obj = 0;
     flag_lsenv = 0;
     flag_lslibs = 0;
 }
@@ -793,11 +841,207 @@ static void vimcom_fire()
 }
 #endif
 
+static void vimcom_save_running_info(int bindportn)
+{
+    char fn[512];
+    snprintf(fn, 510, "%s/vimcom_running_%s", tmpdir, getenv("VIMINSTANCEID"));
+    FILE *f = fopen(fn, "w");
+    if(f == NULL){
+        REprintf("Error: Could not write to '%s'. [vimcom]\n", fn);
+    } else {
 #ifdef WIN32
-static void vimcom_server_thread(void *arg)
+#ifdef _WIN64
+        fprintf(f, "%s\n%s\n%d\n%" PRId64 "\n%" PRId64 "\n",
+                vimcom_version, vimcom_home, bindportn, R_PID,
+                (long long)GetForegroundWindow());
 #else
-static void *vimcom_server_thread(void *arg)
+        fprintf(f, "%s\n%s\n%d\n%d\n%ld\n",
+                vimcom_version, vimcom_home, bindportn, R_PID,
+                (long)GetForegroundWindow());
 #endif
+#else
+        if(getenv("WINDOWID"))
+            fprintf(f, "%s\n%s\n%d\n%d\n%s\n",
+                    vimcom_version, vimcom_home, bindportn, R_PID,
+                    getenv("WINDOWID"));
+        else
+            fprintf(f, "%s\n%s\n%d\n%d\n0\n",
+                    vimcom_version, vimcom_home, bindportn, R_PID);
+#endif
+        fclose(f);
+    }
+}
+
+static void vimcom_parse_received_msg(char *buf)
+{
+    int status;
+    char *bbuf;
+
+    if(verbose > 1){
+        bbuf = buf;
+        if(buf[0] < 30)
+            bbuf++;
+        REprintf("VimCom Received: [%d] %s\n", buf[0], bbuf);
+    }
+
+    switch(buf[0]){
+        case 1: // Set Editor server port number
+            bbuf = buf;
+            bbuf++;
+            strcpy(edsrvr, bbuf);
+            vimcom_del_newline(edsrvr);
+            break;
+        case 2: // Set Object Browser server port number
+            bbuf = buf;
+            bbuf++;
+            objbr_auto = 1;
+            strcpy(obsrvr, bbuf);
+            vimcom_del_newline(obsrvr);
+#ifdef WIN32
+            if(!r_is_busy)
+                vimcom_list_env();
+#else
+            flag_lsenv = 1;
+            flag_lslibs = 1;
+            vimcom_fire();
+#endif
+            break;
+#ifdef WIN32
+        case 3: // Set R as busy
+            r_is_busy = 1;
+            break;
+#endif
+        case 4: // Change value of objbr_auto
+            if(buf[1] == 'G'){
+                objbr_auto = 1;
+                memset(obbrbuf1, 0, obbrbufzise);
+            } else if(buf[1] == 'L'){
+                nlibs = 0;
+                objbr_auto = 2;
+            } else {
+                objbr_auto = 0;
+            }
+#ifdef WIN32
+            if(!r_is_busy){
+                if(objbr_auto == 1)
+                    vimcom_list_env();
+                else
+                    if(objbr_auto == 2)
+                        vimcom_list_libs();
+            }
+#else
+            if(objbr_auto == 1)
+                flag_lsenv = 1;
+            else
+                if(objbr_auto == 2)
+                    flag_lslibs = 1;
+            if(objbr_auto != 0)
+                vimcom_fire();
+#endif
+            break;
+        case 6: // Toggle list status
+#ifdef WIN32
+            if(r_is_busy)
+                break;
+#endif
+            bbuf = buf;
+            bbuf++;
+            if(*bbuf == '&'){
+                bbuf++;
+#ifdef WIN32
+                char flag_eval[512];
+                snprintf(flag_eval, 510, "%s <- %s", bbuf, bbuf);
+                vimcom_eval_expr(flag_eval);
+                *flag_eval = 0;
+                vimcom_list_env();
+#else
+                snprintf(flag_eval, 510, "%s <- %s", bbuf, bbuf);
+                flag_lsenv = 1;
+                vimcom_fire();
+#endif
+                break;
+            }
+            vimcom_toggle_list_status(bbuf);
+            if(strstr(bbuf, "package:") == bbuf){
+                openclosel = 1;
+#ifdef WIN32
+                vimcom_list_libs();
+#else
+                flag_lslibs = 1;
+#endif
+            } else {
+#ifdef WIN32
+                vimcom_list_env();
+#else
+                flag_lsenv = 1;
+#endif
+            }
+#ifndef WIN32
+            vimcom_fire();
+#endif
+            break;
+        case 7: // Close/open all lists
+#ifdef WIN32
+            if(r_is_busy)
+                break;
+#endif
+            bbuf = buf;
+            bbuf++;
+            status = atoi(bbuf);
+            ListStatus *tmp = firstList;
+            if(status){
+                while(tmp){
+                    if(strstr(tmp->key, "package:") != tmp->key)
+                        tmp->status = 1;
+                    tmp = tmp->next;
+                }
+#ifdef WIN32
+                vimcom_list_env();
+#else
+                flag_lsenv = 1;
+#endif
+            } else {
+                while(tmp){
+                    tmp->status = 0;
+                    tmp = tmp->next;
+                }
+                openclosel = 1;
+#ifdef WIN32
+                vimcom_list_libs();
+                vimcom_list_env();
+#else
+                flag_lsenv = 1;
+                flag_lslibs = 1;
+#endif
+            }
+#ifndef WIN32
+            vimcom_fire();
+#endif
+            break;
+        case 8: // eval expression
+            bbuf = buf;
+            bbuf++;
+            if(strstr(bbuf, getenv("VIMINSTANCEID")) == bbuf){
+                bbuf += strlen(getenv("VIMINSTANCEID"));
+#ifdef WIN32
+                if(!r_is_busy)
+                    vimcom_eval_expr(bbuf);
+#else
+                strncpy(flag_eval, bbuf, 510);
+                vimcom_fire();
+#endif
+            } else {
+                REprintf("\vimcom: received invalid VIMINSTANCEID.\n");
+            }
+            break;
+        default: // do nothing
+            REprintf("\nError [vimcom]: Invalid message received: %s\n", buf);
+            break;
+    }
+}
+
+#ifndef WIN32
+static void *vimcom_server_thread(void *arg)
 {
     unsigned short bindportn = 10000;
     ssize_t nread;
@@ -805,55 +1049,6 @@ static void *vimcom_server_thread(void *arg)
     char buf[bsize];
     int result;
 
-#ifdef WIN32
-    WSADATA wsaData;
-    SOCKADDR_IN RecvAddr;
-    SOCKADDR_IN peer_addr;
-    int peer_addr_len = sizeof (peer_addr);
-    int nattp = 0;
-    int nfail = 0;
-    int lastfail = 0;
-
-    result = WSAStartup(MAKEWORD(2, 2), &wsaData);
-    if (result != NO_ERROR) {
-        REprintf("WSAStartup failed with error %d\n", result);
-        return;
-    }
-
-    while(bindportn < 10049){
-        bindportn++;
-        sfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-        if (sfd == INVALID_SOCKET) {
-            REprintf("Error: socket failed with error %d [vimcom]\n", WSAGetLastError());
-            return;
-        }
-
-        RecvAddr.sin_family = AF_INET;
-        RecvAddr.sin_port = htons(bindportn);
-        RecvAddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-
-        nattp++;
-        if(bind(sfd, (SOCKADDR *) & RecvAddr, sizeof (RecvAddr)) == 0)
-            break;
-        lastfail = WSAGetLastError();
-        nfail++;
-        if(verbose > 1)
-            REprintf("vimcom: Could not bind to port %d [error  %d].\n", bindportn, lastfail);
-    }
-    if(nfail > 0 && verbose > 0){
-        if(nfail == 1)
-            REprintf("vimcom: bind failed once with error %d.\n", lastfail);
-        else
-            REprintf("vimcom: bind failed %d times and the last error was %d.\n", nfail, lastfail);
-        if(nattp > nfail)
-            REprintf("vimcom: finally, bind to port %d was successful.\n", bindportn);
-    }
-    if(nattp == nfail){
-        REprintf("Error: Could not bind. [vimcom]\n");
-        vimcom_failure = 1;
-        return;
-    }
-#else
     struct addrinfo hints;
     struct addrinfo *rp;
     struct addrinfo *res;
@@ -907,38 +1102,20 @@ static void *vimcom_server_thread(void *arg)
         vimcom_failure = 1;
         return(NULL);
     }
-#endif
 
     if(verbose > 1)
         REprintf("vimcom port: %d\n", bindportn);
 
+    flag_lslibs = 1;
+    vimcom_fire();
+
     // Save a file to indicate that vimcom is running
-    char fn[512];
-    snprintf(fn, 510, "%s/vimcom_running_%s", tmpdir, getenv("VIMINSTANCEID"));
-    FILE *f = fopen(fn, "w");
-    if(f == NULL){
-        REprintf("Error: Could not write to '%s'. [vimcom]\n", fn);
-    } else {
-#ifdef _WIN64
-        fprintf(f, "%s\n%s\n%d\n%" PRId64 "\n", vimcom_version, vimcom_home, bindportn, R_PID);
-#else
-        fprintf(f, "%s\n%s\n%d\n%d\n", vimcom_version, vimcom_home, bindportn, R_PID);
-#endif
-        fclose(f);
-    }
+    vimcom_save_running_info(bindportn);
 
     /* Read datagrams and reply to sender */
     for (;;) {
         memset(buf, 0, bsize);
 
-#ifdef WIN32
-        nread = recvfrom(sfd, buf, bsize, 0,
-                (SOCKADDR *) &peer_addr, &peer_addr_len);
-        if (nread == SOCKET_ERROR) {
-            REprintf("vimcom: recvfrom failed with error %d\n", WSAGetLastError());
-            return;
-        }
-#else
         nread = recvfrom(sfd, buf, bsize, 0,
                 (struct sockaddr *) &peer_addr, &peer_addr_len);
         if (nread == -1){
@@ -946,172 +1123,88 @@ static void *vimcom_server_thread(void *arg)
                 REprintf("vimcom: recvfrom failed\n");
             continue;     /* Ignore failed request */
         }
-#endif
-
-        int status;
-        char *bbuf;
-
-        if(verbose > 1){
-            bbuf = buf;
-            if(buf[0] < 30)
-                bbuf++;
-            REprintf("VimCom Received: [%d] %s\n", buf[0], bbuf);
-        }
-
-        switch(buf[0]){
-            case 1: // Set Editor server name
-                if(Xdisp){
-                    bbuf = buf;
-                    bbuf++;
-                    strcpy(edsrvr, bbuf);
-                    vimcom_del_newline(edsrvr);
-                }
-                break;
-            case 2: // Set Object Browser server name
-                if(Xdisp){
-                    bbuf = buf;
-                    bbuf++;
-                    objbr_auto = 1;
-                    strcpy(obsrvr, bbuf);
-                    vimcom_del_newline(obsrvr);
-                }
-                break;
-#ifdef WIN32
-            case 3: // Set R as busy
-                r_is_busy = 1;
-                break;
-#endif
-            case 4: // Stop automatic update of Object Browser info
-                objbr_auto = 0;
-                break;
-            case 5: // Update Object Browser (.GlobalEnv and Libraries)
-#ifdef WIN32
-                if(!r_is_busy){
-                    if(buf[1] == 'B' || buf[1] == 'G')
-                        vimcom_list_env();
-                    if(buf[1] == 'B' || buf[1] == 'L')
-                        vimcom_list_libs();
-                    if(buf[1] == 'B')
-                        vimcom_client_ptr("UpdateOB('both')", obsrvr);
-                    else if(buf[1] == 'G')
-                        vimcom_client_ptr("UpdateOB('GlobalEnv')", obsrvr);
-                    else if(buf[1] == 'L')
-                        vimcom_client_ptr("UpdateOB('libraries')", obsrvr);
-                }
-#else
-                if(buf[1] == 'B' || buf[1] == 'G')
-                    flag_lsenv = 1;
-                if(buf[1] == 'B' || buf[1] == 'L')
-                    flag_lslibs = 1;
-                vimcom_fire();
-#endif
-                break;
-            case 6: // Toggle list status
-#ifdef WIN32
-                if(r_is_busy)
-                    break;
-#endif
-                bbuf = buf;
-                bbuf++;
-                if(*bbuf == '&'){
-                    bbuf++;
-#ifdef WIN32
-                    char flag_eval[512];
-                    snprintf(flag_eval, 510, "%s <- %s", bbuf, bbuf);
-                    vimcom_eval_expr(flag_eval);
-                    *flag_eval = 0;
-                    vimcom_list_env();
-                    vimcom_client_ptr("UpdateOB('GlobalEnv')", obsrvr);
-#else
-                    snprintf(flag_eval, 510, "%s <- %s", bbuf, bbuf);
-                    flag_lsenv = 1;
-                    vimcom_fire();
-#endif
-                    break;
-                }
-                vimcom_toggle_list_status(bbuf);
-                if(strstr(bbuf, "package:") == bbuf){
-                    openclosel = 1;
-#ifdef WIN32
-                    vimcom_list_libs();
-                    vimcom_client_ptr("UpdateOB('libraries')", obsrvr);
-#else
-                    flag_lslibs = 1;
-#endif
-                } else {
-#ifdef WIN32
-                    vimcom_list_env();
-                    vimcom_client_ptr("UpdateOB('GlobalEnv')", obsrvr);
-#else
-                    flag_lsenv = 1;
-#endif
-                }
-#ifndef WIN32
-                vimcom_fire();
-#endif
-                break;
-            case 7: // Close/open all lists
-#ifdef WIN32
-                if(r_is_busy)
-                    break;
-#endif
-                bbuf = buf;
-                bbuf++;
-                status = atoi(bbuf);
-                ListStatus *tmp = firstList;
-                if(status == 1 || status == 3){
-                    while(tmp){
-                        if(strstr(tmp->key, "package:") != tmp->key)
-                            tmp->status = 1;
-                        tmp = tmp->next;
-                    }
-#ifdef WIN32
-                    vimcom_list_env();
-#else
-                    flag_lsenv = 1;
-#endif
-                } else {
-                    while(tmp){
-                        tmp->status = 0;
-                        tmp = tmp->next;
-                    }
-                    openclosel = 1;
-#ifdef WIN32
-                    vimcom_list_libs();
-                    vimcom_list_env();
-#else
-                    flag_lsenv = 1;
-                    flag_lslibs = 1;
-#endif
-                }
-#ifdef WIN32
-                vimcom_client_ptr("UpdateOB('both')", obsrvr);
-#else
-                vimcom_fire();
-#endif
-                break;
-            case 8: // eval expression
-                bbuf = buf;
-                bbuf++;
-                if(strstr(bbuf, getenv("VIMINSTANCEID")) == bbuf){
-                    bbuf += strlen(getenv("VIMINSTANCEID"));
-#ifdef WIN32
-                    if(!r_is_busy)
-                        vimcom_eval_expr(bbuf);
-#else
-                    strncpy(flag_eval, bbuf, 510);
-                    vimcom_fire();
-#endif
-                } else {
-                    REprintf("\nvimcom: received invalid VIMINSTANCEID.\n");
-                }
-                break;
-            default: // do nothing
-                REprintf("\nError [vimcom]: Invalid message received: %s\n", buf);
-                break;
-        }
+        vimcom_parse_received_msg(buf);
     }
+    return(NULL);
+}
+#endif
+
 #ifdef WIN32
+static void vimcom_server_thread(void *arg)
+{
+    unsigned short bindportn = 10000;
+    ssize_t nread;
+    int bsize = 5012;
+    char buf[bsize];
+    int result;
+
+    WSADATA wsaData;
+    SOCKADDR_IN RecvAddr;
+    SOCKADDR_IN peer_addr;
+    int peer_addr_len = sizeof (peer_addr);
+    int nattp = 0;
+    int nfail = 0;
+    int lastfail = 0;
+
+    result = WSAStartup(MAKEWORD(2, 2), &wsaData);
+    if (result != NO_ERROR) {
+        REprintf("WSAStartup failed with error %d\n", result);
+        return;
+    }
+
+    while(bindportn < 10049){
+        bindportn++;
+        sfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+        if (sfd == INVALID_SOCKET) {
+            REprintf("Error: socket failed with error %d [vimcom]\n", WSAGetLastError());
+            return;
+        }
+
+        RecvAddr.sin_family = AF_INET;
+        RecvAddr.sin_port = htons(bindportn);
+        RecvAddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+
+        nattp++;
+        if(bind(sfd, (SOCKADDR *) & RecvAddr, sizeof (RecvAddr)) == 0)
+            break;
+        lastfail = WSAGetLastError();
+        nfail++;
+        if(verbose > 1)
+            REprintf("vimcom: Could not bind to port %d [error  %d].\n", bindportn, lastfail);
+    }
+    if(nfail > 0 && verbose > 0){
+        if(nfail == 1)
+            REprintf("vimcom: bind failed once with error %d.\n", lastfail);
+        else
+            REprintf("vimcom: bind failed %d times and the last error was %d.\n", nfail, lastfail);
+        if(nattp > nfail)
+            REprintf("vimcom: finally, bind to port %d was successful.\n", bindportn);
+    }
+    if(nattp == nfail){
+        REprintf("Error: Could not bind. [vimcom]\n");
+        vimcom_failure = 1;
+        return;
+    }
+
+    if(verbose > 1)
+        REprintf("vimcom port: %d\n", bindportn);
+
+    // Save a file to indicate that vimcom is running
+    vimcom_save_running_info(bindportn);
+
+    /* Read datagrams and reply to sender */
+    for (;;) {
+        memset(buf, 0, bsize);
+
+        nread = recvfrom(sfd, buf, bsize, 0,
+                (SOCKADDR *) &peer_addr, &peer_addr_len);
+        if (nread == SOCKET_ERROR) {
+            REprintf("vimcom: recvfrom failed with error %d\n", WSAGetLastError());
+            return;
+        }
+        vimcom_parse_received_msg(buf);
+    }
+
     REprintf("vimcom: Finished receiving. Closing socket.\n");
     result = closesocket(sfd);
     if (result == SOCKET_ERROR) {
@@ -1120,10 +1213,8 @@ static void *vimcom_server_thread(void *arg)
     }
     WSACleanup();
     return;
-#else
-    return(NULL);
-#endif
 }
+#endif
 
 void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *lbe, char **pth, char **vcv)
 {
@@ -1133,85 +1224,22 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *lbe, char **pth, 
     allnames = *anm;
     labelerr = *lbe;
 
-#ifdef NO_X_CLIENTSERVER
-    Xdisp = 1;
-    vimcom_client_ptr = vimcom_noclient;
-#else
-    vimcom_client_ptr = vimcom_vimclient;
-#ifdef WIN32
-    Xdisp = 1;
-#else
-    if(getenv("DISPLAY"))
-        Xdisp = 1;
-    else
-        Xdisp = 0;
-#endif
-#endif
-
     R_PID = getpid();
     strncpy(vimcom_version, *vcv, 31);
 
     if(getenv("VIMRPLUGIN_TMPDIR")){
         strncpy(vimcom_home, *pth, 1023);
         strncpy(tmpdir, getenv("VIMRPLUGIN_TMPDIR"), 500);
-        if(getenv("VIMRPLUGIN_SECRET"))
-            strncpy(vimsecr, getenv("VIMRPLUGIN_SECRET"), 127);
+        if(getenv("VIMR_SECRET"))
+            strncpy(vimsecr, getenv("VIMR_SECRET"), 127);
         else
-            REprintf("vimcom: Environment variable VIMRPLUGIN_SECRET is missing.\n");
-        char *srvr = getenv("VIMEDITOR_SVRNM");
-        if(srvr){
-            if(strstr(srvr, "MacVim_") == srvr){
-                Xdisp = 0; // Do not call vimremote_init()
-                vimcom_client_ptr = vimcom_mvimclient;
-                strncpy(edsrvr, srvr + 7, 127);
-                if(getenv("VIM_BINARY_PATH")){
-                    strncpy(macvim, getenv("VIM_BINARY_PATH"), 500);
-                    if(strlen(macvim) < 3){
-                        REprintf("vimcom: VIM_BINARY_PATH is too short: \"%s\".\n", macvim);
-                        strcpy(macvim, "mvim");
-                    }
-                } else {
-                    REprintf("vimcom: VIM_BINARY_PATH environment variable not found.\n");
-                    strcpy(macvim, "mvim");
-                }
-                if(verbose > 1)
-                    Rprintf("vimcom: R started by MacVim (servername = %s).\n", edsrvr);
-            } else if(strcmp(srvr, "NoClientServer") == 0 && verbose > -1){
-                REprintf("vimcom: Vim was built without the 'clientserver' feature.\n");
-                REprintf("             Please, in Vim, enter Normal mode and type:\n");
-                REprintf("             :h r-plugin-nox\n");
-            } else if(strcmp(srvr, "NoServerName") == 0 && verbose > -1){
-                if(Xdisp)
-                    REprintf("vimcom: Did you pass the --servername argument to Vim?\n");
-                else
-                    REprintf("vimcom: There is no X Server running.\n");
-                REprintf("             Please, in Vim, enter Normal mode and type:\n");
-                REprintf("             :h r-plugin-nox\n");
-            } else {
-                strncpy(edsrvr, srvr, 127);
-                vimcom_del_newline(edsrvr);
-            }
-        } else {
-            if(verbose > -1)
-                REprintf("vimcom: Vim's server is unknown.\n");
-        }
-        if(verbose > 1)
-            Rprintf("vimcom: VIMEDITOR_SVRNM=%s\n", srvr);
+            REprintf("vimcom: Environment variable VIMR_SECRET is missing.\n");
     } else {
         if(verbose)
             REprintf("vimcom: It seems that R was not started by Vim. The communication with Vim-R-plugin will not work.\n");
         tmpdir[0] = 0;
         return;
     }
-
-#ifndef NO_X_CLIENTSERVER
-    if(Xdisp){
-        if(vimremote_init() == 0)
-            vimremote_initialized = 1;
-        else
-            REprintf("vimcom: vimremote_init() failed.\n");
-    }
-#endif
 
     snprintf(liblist, 510, "%s/liblist_%s", tmpdir, getenv("VIMINSTANCEID"));
     snprintf(globenv, 510, "%s/globenv_%s", tmpdir, getenv("VIMINSTANCEID"));
@@ -1290,13 +1318,6 @@ void vimcom_Start(int *vrb, int *odf, int *ols, int *anm, int *lbe, char **pth, 
 
 void vimcom_Stop()
 {
-#ifndef NO_X_CLIENTSERVER
-    if(vimremote_initialized && vimremote_uninit() != 0){
-        REprintf("Error: vimremote_uninit() failed.\n");
-    }
-    vimremote_initialized = 0;
-#endif
-
 #ifndef WIN32
     if(ih){
         removeInputHandler(&R_InputHandlers, ih);

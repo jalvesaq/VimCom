@@ -5,9 +5,9 @@ file.copy(files, dest, overwrite = TRUE)
 if(file.exists("symbols.rds"))
     file.copy("symbols.rds", dest, overwrite = TRUE)
 
-execs <- c("apps/libVimR.so")
+execs <- "apps/vclientserver"
 if(WINDOWS)
-    execs <- c("apps/libVimR.dll")
+    execs <- c("apps/vclientserver.exe", "apps/libVimR.dll")
 if(any(file.exists(execs))){
     dest <- file.path(R_PACKAGE_DIR,  paste0('bin', R_ARCH))
     dir.create(dest, recursive = TRUE, showWarnings = FALSE)

@@ -10,17 +10,14 @@
 .onLoad <- function(libname, pkgname) {
     if(Sys.getenv("VIMRPLUGIN_TMPDIR") == "")
         return(invisible(NULL))
-    if(Sys.getenv("VIMRPLUGIN_COMPLDIR") == ""){
-        warning('Missing environment variable: "VIMRPLUGIN_COMPLDIR"')
+    if(Sys.getenv("VIMR_COMPLDIR") == ""){
+        warning('Missing environment variable: "VIMR_COMPLDIR"')
         return(invisible(NULL))
     }
     library.dynam("vimcom", pkgname, libname, local = FALSE)
 
     if(is.null(getOption("vimcom.verbose")))
         options(vimcom.verbose = 0)
-
-    if(Sys.getenv("VIMEDITOR_SVRNM") %in% c("", "NoClientServer", "NoServerName"))
-        options(vimcom.vimpager = FALSE)
 
     # The remaining options are set by Neovim. Don't try to set them in your
     # ~/.Rprofile because they will be overridden here:
@@ -47,8 +44,8 @@
     else
         termenv <- Sys.getenv("TERM")
 
-    if(interactive() && termenv != "NeovimTerm" && termenv != "dumb" && Sys.getenv("VIMRPLUGIN_COMPLDIR") != ""){
-        dir.create(Sys.getenv("VIMRPLUGIN_COMPLDIR"), showWarnings = FALSE)
+    if(interactive() && termenv != "NeovimTerm" && termenv != "dumb" && Sys.getenv("VIMR_COMPLDIR") != ""){
+        dir.create(Sys.getenv("VIMR_COMPLDIR"), showWarnings = FALSE)
         .C("vimcom_Start",
            as.integer(getOption("vimcom.verbose")),
            as.integer(getOption("vimcom.opendf")),
@@ -69,7 +66,7 @@
                           Sys.getenv("VIMINSTANCEID")))
             if(.Platform$OS.type == "windows")
                 unlink(paste0(Sys.getenv("VIMRPLUGIN_TMPDIR"), "/rconsole_hwnd_",
-                              Sys.getenv("VIMRPLUGIN_SECRET")))
+                              Sys.getenv("VIMR_SECRET")))
         }
         Sys.sleep(0.2)
         library.dynam.unload("vimcom", libpath)

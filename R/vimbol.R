@@ -225,7 +225,7 @@ vim.bol <- function(omnilist, packlist, allnames = FALSE, pattern = "") {
 
 vim.buildomnils <- function(p){
     pvi <- utils::packageDescription(p)$Version
-    bdir <- paste0(Sys.getenv("VIMRPLUGIN_COMPLDIR"), "/")
+    bdir <- paste0(Sys.getenv("VIMR_COMPLDIR"), "/")
     odir <- dir(bdir)
     pbuilt <- odir[grep(paste0("omnils_", p, "_"), odir)]
     fbuilt <- odir[grep(paste0("fun_", p, "_"), odir)]
