@@ -11,10 +11,7 @@
   information printed on R Console. If the value is 1, the package version is
   output on startup. Higher values, up to 4, will make the package print
   information verbosely which is useful only if you want either to fix a bug
-  or to understand how vimcom works. If you run Vim in an terminal emulator
-  without the \samp{--servername} argument, you have to set the value of
-  vimcom.verbose to -1 to suppress the message about Vim-R-plugin missing
-  features. Neovim does not require the \samp{--servername} argument.
+  or to understand how vimcom works.
 
   Below is an example of how to load \pkg{vimcom} in your \samp{~/.Rprofile}:
 

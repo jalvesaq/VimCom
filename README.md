@@ -29,19 +29,6 @@ And, then, do in R:
 install.packages("path/to/VimCom", type = "source", repos = NULL)
 ```
 
-On Mac OS X, by default, vimcom will be compiled without support for Vim's
-clientserver feature, which depends on the X Server. MacVim's clientserver
-feature depends on Cocoa. On any other Unix system, the package is built with
-support for X Server and, consequently, the X11 headers must be installed.
-
-To enable the support for Vim's 'clientserver' based on the X Server on Mac OS
-X, do the following:
-
-```s
-install.packages("path/to/VimCom", type = "source", repos = NULL,
-                  configure.args = "--enable-clientserver")
-```
-
 [Vim-R-plugin]: https://github.com/jcfaria/Vim-R-plugin
 [Vim]: http://www.vim.org
 [Neovim]: http://neovim.org
