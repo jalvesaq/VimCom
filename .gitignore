@@ -9,4 +9,6 @@ src/*.dll
 src/apps/*.o
 src/apps/*.so
 src/apps/*.dll
+src/apps/vclientserver
+src/apps/vclientserver.exe
 .*.sw?
