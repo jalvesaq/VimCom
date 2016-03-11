@@ -1,4 +1,8 @@
-Version 1.2-9 (2016-03-02)
+Version 1.2-9 (2016-03-11)
+
+ - Support Vim's +channel and +job features instead of +clientserver.
+
+Version 1.2-8 (2016-02-20)
 
  - Minor bug fixes.
 
