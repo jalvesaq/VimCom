@@ -1,3 +1,7 @@
+Version 1.3-1 (2016-03-16)
+
+ - Bring back src/Makevars accidentaly deleted.
+
 Version 1.3 (2016-03-12)
 
  - Delete spurious binary file from src/apps.
